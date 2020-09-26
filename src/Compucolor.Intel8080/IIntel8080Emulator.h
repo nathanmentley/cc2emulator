@@ -1,9 +1,15 @@
 
 #pragma once
 
+#include <memory>
+
 #include "Compucolor.Core/IEmulatable.h"
+
+#include "IIntel8080Bus.h"
 
 class IIntel8080Emulator: public IEmulatable {
     public:
         virtual ~IIntel8080Emulator() {}
+        
+        virtual void SetBus(std::shared_ptr<IIntel8080Bus> intel8080Bus) = 0;
 };

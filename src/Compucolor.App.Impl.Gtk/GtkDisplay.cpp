@@ -1,25 +1,7 @@
 #include "GtkDisplay.h"
 
-CompucolorEmulator* buildEmulator()
-{
-    std::shared_ptr<IMemory> memory =
-        std::shared_ptr<IMemory>(new ByteArrayMemory());
-
-    std::shared_ptr<ICrtEmulator> crtEmulator =
-        std::shared_ptr<ICrtEmulator>(new CrtEmulator(memory));
-
-    std::shared_ptr<IIntel8080Emulator> intel8080Emulator =
-        std::shared_ptr<IIntel8080Emulator>(new Intel8080Emulator(memory));
-
-    return new CompucolorEmulator(
-        memory,
-        crtEmulator,
-        intel8080Emulator
-    );
-};
-
 GtkDisplay::GtkDisplay():
-    _emulator(std::unique_ptr<CompucolorEmulator>(buildEmulator())),//get_emulator()),
+    _emulator(get_emulator()),
     _window(
         std::unique_ptr<GtkWindow, GWidgetDeleter>(
             (GtkWindow*)gtk_window_new(GTK_WINDOW_TOPLEVEL)
@@ -42,12 +24,10 @@ GtkDisplay::GtkDisplay():
         )
     )
 {
-    gtk_window_set_title(_window.get(), "Hello there");
+    gtk_window_set_title(_window.get(), "Compucolor II Emulator");
     gtk_window_set_default_size(_window.get(), 384, 256);
 
-    auto halign = gtk_alignment_new(0, 0, 0, 0);
-    gtk_container_add(GTK_CONTAINER(halign), GTK_WIDGET(_image.get()));
-    gtk_container_add(GTK_CONTAINER(_window.get()), halign);
+    gtk_container_add(GTK_CONTAINER(_window.get()), GTK_WIDGET(_image.get()));
 
     g_signal_connect(_window.get(), "destroy", G_CALLBACK(gtk_main_quit), NULL);
 

@@ -22,11 +22,36 @@ intel8080ImplLib = declare_dependency(
         'Compucolor.Intel8080.Impl',
         [
             'src/Compucolor.Intel8080.Impl/Intel8080.cpp',
-            'src/Compucolor.Intel8080.Impl/Intel8080Emulator.cpp'
+            'src/Compucolor.Intel8080.Impl/Intel8080Emulator.cpp',
+            'src/Compucolor.Intel8080.Impl/Intel8080EmulatorContext.cpp'
         ],
         dependencies: [
-            meson.get_compiler('cpp').find_library('fruit'),
+            coreLib
+        ]
+    ),
+    include_directories: includeDirectories
+)
 
+smc5027ImplLib = declare_dependency(
+    link_with: static_library(
+        'Compucolor.Smc5027.Impl',
+        [
+            'src/Compucolor.Smc5027.Impl/Smc5027Emulator.cpp'
+        ],
+        dependencies: [
+            coreLib
+        ]
+    ),
+    include_directories: includeDirectories
+)
+
+tms5501ImplLib = declare_dependency(
+    link_with: static_library(
+        'Compucolor.Tms5501.Impl',
+        [
+            'src/Compucolor.Tms5501.Impl/Tms5501Emulator.cpp'
+        ],
+        dependencies: [
             coreLib
         ]
     ),
@@ -41,8 +66,19 @@ crtImplLib = declare_dependency(
             'src/Compucolor.Crt.Impl/CrtEmulator.cpp'
         ],
         dependencies: [
-            meson.get_compiler('cpp').find_library('fruit'),
+            coreLib
+        ]
+    ),
+    include_directories: includeDirectories
+)
 
+keyboardImplLib = declare_dependency(
+    link_with: static_library(
+        'Compucolor.Keyboard.Impl',
+        [
+            'src/Compucolor.Keyboard.Impl/KeyboardEmulator.cpp'
+        ],
+        dependencies: [
             coreLib
         ]
     ),
@@ -53,14 +89,18 @@ compucolorImplLib = declare_dependency(
     link_with: static_library(
         'Compucolor.Compucolor.Impl',
         [
+            'src/Compucolor.Compucolor.Impl/CompucolorIntel8080Bus.cpp',
             'src/Compucolor.Compucolor.Impl/CompucolorEmulator.cpp',
             'src/Compucolor.Compucolor.Impl/Roms.cpp'
         ],
         dependencies: [
-            meson.get_compiler('cpp').find_library('fruit'),
-
             coreLib,
-            intel8080ImplLib
+
+            intel8080ImplLib,
+            smc5027ImplLib,
+            tms5501ImplLib,
+            crtImplLib,
+            keyboardImplLib
         ]
     ),
     include_directories: includeDirectories
@@ -73,11 +113,6 @@ appLib = declare_dependency(
             'src/Compucolor.App/get_emulator.cpp',
         ],
         dependencies: [
-            meson.get_compiler('cpp').find_library('fruit'),
-
-            coreLib,
-            intel8080ImplLib,
-            crtImplLib,
             compucolorImplLib
         ]
     ),

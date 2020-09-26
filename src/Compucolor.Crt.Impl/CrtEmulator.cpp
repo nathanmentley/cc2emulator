@@ -21,7 +21,7 @@ void CrtEmulator::Start()
                     RefreshDisplay();
                 }
 
-                std::this_thread::sleep_for (std::chrono::milliseconds(40));
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
             }
         }
     );
@@ -37,16 +37,16 @@ void CrtEmulator::RefreshDisplay()
 {
     if (_display.has_value())
     {
-        for (int i = 0x7000; i < 0x8000; i += 2)
+        for (uint16_t i = 0x7000; i < 0x8000; i += 2)
         {
             // Update video memory
-            int baseAddress = i - 0x7000;   // 0x6... range to avoid wait for hblank
+            uint16_t baseAddress = i - 0x7000;   // 0x6... range to avoid wait for hblank
             // two bytes per char, 64 char/row
-            int x = (baseAddress >> 1) & 0x3F;
+            uint16_t x = (baseAddress >> 1) & 0x3F;
             // 128 bytes per row, 32 rows
-            int y = (baseAddress >> 7) & 0x1F;
+            uint16_t y = (baseAddress >> 7) & 0x1F;
 
-            int pair = (i & 0xFFFE);
+            uint16_t pair = (i & 0xFFFE);
             uint8_t ch = _memory->GetByte(pair);
             uint8_t attrib = _memory->GetByte((pair + 1));  // attribute byte
 
@@ -75,22 +75,22 @@ void CrtEmulator::SetDisplay(IDisplay* display)
 
 void CrtEmulator::DrawGlyph(Color foreground, Color background, uint8_t glyphData, bool blink, int x, int y)
 {
-    const int xPos = x * CharacterWidth;
-    const int yPos = y * CharacterHeight;
+    const uint16_t xPos = x * CharacterWidth;
+    const uint16_t yPos = y * CharacterHeight;
 
-    for(int row = 0; row < CharacterHeight; row++)
+    for(uint16_t row = 0; row < CharacterHeight; row++)
     {
-        uint8_t* uf6_rom = get_uf6_rom();
+        const uint8_t* uf6_rom = get_uf6_rom();
 
         const bool isTall = IsBitSet(7, glyphData);
         const uint8_t ch = glyphData & 0x7F;
-        const int romIndex = (ch * CharacterHeight) + (isTall ? (row/2 + ((y % 2) * 4)): row);
+        const uint16_t romIndex = (ch * CharacterHeight) + (isTall ? (row/2 + ((y % 2) * 4)): row);
         const uint8_t romData = uf6_rom[romIndex];
 
-        for(int column = 0; column < CharacterWidth; column++)
+        for(uint16_t column = 0; column < CharacterWidth; column++)
         {
-            const int targetX = column + xPos;
-            const int targetY = row + yPos;
+            const uint16_t targetX = column + xPos;
+            const uint16_t targetY = row + yPos;
 
             if (IsBitSet(7 - column, romData))
             {

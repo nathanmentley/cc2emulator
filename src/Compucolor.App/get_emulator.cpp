@@ -1,17 +1,32 @@
 #include "get_emulator.h"
 
-fruit::Component<ICompucolorEmulator> getEmulator() {
-    return fruit::createComponent()
-        .bind<IMemory, ByteArrayMemory>()
-        .bind<ICrtEmulator, CrtEmulator>()
-        .bind<IIntel8080Emulator, Intel8080Emulator>()
-        .bind<ICompucolorEmulator, CompucolorEmulator>();
-}
-
 std::unique_ptr<ICompucolorEmulator> get_emulator()
 {
-    fruit::Injector<ICompucolorEmulator> injector(getEmulator);
-    ICompucolorEmulator* instance = injector.get<ICompucolorEmulator*>();
+    std::shared_ptr<IMemory> memory =
+        std::shared_ptr<IMemory>(new ByteArrayMemory());
 
-    return std::unique_ptr<ICompucolorEmulator>(instance);
+    std::shared_ptr<ICrtEmulator> crtEmulator =
+        std::shared_ptr<ICrtEmulator>(new CrtEmulator(memory));
+
+    std::shared_ptr<IIntel8080Emulator> intel8080Emulator =
+        std::shared_ptr<IIntel8080Emulator>(new Intel8080Emulator(memory));
+
+    std::shared_ptr<ISmc5027Emulator> smc5027Emulator =
+        std::shared_ptr<ISmc5027Emulator>(new Smc5027Emulator());
+
+    std::shared_ptr<IKeyboardEmulator> keyboardEmulator =
+        std::shared_ptr<IKeyboardEmulator>(new KeyboardEmulator());
+
+    std::shared_ptr<ITms5501Emulator> tms5501Emulator =
+        std::shared_ptr<ITms5501Emulator>(new Tms5501Emulator(keyboardEmulator));
+
+    return std::unique_ptr<ICompucolorEmulator>(
+        new CompucolorEmulator(
+            crtEmulator,
+            intel8080Emulator,
+            memory,
+            smc5027Emulator,
+            tms5501Emulator
+        )
+    );
 }

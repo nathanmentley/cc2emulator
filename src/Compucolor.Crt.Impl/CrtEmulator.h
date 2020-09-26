@@ -7,8 +7,6 @@
 #include <optional>
 #include <thread>
 
-#include <fruit/fruit.h>
-
 #include "Compucolor.Core/IDisplay.h"
 #include "Compucolor.Core/IMemory.h"
 
@@ -16,19 +14,48 @@
 
 #include "Compucolor.Crt.Impl/FontRom.h"
 
+/**
+ * @brief  
+ * @note   
+ * @retval None
+ */
 class CrtEmulator: public ICrtEmulator {
     public:
-        INJECT(
-            CrtEmulator(
-                std::shared_ptr<IMemory> memory
-            )
-        );
+        /**
+         * @brief  
+         * @note   
+         * @param  memory: 
+         * @retval 
+         */
+        CrtEmulator(std::shared_ptr<IMemory> memory);
 
+        /**
+         * @brief  
+         * @note   
+         * @retval None
+         */
         virtual void Start() override;
+
+        /**
+         * @brief  
+         * @note   
+         * @retval None
+         */
         virtual void Stop() override;
 
+        /**
+         * @brief  
+         * @note   
+         * @retval None
+         */
         virtual void RefreshDisplay() override;
 
+        /**
+         * @brief  
+         * @note   
+         * @param  display: 
+         * @retval None
+         */
         virtual void SetDisplay(IDisplay* display) override;
 
     private:
@@ -44,9 +71,49 @@ class CrtEmulator: public ICrtEmulator {
         std::atomic<bool> _isRunning;
         std::thread _thread;
 
+        /**
+         * @brief  
+         * @note   
+         * @param  foreground: 
+         * @param  background: 
+         * @param  glyphData: 
+         * @param  blink: 
+         * @param  x: 
+         * @param  y: 
+         * @retval None
+         */
         void DrawGlyph(Color foreground, Color background, uint8_t glyphData, bool blink, int x, int y);
+
+        /**
+         * @brief  
+         * @note   
+         * @param  bit: 
+         * @param  data: 
+         * @retval 
+         */
         bool IsBitSet(int bit, uint8_t data);
+
+        /**
+         * @brief  
+         * @note   
+         * @param  data: 
+         * @retval 
+         */
         Color GetForegroundColor(uint8_t data);
+
+        /**
+         * @brief  
+         * @note   
+         * @param  data: 
+         * @retval 
+         */
         Color GetBackgroundColor(uint8_t data);
+        
+        /**
+         * @brief  
+         * @note   
+         * @param  data: 
+         * @retval 
+         */
         Color GetColor(uint8_t data);
 };
