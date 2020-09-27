@@ -15,9 +15,12 @@ void KeyboardEmulator::Stop()
 {
 }
 
+#include <iostream>
+
 uint8_t KeyboardEmulator::Read(uint8_t port)
 {
-    return 0;
+    std::cout << "READ FROM KEYBOARd.\n";
+    return 0xFF;
 }
 
 void KeyboardEmulator::Reset()

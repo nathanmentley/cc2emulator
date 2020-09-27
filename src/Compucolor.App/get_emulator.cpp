@@ -18,7 +18,12 @@ std::unique_ptr<ICompucolorEmulator> get_emulator()
         std::shared_ptr<IKeyboardEmulator>(new KeyboardEmulator());
 
     std::shared_ptr<ITms5501Emulator> tms5501Emulator =
-        std::shared_ptr<ITms5501Emulator>(new Tms5501Emulator(keyboardEmulator));
+        std::shared_ptr<ITms5501Emulator>(
+            new Tms5501Emulator(
+                intel8080Emulator,
+                keyboardEmulator
+            )
+        );
 
     return std::unique_ptr<ICompucolorEmulator>(
         new CompucolorEmulator(

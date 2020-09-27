@@ -49,7 +49,8 @@ tms5501ImplLib = declare_dependency(
     link_with: static_library(
         'Compucolor.Tms5501.Impl',
         [
-            'src/Compucolor.Tms5501.Impl/Tms5501Emulator.cpp'
+            'src/Compucolor.Tms5501.Impl/Tms5501Emulator.cpp',
+            'src/Compucolor.Tms5501.Impl/Tms5501EmulatorContext.cpp'
         ],
         dependencies: [
             coreLib
@@ -89,8 +90,8 @@ compucolorImplLib = declare_dependency(
     link_with: static_library(
         'Compucolor.Compucolor.Impl',
         [
-            'src/Compucolor.Compucolor.Impl/CompucolorIntel8080Bus.cpp',
             'src/Compucolor.Compucolor.Impl/CompucolorEmulator.cpp',
+            'src/Compucolor.Compucolor.Impl/CompucolorIntel8080Bus.cpp',
             'src/Compucolor.Compucolor.Impl/Roms.cpp'
         ],
         dependencies: [
