@@ -4,10 +4,11 @@
 #include <memory>
 
 #include "Compucolor.Core/IEmulatable.h"
+#include "Compucolor.Core/IResetable.h"
 
 #include "IIntel8080Bus.h"
 
-class IIntel8080Emulator: public IEmulatable {
+class IIntel8080Emulator: public IEmulatable, public IResetable {
     public:
         virtual ~IIntel8080Emulator() {}
 

@@ -4,7 +4,13 @@
 #include "Compucolor.Core/IInputDevice.h"
 #include "Compucolor.Core/IResetable.h"
 
+#include "CompucolorIIKey.h"
+
 class IKeyboardEmulator: public IEmulatable, public IInputDevice, public IResetable {
     public:
         virtual ~IKeyboardEmulator() {}
+
+        virtual void OnKeyUp(CompucolorIIKey key) = 0;
+
+        virtual void OnKeyDown(CompucolorIIKey key) = 0;
 };

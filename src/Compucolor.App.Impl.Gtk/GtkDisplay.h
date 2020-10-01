@@ -8,6 +8,7 @@
 #include "Compucolor.App/get_emulator.h"
 #include "Compucolor.Core/IDisplay.h"
 
+#include "GtkKeyboard.h"
 #include "GObjectDeleter.h"
 #include "GWidgetDeleter.h"
 
@@ -25,10 +26,15 @@ class GtkDisplay: public IDisplay {
         static int const Width = Columns * CharacterWidth;
         static int const Height = Rows * CharacterHeight;
 
-        std::unique_ptr<ICompucolorEmulator> _emulator;
+        std::shared_ptr<ICompucolorEmulator> _emulator;
         std::unique_ptr<GtkWindow, GWidgetDeleter> _window;
         std::unique_ptr<GtkImage, GWidgetDeleter> _image;
         std::unique_ptr<GdkPixbuf, GObjectDeleter> _buffer;
+        std::unique_ptr<GtkKeyboard> _keyboard;
 
         static uint32_t GetColor(Color color);
+
+        static void QuitApp(ICompucolorEmulator* emulator);
+        static void OnKeyUp(GtkWidget* widget, GdkEventKey* event, GtkKeyboard* keyboard);
+        static void OnKeyDown(GtkWidget* widget, GdkEventKey* event, GtkKeyboard* keyboard);
 };

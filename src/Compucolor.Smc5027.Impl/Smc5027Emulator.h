@@ -1,6 +1,5 @@
 #pragma once
 
-#include <memory>
 #include <vector>
 
 #include "Compucolor.Smc5027/ISmc5027Emulator.h"
@@ -18,6 +17,8 @@ class Smc5027Emulator: public ISmc5027Emulator {
 
         virtual void Reset() override;
     private:
+        static const uint8_t REGISTER_COUNT = 16;
+
         std::vector<uint8_t> _registers;
 
         uint8_t ConvertPort(uint8_t port);

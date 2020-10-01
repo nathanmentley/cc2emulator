@@ -7,7 +7,6 @@ CrtEmulator::CrtEmulator(
     _memory(memory),
     _isRunning(false)
 {
-
 }
 
 void CrtEmulator::Start()
@@ -118,24 +117,15 @@ Color CrtEmulator::GetColor(uint8_t data)
 {
     switch(data)
     {
-        case 0:
-            return Black;
-        case 1:
-            return Red;
-        case 2:
-            return Green;
-        case 3:
-            return Yellow;
-        case 4:
-            return Blue;
-        case 5:
-            return Purple;
-        case 6:
-            return Teal;
-        case 7:
-            return White;
-        default:
-            return White;
+        case 0:     return Color::Black;
+        case 1:     return Color::Red;
+        case 2:     return Color::Green;
+        case 3:     return Color::Yellow;
+        case 4:     return Color::Blue;
+        case 5:     return Color::Purple;
+        case 6:     return Color::Teal;
+        case 7:     return Color::White;
+        default:    return Color::White;
     }
 }
 

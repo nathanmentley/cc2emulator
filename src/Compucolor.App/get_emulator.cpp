@@ -29,6 +29,7 @@ std::unique_ptr<ICompucolorEmulator> get_emulator()
         new CompucolorEmulator(
             crtEmulator,
             intel8080Emulator,
+            keyboardEmulator,
             memory,
             smc5027Emulator,
             tms5501Emulator

@@ -3,7 +3,6 @@
 KeyboardEmulator::KeyboardEmulator():
     _kbMatrix(std::vector<uint8_t>(17))
 {
-
 }
 
 void KeyboardEmulator::Start()
@@ -13,14 +12,22 @@ void KeyboardEmulator::Start()
 
 void KeyboardEmulator::Stop()
 {
+    Reset();
 }
 
 #include <iostream>
 
 uint8_t KeyboardEmulator::Read(uint8_t port)
 {
-    std::cout << "READ FROM KEYBOARd.\n";
-    return 0xFF;
+    printf("READ ROW %d from keyboard\n", port);
+
+    if (port == 14)
+    {
+        return 0xFD;
+    }
+
+    return _kbMatrix[port];
+
 }
 
 void KeyboardEmulator::Reset()
@@ -29,4 +36,14 @@ void KeyboardEmulator::Reset()
     {
         _kbMatrix[i] = 0xFF;
     }
+}
+
+void KeyboardEmulator::OnKeyUp(CompucolorIIKey key)
+{
+    _kbMatrix[14] = 0xFF;
+}
+
+void KeyboardEmulator::OnKeyDown(CompucolorIIKey key)
+{
+    _kbMatrix[14] = 0xFD;
 }

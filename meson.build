@@ -124,6 +124,7 @@ executable(
     'Compucolor.App.Impl.Gtk',
     [
         'src/Compucolor.App.Impl.Gtk/GtkDisplay.cpp',
+        'src/Compucolor.App.Impl.Gtk/GtkKeyboard.cpp',
         'src/Compucolor.App.Impl.Gtk/main.cpp'
     ],
     dependencies: [

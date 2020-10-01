@@ -50,6 +50,22 @@ class KeyboardEmulator: public IKeyboardEmulator {
          */
         virtual void Reset() override;
 
+        /**
+         * @brief  
+         * @note   
+         * @param  key: 
+         * @retval None
+         */
+        virtual void OnKeyUp(CompucolorIIKey key) override;
+
+        /**
+         * @brief  
+         * @note   
+         * @param  key: 
+         * @retval None
+         */
+        virtual void OnKeyDown(CompucolorIIKey key) override;
+
     private:
         std::vector<uint8_t> _kbMatrix;
 };

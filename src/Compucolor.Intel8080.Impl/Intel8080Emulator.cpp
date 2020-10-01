@@ -33,6 +33,16 @@ void Intel8080Emulator::Stop()
     _thread.join();
 }
 
+void Intel8080Emulator::Reset()
+{
+    Stop();
+
+    //TODO:
+    //reset cpu state
+
+    Start();
+}
+
 void Intel8080Emulator::SetBus(std::shared_ptr<IIntel8080Bus> intel8080Bus)
 {
     _context->SetBus(intel8080Bus);
@@ -70,6 +80,7 @@ void Intel8080Emulator::WriteByte(void* userdata, uint16_t addr, uint8_t data)
 
     if (memory.has_value())
     {
+        //Only write above the 0-5ffff rom.
         if (addr >= 0x6000)
         {
             memory.value()->SetByte(addr, data);

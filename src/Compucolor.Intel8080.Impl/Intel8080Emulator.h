@@ -21,6 +21,8 @@ class Intel8080Emulator: public IIntel8080Emulator {
 
         virtual void Stop() override;
 
+        virtual void Reset() override;
+
         virtual void SetBus(std::shared_ptr<IIntel8080Bus> intel8080Bus) override;
 
         virtual void RegisterInterrupt(uint8_t opcode) override;

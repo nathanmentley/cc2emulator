@@ -10,8 +10,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-
-
 #include "GtkDisplay.h"
 
 void handler(int sig) {
@@ -36,4 +34,6 @@ int main(int argc, char** argv) {
         std::unique_ptr<GtkDisplay>(new GtkDisplay());
 
     gtk_main();
+
+    //gtk_main_quit();
 }

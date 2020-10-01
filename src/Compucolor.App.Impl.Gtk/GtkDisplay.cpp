@@ -22,19 +22,30 @@ GtkDisplay::GtkDisplay():
                 GtkDisplay::Height
             )
         )
+    ),
+    _keyboard(
+        std::unique_ptr<GtkKeyboard>(
+            new GtkKeyboard(_emulator)
+        )
     )
 {
+    //setup window
     gtk_window_set_title(_window.get(), "Compucolor II Emulator");
-    gtk_window_set_default_size(_window.get(), 384, 256);
+    gtk_window_set_default_size(_window.get(), 384 * 2, 256 * 2);
 
+    //setup listeners
+    g_signal_connect(_window.get(), "key-release-event", G_CALLBACK(GtkDisplay::OnKeyUp), _keyboard.get());
+    g_signal_connect(_window.get(), "key_press_event", G_CALLBACK(GtkDisplay::OnKeyDown), _keyboard.get());
+    g_signal_connect(_window.get(), "destroy", G_CALLBACK(GtkDisplay::QuitApp), _emulator.get());
+
+    //setup elements
     gtk_container_add(GTK_CONTAINER(_window.get()), GTK_WIDGET(_image.get()));
 
-    g_signal_connect(_window.get(), "destroy", G_CALLBACK(gtk_main_quit), NULL);
+    //show all
+    gtk_widget_show_all(GTK_WIDGET(_window.get()));
 
-    gtk_widget_show_all((GtkWidget*)_window.get());
-
+    //start the emulator
     _emulator->SetDisplay(this);
-
     _emulator->Start();
 }
 
@@ -57,33 +68,46 @@ void GtkDisplay::DrawPixel(Color color, int x, int y)
 
 void GtkDisplay::Repaint()
 {
-    gtk_image_set_from_pixbuf(
-        _image.get(),
-        _buffer.get()
-    );
+    std::unique_ptr<GtkAllocation> allocation =
+        std::unique_ptr<GtkAllocation>(new GtkAllocation());
+
+    gtk_widget_get_allocation(GTK_WIDGET(_image.get()), allocation.get());
+
+    std::unique_ptr<GdkPixbuf, GObjectDeleter> pxbscaled =
+        std::unique_ptr<GdkPixbuf, GObjectDeleter>(
+            gdk_pixbuf_scale_simple(_buffer.get(), allocation->width, allocation->height, GDK_INTERP_BILINEAR)
+        );
+
+    gtk_image_set_from_pixbuf(_image.get(), pxbscaled.get());
 }
 
 uint32_t GtkDisplay::GetColor(Color color)
 {
     switch (color)
     {
-        case Black:
-            return 0x000000FF;
-        case Red:
-            return 0xFF0000FF;
-        case Green:
-            return 0x00FF00FF;
-        case Yellow:
-            return 0xFFFF00FF;
-        case Blue:
-            return 0x0000FFFF;
-        case Purple:
-            return 0xFF00FFFF;
-        case Teal:
-            return 0x00FFFFFF;
-        case White:
-            return 0xFFFFFFFF;
-        default:
-            return 0x000000FF;
+        case Color::Black:      return 0x000000FF;
+        case Color::Red:        return 0xFF0000FF;
+        case Color::Green:      return 0x00FF00FF;
+        case Color::Yellow:     return 0xFFFF00FF;
+        case Color::Blue:       return 0x0000FFFF;
+        case Color::Purple:     return 0xFF00FFFF;
+        case Color::Teal:       return 0x00FFFFFF;
+        case Color::White:      return 0xFFFFFFFF;
+        default:                return 0x000000FF;
     }
+}
+
+void GtkDisplay::QuitApp(ICompucolorEmulator* emulator)
+{
+    emulator->Stop();
+}
+
+void GtkDisplay::OnKeyUp(GtkWidget* widget, GdkEventKey* event, GtkKeyboard* keyboard)
+{
+    keyboard->OnKeyUp(event);
+}
+
+void GtkDisplay::OnKeyDown(GtkWidget* widget, GdkEventKey* event, GtkKeyboard* keyboard)
+{
+    keyboard->OnKeyDown(event);
 }
