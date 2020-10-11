@@ -25,7 +25,12 @@
 #include <Compucolor.Crt/ICrtEmulator.h>
 #include <Compucolor.Crt.Impl/CrtEmulator.h>
 
+#include <Compucolor.Logger/ILogger.h>
+#include <Compucolor.Logger.Impl/Logger.h>
+
 #include <Compucolor.Compucolor/ICompucolorEmulator.h>
 #include <Compucolor.Compucolor.Impl/CompucolorEmulator.h>
 
-std::unique_ptr<ICompucolorEmulator> get_emulator();
+std::unique_ptr<ICompucolorEmulator> get_emulator(
+    std::shared_ptr<ILoggerProvider> loggerProvider
+);

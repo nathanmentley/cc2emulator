@@ -1,7 +1,12 @@
 #include "GtkDisplay.h"
 
 GtkDisplay::GtkDisplay():
-    _emulator(get_emulator()),
+    _loggerProvider(
+        std::shared_ptr<ILoggerProvider>(
+            new GtkLoggerProvider()
+        )
+    ),
+    _emulator(get_emulator(_loggerProvider)),
     _window(
         std::unique_ptr<GtkWindow, GWidgetDeleter>(
             (GtkWindow*)gtk_window_new(GTK_WINDOW_TOPLEVEL)

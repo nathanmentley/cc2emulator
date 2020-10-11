@@ -99,6 +99,19 @@ keyboardImplLib = declare_dependency(
     include_directories: includeDirectories
 )
 
+loggerImplLib = declare_dependency(
+    link_with: shared_library(
+        'Compucolor.Logger.Impl',
+        [
+            'src/Compucolor.Logger.Impl/Logger.cpp'
+        ],
+        dependencies: [
+            coreLib
+        ]
+    ),
+    include_directories: includeDirectories
+)
+
 compucolorImplLib = declare_dependency(
     link_with: shared_library(
         'Compucolor.Compucolor.Impl',
@@ -136,6 +149,7 @@ appLib = declare_dependency(
             crtImplLib,
             floppyImplLib,
             keyboardImplLib,
+            loggerImplLib,
 
             compucolorImplLib
         ]
@@ -148,6 +162,7 @@ executable(
     [
         'src/Compucolor.App.Impl.Gtk/GtkDisplay.cpp',
         'src/Compucolor.App.Impl.Gtk/GtkKeyboard.cpp',
+        'src/Compucolor.App.Impl.Gtk/GtkLoggerProvider.cpp',
         'src/Compucolor.App.Impl.Gtk/main.cpp'
     ],
     dependencies: [

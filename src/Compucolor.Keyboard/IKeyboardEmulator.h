@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Compucolor.Core/IEmulatable.h"
-#include "Compucolor.Core/IInputDevice.h"
-#include "Compucolor.Core/IResetable.h"
+#include <Compucolor.Core/IEmulatable.h>
+#include <Compucolor.Core/IInputDevice.h>
+#include <Compucolor.Core/IResetable.h>
 
-#include "CompucolorIIKey.h"
+#include <Compucolor.Keyboard/CompucolorIIKey.h>
 
 class IKeyboardEmulator: public IEmulatable, public IInputDevice, public IResetable {
     public:

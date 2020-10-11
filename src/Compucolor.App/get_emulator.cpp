@@ -1,7 +1,15 @@
 #include <Compucolor.App/get_emulator.h>
 
-std::unique_ptr<ICompucolorEmulator> get_emulator()
+std::unique_ptr<ICompucolorEmulator> get_emulator(
+    std::shared_ptr<ILoggerProvider> loggerProvider
+)
 {
+    std::shared_ptr<ILogger> logger =
+        std::shared_ptr<ILogger>(new Logger());
+
+    logger->SetProvider(loggerProvider);
+    logger->SetLogLevel(LogLevel::Trace);
+
     std::shared_ptr<IMemory> memory =
         std::shared_ptr<IMemory>(new ByteArrayMemory());
 
@@ -33,6 +41,7 @@ std::unique_ptr<ICompucolorEmulator> get_emulator()
     std::shared_ptr<ICrtEmulator> crtEmulator =
         std::shared_ptr<ICrtEmulator>(
             new CrtEmulator(
+                logger,
                 memory,
                 smc5027Emulator
             )

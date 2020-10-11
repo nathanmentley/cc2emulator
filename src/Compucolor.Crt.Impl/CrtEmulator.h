@@ -7,9 +7,12 @@
 #include <optional>
 #include <thread>
 
+#include <Compucolor.Core/ThirdParty/nameof.hpp>
+
 #include <Compucolor.Core/IDisplay.h>
 #include <Compucolor.Core/IMemory.h>
 
+#include <Compucolor.Logger/ILogger.h>
 #include <Compucolor.Smc5027/ISmc5027Emulator.h>
 
 #include <Compucolor.Crt/ICrtEmulator.h>
@@ -31,6 +34,7 @@ class CrtEmulator: public ICrtEmulator {
          * @retval 
          */
         CrtEmulator(
+            std::shared_ptr<ILogger> logger,
             std::shared_ptr<IMemory> memory,
             std::shared_ptr<ISmc5027Emulator> smc5027emulator
         );
@@ -73,6 +77,7 @@ class CrtEmulator: public ICrtEmulator {
         static int const Height = Rows * CharacterHeight;
 
         std::optional<IDisplay*> _display;
+        std::shared_ptr<ILogger> _logger;
         std::shared_ptr<IMemory> _memory;
         std::shared_ptr<ISmc5027Emulator> _smc5027emulator;
         std::atomic<bool> _isRunning;

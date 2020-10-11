@@ -8,6 +8,7 @@
 #include "Compucolor.App/get_emulator.h"
 #include "Compucolor.Core/IDisplay.h"
 
+#include "GtkLoggerProvider.h"
 #include "GtkKeyboard.h"
 #include "GObjectDeleter.h"
 #include "GWidgetDeleter.h"
@@ -26,6 +27,7 @@ class GtkDisplay: public IDisplay {
         static int const Width = Columns * CharacterWidth;
         static int const Height = Rows * CharacterHeight;
 
+        std::shared_ptr<ILoggerProvider> _loggerProvider;
         std::shared_ptr<ICompucolorEmulator> _emulator;
         std::unique_ptr<GtkWindow, GWidgetDeleter> _window;
         std::unique_ptr<GtkImage, GWidgetDeleter> _image;

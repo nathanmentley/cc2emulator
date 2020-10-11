@@ -1,10 +1,12 @@
 #include <Compucolor.Crt.Impl/CrtEmulator.h>
 
 CrtEmulator::CrtEmulator(
+    std::shared_ptr<ILogger> logger,
     std::shared_ptr<IMemory> memory,
     std::shared_ptr<ISmc5027Emulator> smc5027emulator
 ):
     _display({}),
+    _logger(logger),
     _memory(memory),
     _smc5027emulator(smc5027emulator),
     _isRunning(false),
@@ -14,6 +16,8 @@ CrtEmulator::CrtEmulator(
 
 void CrtEmulator::Start()
 {
+    _logger->LogTrace("Starting %s", NAMEOF_TYPE(CrtEmulator));
+
     _isRunning = true;
     _thread = std::thread(
         [this]()
@@ -48,6 +52,11 @@ void CrtEmulator::RefreshDisplay()
 {
     if (_display.has_value())
     {
+        _logger->LogTrace(
+            "Refereshing Display in %s",
+            NAMEOF_TYPE(CrtEmulator)
+        );
+
         for (uint16_t i = 0x7000; i < 0x8000; i += 2)
         {
             // Update video memory
