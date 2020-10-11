@@ -1,19 +1,15 @@
 
 #pragma once
 
-#include <iostream>
 #include <memory>
-#include <optional>
-#include <vector>
 
-#include <Compucolor.Keyboard/IKeyboardEmulator.h>
+#include <Compucolor.Floppy/IFloppyEmulator.h>
 
 /**
  * @brief  
  * @note   
- * @retval None
  */
-class KeyboardEmulator: public IKeyboardEmulator {
+class FloppyEmulator: public IFloppyEmulator {
     public:
         /**
          * @brief  
@@ -21,7 +17,7 @@ class KeyboardEmulator: public IKeyboardEmulator {
          * @param  memory: 
          * @retval 
          */
-        KeyboardEmulator();
+        FloppyEmulator();
 
         /**
          * @brief  
@@ -40,14 +36,6 @@ class KeyboardEmulator: public IKeyboardEmulator {
         /**
          * @brief  
          * @note   
-         * @param  port: 
-         * @retval 
-         */
-        virtual uint8_t Read(uint8_t port) override;
-
-        /**
-         * @brief  
-         * @note   
          * @retval None
          */
         virtual void Reset() override;
@@ -55,23 +43,26 @@ class KeyboardEmulator: public IKeyboardEmulator {
         /**
          * @brief  
          * @note   
-         * @param  key: 
+         * @param  port: 
+         * @param  data: 
          * @retval None
          */
-        virtual void OnKeyUp(CompucolorIIKey key) override;
+        virtual void Write(uint8_t port, uint8_t data) override;
 
         /**
          * @brief  
          * @note   
-         * @param  key: 
+         * @param  selected: 
+         * @param  write: 
+         * @param  stepper: 
          * @retval None
          */
-        virtual void OnKeyDown(CompucolorIIKey key) override;
+        virtual void Select(bool selected, bool write, uint8_t stepper) override;
 
     private:
-        std::vector<uint8_t> _kbMatrix;
-
-        std::optional<int> GetRow(CompucolorIIKey key);
-
-        std::optional<int> GetBit(CompucolorIIKey key);
+        /**
+         * @brief  
+         * @note   
+         */
+        static const int StepperPhases = 3;//4;
 };

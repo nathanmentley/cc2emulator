@@ -7,7 +7,7 @@ project(
 includeDirectories = include_directories('src')
 
 coreLib = declare_dependency(
-    link_with: static_library(
+    link_with: shared_library(
         'Compucolor.Core',
         [
             'src/Compucolor.Core/BaseEmulator.cpp',
@@ -18,7 +18,7 @@ coreLib = declare_dependency(
 )
 
 intel8080ImplLib = declare_dependency(
-    link_with: static_library(
+    link_with: shared_library(
         'Compucolor.Intel8080.Impl',
         [
             'src/Compucolor.Intel8080.Impl/Intel8080.cpp',
@@ -33,7 +33,7 @@ intel8080ImplLib = declare_dependency(
 )
 
 smc5027ImplLib = declare_dependency(
-    link_with: static_library(
+    link_with: shared_library(
         'Compucolor.Smc5027.Impl',
         [
             'src/Compucolor.Smc5027.Impl/Smc5027Emulator.cpp'
@@ -46,7 +46,7 @@ smc5027ImplLib = declare_dependency(
 )
 
 tms5501ImplLib = declare_dependency(
-    link_with: static_library(
+    link_with: shared_library(
         'Compucolor.Tms5501.Impl',
         [
             'src/Compucolor.Tms5501.Impl/Tms5501Emulator.cpp',
@@ -60,7 +60,7 @@ tms5501ImplLib = declare_dependency(
 )
 
 crtImplLib = declare_dependency(
-    link_with: static_library(
+    link_with: shared_library(
         'Compucolor.Crt.Impl',
         [
             'src/Compucolor.Crt.Impl/FontRom.cpp',
@@ -73,8 +73,21 @@ crtImplLib = declare_dependency(
     include_directories: includeDirectories
 )
 
+floppyImplLib = declare_dependency(
+    link_with: shared_library(
+        'Compucolor.Floppy.Impl',
+        [
+            'src/Compucolor.Floppy.Impl/FloppyEmulator.cpp'
+        ],
+        dependencies: [
+            coreLib
+        ]
+    ),
+    include_directories: includeDirectories
+)
+
 keyboardImplLib = declare_dependency(
-    link_with: static_library(
+    link_with: shared_library(
         'Compucolor.Keyboard.Impl',
         [
             'src/Compucolor.Keyboard.Impl/KeyboardEmulator.cpp'
@@ -87,7 +100,7 @@ keyboardImplLib = declare_dependency(
 )
 
 compucolorImplLib = declare_dependency(
-    link_with: static_library(
+    link_with: shared_library(
         'Compucolor.Compucolor.Impl',
         [
             'src/Compucolor.Compucolor.Impl/CompucolorEmulator.cpp',
@@ -101,6 +114,7 @@ compucolorImplLib = declare_dependency(
             smc5027ImplLib,
             tms5501ImplLib,
             crtImplLib,
+            floppyImplLib,
             keyboardImplLib
         ]
     ),
@@ -108,12 +122,21 @@ compucolorImplLib = declare_dependency(
 )
 
 appLib = declare_dependency(
-    link_with: static_library(
+    link_with: shared_library(
         'Compucolor.App',
         [
             'src/Compucolor.App/get_emulator.cpp',
         ],
         dependencies: [
+            coreLib,
+
+            intel8080ImplLib,
+            smc5027ImplLib,
+            tms5501ImplLib,
+            crtImplLib,
+            floppyImplLib,
+            keyboardImplLib,
+
             compucolorImplLib
         ]
     ),

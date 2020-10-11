@@ -2,12 +2,16 @@
 
 Tms5501Emulator::Tms5501Emulator(
     std::shared_ptr<IIntel8080Emulator> intel8080,
-    std::shared_ptr<IKeyboardEmulator> keyboard
+    std::shared_ptr<IKeyboardEmulator> keyboard,
+    std::shared_ptr<IFloppyEmulator> floppy1,
+    std::shared_ptr<IFloppyEmulator> floppy2
 ):
     _context(std::unique_ptr<Tms5501EmulatorContext>(new Tms5501EmulatorContext())),
     _intel8080(intel8080),
     _isRunning(false),
-    _keyboard(keyboard)
+    _keyboard(keyboard),
+    _floppy1(floppy1),
+    _floppy2(floppy2)
 {
 }
 
@@ -41,10 +45,14 @@ void Tms5501Emulator::Start()
     );
     _keyboardThread = std::thread(
         [this]() {
-            std::this_thread::sleep_for (std::chrono::milliseconds(17));
+            std::this_thread::sleep_for (std::chrono::milliseconds(1000));
 
-            _context->intStatus |= 0x04;
-            CheckInterruptStatus();
+            while(_isRunning) {
+                std::this_thread::sleep_for (std::chrono::milliseconds(17));
+
+                _context->intStatus |= 0x04;
+                CheckInterruptStatus();
+            }
         }
     );
 }
@@ -95,13 +103,13 @@ uint8_t Tms5501Emulator::Read(uint8_t port)
         case 0x3: {
             uint8_t retval = 0;
 
-            //if (serialSelected()) {
-            //    // this isn't modeled; just lie and say nothing is received
-            //    // and we are ready to transmit
-            //    retval = 0x14;
-            //} else {
+            if (IsSerialSelected()) {
+                // this isn't modeled; just lie and say nothing is received
+                // and we are ready to transmit
+                retval = 0x14;
+            } else {
                 retval = _context->sstatus;
-            //}
+            }
             // bit 5 indicates if there is an unmasked interrupt pending
             retval = (retval & ~0x20) |
                      ((_context->intMask & _context->intStatus) ? 0x20 : 0x00);
@@ -129,7 +137,7 @@ void Tms5501Emulator::Write(uint8_t port, uint8_t data)
     uint8_t convertedPort = ConvertPort(port);
     switch (convertedPort)
     {
-        case 0x4: {
+        case 0x4: { //TODO
             _context->dscCmd = data;
             if (data & 0x01) {
                 // reset status
@@ -174,7 +182,8 @@ void Tms5501Emulator::Write(uint8_t port, uint8_t data)
         case 0x5:
             _context->rate = data;
             break;
-        case 0x6: {
+
+        case 0x6: { //TODO
             //if (0 && floppy_dbg) {
             //    console.log('T' + ccemu.getTickCount() +
             //                ':: 8080 sending serial data ' + value.toString(16) +
@@ -204,18 +213,18 @@ void Tms5501Emulator::Write(uint8_t port, uint8_t data)
                 //    console.log('5501 wr() is sending txdata at T=' + ccemu.getTickCount());
                 //}
                 _context->txdata2 = _context->txdata;
-                //if (floppy0Selected()) {
-                //    floppy[0].txData(txdata2);
-                //} else if (floppy1Selected()) {
-                //    floppy[1].txData(txdata2);
-                //} else if (serialSelected()) {
-                //    // make a callback to retire the tx byte
+                if (IsFloppy1Selected()) {
+                    _floppy1->Write(0, _context->txdata2);
+                } else if (IsFloppy2Selected()) {
+                    _floppy2->Write(0, _context->txdata2);
+                } else if (IsSerialSelected()) {
+                    // make a callback to retire the tx byte
                 //    var ticks = byteToTicks();
                 //    txCallbackTimer = scheduler.oneShot(ticks, serialTxCallback,
                 //                                        "txCB");
                 //    // send it to the soundware emulation too just in case
                 //    audio.txData(txdata2);
-                //}
+                }
                 // it should already be set, but just in case ...
                 _context->sstatus |= 0x10;       // xmit buffer empty
                 // TBD: is the interrupt generated after the byte is sent, or
@@ -234,10 +243,12 @@ void Tms5501Emulator::Write(uint8_t port, uint8_t data)
         case 0x7:
             SetOutport(data);
             break;
+
         case 0x8:
             _context->intMask = data;
             CheckInterruptStatus();
             break;
+
         case 0x9:
         case 0xA:
         case 0xB:
@@ -254,6 +265,7 @@ void Tms5501Emulator::Write(uint8_t port, uint8_t data)
                 CheckInterruptStatus();
             }
             break;
+
         default:
             break;
     }
@@ -343,4 +355,19 @@ void Tms5501Emulator::CheckInterruptStatus()
 bool Tms5501Emulator::IsBitSet(uint8_t data, uint8_t pos)
 {
     return (data & (1 << pos)) != 0;
+}
+
+bool Tms5501Emulator::IsSerialSelected()
+{
+    return ((_context->outport >> 4) & 3) == 0;
+}
+
+bool Tms5501Emulator::IsFloppy1Selected()
+{
+    return ((_context->outport >> 4) & 3) == 1;
+}
+
+bool Tms5501Emulator::IsFloppy2Selected()
+{
+    return ((_context->outport >> 4) & 3) == 2;
 }

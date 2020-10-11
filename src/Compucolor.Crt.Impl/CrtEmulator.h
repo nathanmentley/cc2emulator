@@ -7,12 +7,14 @@
 #include <optional>
 #include <thread>
 
-#include "Compucolor.Core/IDisplay.h"
-#include "Compucolor.Core/IMemory.h"
+#include <Compucolor.Core/IDisplay.h>
+#include <Compucolor.Core/IMemory.h>
 
-#include "Compucolor.Crt/ICrtEmulator.h"
+#include <Compucolor.Smc5027/ISmc5027Emulator.h>
 
-#include "Compucolor.Crt.Impl/FontRom.h"
+#include <Compucolor.Crt/ICrtEmulator.h>
+
+#include <Compucolor.Crt.Impl/FontRom.h>
 
 /**
  * @brief  
@@ -25,9 +27,13 @@ class CrtEmulator: public ICrtEmulator {
          * @brief  
          * @note   
          * @param  memory: 
+         * @param  smc5027emulator: 
          * @retval 
          */
-        CrtEmulator(std::shared_ptr<IMemory> memory);
+        CrtEmulator(
+            std::shared_ptr<IMemory> memory,
+            std::shared_ptr<ISmc5027Emulator> smc5027emulator
+        );
 
         /**
          * @brief  
@@ -68,8 +74,11 @@ class CrtEmulator: public ICrtEmulator {
 
         std::optional<IDisplay*> _display;
         std::shared_ptr<IMemory> _memory;
+        std::shared_ptr<ISmc5027Emulator> _smc5027emulator;
         std::atomic<bool> _isRunning;
         std::thread _thread;
+
+        int _phase;
 
         /**
          * @brief  
@@ -116,4 +125,11 @@ class CrtEmulator: public ICrtEmulator {
          * @retval 
          */
         Color GetColor(uint8_t data);
+
+        /**
+         * @brief  
+         * @note   
+         * @retval 
+         */
+        bool IsBlinkOn();
 };

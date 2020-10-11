@@ -1,4 +1,4 @@
-#include "FontRom.h"
+#include <Compucolor.Crt.Impl/FontRom.h>
 
 uint8_t uf6_rom[] = {
     0x8C,  /*    0  #...## */

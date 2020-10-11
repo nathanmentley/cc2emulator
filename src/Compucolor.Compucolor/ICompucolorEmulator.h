@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Compucolor.Core/IDisplay.h"
-#include "Compucolor.Core/ISystem.h"
+#include <Compucolor.Core/IDisplay.h>
+#include <Compucolor.Core/ISystem.h>
 
-#include "Compucolor.Keyboard/CompucolorIIKey.h"
+#include <Compucolor.Keyboard/CompucolorIIKey.h>
 
 class ICompucolorEmulator: public ISystem {
     public:

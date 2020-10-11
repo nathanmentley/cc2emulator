@@ -1,12 +1,9 @@
-#include "get_emulator.h"
+#include <Compucolor.App/get_emulator.h>
 
 std::unique_ptr<ICompucolorEmulator> get_emulator()
 {
     std::shared_ptr<IMemory> memory =
         std::shared_ptr<IMemory>(new ByteArrayMemory());
-
-    std::shared_ptr<ICrtEmulator> crtEmulator =
-        std::shared_ptr<ICrtEmulator>(new CrtEmulator(memory));
 
     std::shared_ptr<IIntel8080Emulator> intel8080Emulator =
         std::shared_ptr<IIntel8080Emulator>(new Intel8080Emulator(memory));
@@ -17,11 +14,27 @@ std::unique_ptr<ICompucolorEmulator> get_emulator()
     std::shared_ptr<IKeyboardEmulator> keyboardEmulator =
         std::shared_ptr<IKeyboardEmulator>(new KeyboardEmulator());
 
+    std::shared_ptr<IFloppyEmulator> floppy1Emulator =
+        std::shared_ptr<IFloppyEmulator>(new FloppyEmulator());
+
+    std::shared_ptr<IFloppyEmulator> floppy2Emulator =
+        std::shared_ptr<IFloppyEmulator>(new FloppyEmulator());
+
     std::shared_ptr<ITms5501Emulator> tms5501Emulator =
         std::shared_ptr<ITms5501Emulator>(
             new Tms5501Emulator(
                 intel8080Emulator,
-                keyboardEmulator
+                keyboardEmulator,
+                floppy1Emulator,
+                floppy2Emulator
+            )
+        );
+
+    std::shared_ptr<ICrtEmulator> crtEmulator =
+        std::shared_ptr<ICrtEmulator>(
+            new CrtEmulator(
+                memory,
+                smc5027Emulator
             )
         );
 

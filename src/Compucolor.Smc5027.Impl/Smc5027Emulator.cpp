@@ -1,4 +1,4 @@
-#include "Smc5027Emulator.h"
+#include <Compucolor.Smc5027.Impl/Smc5027Emulator.h>
 
 Smc5027Emulator::Smc5027Emulator():
     _registers(std::vector<uint8_t>(Smc5027Emulator::REGISTER_COUNT))
@@ -58,6 +58,16 @@ void Smc5027Emulator::Reset()
     {
         _registers[registerIndex] = 0x00;
     }
+}
+
+uint8_t Smc5027Emulator::GetCursorX()
+{
+    return Read(0x09);
+}
+
+uint8_t Smc5027Emulator::GetCursorY()
+{
+    return Read(0x08);
 }
 
 uint8_t Smc5027Emulator::ConvertPort(uint8_t port)

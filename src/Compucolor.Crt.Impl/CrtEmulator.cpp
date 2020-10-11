@@ -1,11 +1,14 @@
-#include "CrtEmulator.h"
+#include <Compucolor.Crt.Impl/CrtEmulator.h>
 
 CrtEmulator::CrtEmulator(
-    std::shared_ptr<IMemory> memory
+    std::shared_ptr<IMemory> memory,
+    std::shared_ptr<ISmc5027Emulator> smc5027emulator
 ):
     _display({}),
     _memory(memory),
-    _isRunning(false)
+    _smc5027emulator(smc5027emulator),
+    _isRunning(false),
+    _phase(0)
 {
 }
 
@@ -13,14 +16,23 @@ void CrtEmulator::Start()
 {
     _isRunning = true;
     _thread = std::thread(
-        [this]() {
-            while(_isRunning) {
+        [this]()
+        {
+            while(_isRunning)
+            {
                 if(_display.has_value())
                 {
                     RefreshDisplay();
                 }
 
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+                _phase++;
+
+                if (_phase >= 16)
+                {
+                    _phase = 0;
+                }
             }
         }
     );
@@ -51,16 +63,26 @@ void CrtEmulator::RefreshDisplay()
 
             bool blink = IsBitSet(7, attrib);//((attrib & 0x40) != 0);
 
-            if (true) {
-                DrawGlyph(
-                    GetForegroundColor(attrib),
-                    GetBackgroundColor(attrib),
-                    ch,
-                    blink,
-                    x,
-                    y
-                );
-            }
+            DrawGlyph(
+                GetForegroundColor(attrib),
+                GetBackgroundColor(attrib),
+                ch,
+                blink,
+                x,
+                y
+            );
+        }
+
+        if (IsBlinkOn())
+        {
+            DrawGlyph( //TODO: Setup cursor glyph.
+                Color::White,
+                Color::White,
+                0x20,
+                false,
+                _smc5027emulator->GetCursorX(),
+                _smc5027emulator->GetCursorY()
+            );
         }
 
         _display.value()->Repaint();
@@ -91,14 +113,13 @@ void CrtEmulator::DrawGlyph(Color foreground, Color background, uint8_t glyphDat
             const uint16_t targetX = column + xPos;
             const uint16_t targetY = row + yPos;
 
-            if (IsBitSet(7 - column, romData))
-            {
-                _display.value()->DrawPixel(foreground, targetX, targetY);
-            }
-            else
-            {
-                _display.value()->DrawPixel(background, targetX, targetY);
-            }
+            _display.value()->DrawPixel(
+                IsBitSet(7 - column, romData) ?
+                    (blink && IsBlinkOn() ? Color::Black: foreground):
+                    background,
+                targetX,
+                targetY
+            );
         }
     }
 }
@@ -115,21 +136,15 @@ Color CrtEmulator::GetBackgroundColor(uint8_t data)
 
 Color CrtEmulator::GetColor(uint8_t data)
 {
-    switch(data)
-    {
-        case 0:     return Color::Black;
-        case 1:     return Color::Red;
-        case 2:     return Color::Green;
-        case 3:     return Color::Yellow;
-        case 4:     return Color::Blue;
-        case 5:     return Color::Purple;
-        case 6:     return Color::Teal;
-        case 7:     return Color::White;
-        default:    return Color::White;
-    }
+    return (Color)data;
 }
 
 bool CrtEmulator::IsBitSet(int bit, uint8_t data)
 {
     return ((data >> bit) & 0x1) == 1;
+}
+
+bool CrtEmulator::IsBlinkOn()
+{
+    return _phase % 2 == 0;
 }
