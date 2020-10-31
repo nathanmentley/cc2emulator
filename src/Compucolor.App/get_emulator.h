@@ -7,6 +7,9 @@
 #include <Compucolor.Core/IMemory.h>
 #include <Compucolor.Core/ByteArrayMemory.h>
 
+#include <Compucolor.Configuration/IConfiguration.h>
+#include <Compucolor.Configuration.Impl/Configuration.h>
+
 #include <Compucolor.Floppy/IFloppyEmulator.h>
 #include <Compucolor.Floppy.Impl/FloppyEmulator.h>
 

@@ -2,6 +2,9 @@
 
 #include <vector>
 
+#include <Compucolor.Core/ThirdParty/nameof.hpp>
+
+#include <Compucolor.Logger/ILogger.h>
 #include <Compucolor.Smc5027/ISmc5027Emulator.h>
 
 /**
@@ -16,7 +19,9 @@ class Smc5027Emulator: public ISmc5027Emulator {
          * @note   
          * @retval 
          */
-        Smc5027Emulator();
+        Smc5027Emulator(
+            std::shared_ptr<ILogger> logger
+        );
 
         /**
          * @brief  
@@ -71,6 +76,7 @@ class Smc5027Emulator: public ISmc5027Emulator {
     private:
         static const uint8_t REGISTER_COUNT = 16;
 
+        std::shared_ptr<ILogger> _logger;
         std::vector<uint8_t> _registers;
 
         /**

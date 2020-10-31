@@ -1,11 +1,13 @@
 #include "Tms5501Emulator.h"
 
 Tms5501Emulator::Tms5501Emulator(
+    std::shared_ptr<ILogger> logger,
     std::shared_ptr<IIntel8080Emulator> intel8080,
     std::shared_ptr<IKeyboardEmulator> keyboard,
     std::shared_ptr<IFloppyEmulator> floppy1,
     std::shared_ptr<IFloppyEmulator> floppy2
 ):
+    _logger(logger),
     _context(std::unique_ptr<Tms5501EmulatorContext>(new Tms5501EmulatorContext())),
     _intel8080(intel8080),
     _isRunning(false),

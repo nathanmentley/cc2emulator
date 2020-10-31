@@ -88,6 +88,13 @@ class CrtEmulator: public ICrtEmulator {
         /**
          * @brief  
          * @note   
+         * @retval None
+         */
+        void DrawCursor();
+
+        /**
+         * @brief  
+         * @note   
          * @param  foreground: 
          * @param  background: 
          * @param  glyphData: 
@@ -96,7 +103,21 @@ class CrtEmulator: public ICrtEmulator {
          * @param  y: 
          * @retval None
          */
-        void DrawGlyph(Color foreground, Color background, uint8_t glyphData, bool blink, int x, int y);
+        void DrawGlyph(
+            Color foreground,
+            Color background,
+            uint8_t glyphData,
+            bool blink,
+            int x,
+            int y
+        );
+
+        /**
+         * @brief  
+         * @note   
+         * @retval 
+         */
+        bool IsBlinkOn();
 
         /**
          * @brief  
@@ -105,7 +126,7 @@ class CrtEmulator: public ICrtEmulator {
          * @param  data: 
          * @retval 
          */
-        bool IsBitSet(int bit, uint8_t data);
+        static bool IsBitSet(int bit, uint8_t data);
 
         /**
          * @brief  
@@ -113,7 +134,7 @@ class CrtEmulator: public ICrtEmulator {
          * @param  data: 
          * @retval 
          */
-        Color GetForegroundColor(uint8_t data);
+        static Color GetForegroundColor(uint8_t data);
 
         /**
          * @brief  
@@ -121,7 +142,7 @@ class CrtEmulator: public ICrtEmulator {
          * @param  data: 
          * @retval 
          */
-        Color GetBackgroundColor(uint8_t data);
+        static Color GetBackgroundColor(uint8_t data);
         
         /**
          * @brief  
@@ -129,12 +150,5 @@ class CrtEmulator: public ICrtEmulator {
          * @param  data: 
          * @retval 
          */
-        Color GetColor(uint8_t data);
-
-        /**
-         * @brief  
-         * @note   
-         * @retval 
-         */
-        bool IsBlinkOn();
+        static Color GetColor(uint8_t data);
 };

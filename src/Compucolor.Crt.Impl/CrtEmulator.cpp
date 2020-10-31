@@ -82,17 +82,7 @@ void CrtEmulator::RefreshDisplay()
             );
         }
 
-        if (IsBlinkOn())
-        {
-            DrawGlyph( //TODO: Setup cursor glyph.
-                Color::White,
-                Color::White,
-                0x20,
-                false,
-                _smc5027emulator->GetCursorX(),
-                _smc5027emulator->GetCursorY()
-            );
-        }
+        DrawCursor();
 
         _display.value()->Repaint();
     }
@@ -100,7 +90,40 @@ void CrtEmulator::RefreshDisplay()
 
 void CrtEmulator::SetDisplay(IDisplay* display)
 {
+    _logger->LogTrace("Setting up a new display for %s", NAMEOF_TYPE(CrtEmulator));
+
     _display = display;
+}
+
+void CrtEmulator::DrawCursor()
+{
+    if (IsBlinkOn())
+    {
+        uint8_t x = _smc5027emulator->GetCursorX();
+        uint8_t y = _smc5027emulator->GetCursorY();
+
+        if (x <= CrtEmulator::Columns && y <= CrtEmulator::Rows)
+        {
+            DrawGlyph( //TODO: Setup cursor glyph.
+                Color::White,
+                Color::White,
+                0x20,
+                false,
+                x,
+                y
+            );
+        }
+        else
+        {
+            _logger->LogDebug(
+                "Not Drawing Cursor in %s because the cursor is off the screen at x: %d y: %d",
+                NAMEOF_TYPE(CrtEmulator),
+                x,
+                y
+            );
+        }
+        
+    }
 }
 
 void CrtEmulator::DrawGlyph(Color foreground, Color background, uint8_t glyphData, bool blink, int x, int y)
@@ -133,6 +156,11 @@ void CrtEmulator::DrawGlyph(Color foreground, Color background, uint8_t glyphDat
     }
 }
 
+bool CrtEmulator::IsBlinkOn()
+{
+    return _phase % 2 == 0;
+}
+
 Color CrtEmulator::GetForegroundColor(uint8_t data)
 {
     return GetColor(data & 0x7);
@@ -151,9 +179,4 @@ Color CrtEmulator::GetColor(uint8_t data)
 bool CrtEmulator::IsBitSet(int bit, uint8_t data)
 {
     return ((data >> bit) & 0x1) == 1;
-}
-
-bool CrtEmulator::IsBlinkOn()
-{
-    return _phase % 2 == 0;
 }

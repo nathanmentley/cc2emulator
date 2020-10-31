@@ -1,27 +1,53 @@
 #include <Compucolor.Keyboard.Impl/KeyboardEmulator.h>
 
-KeyboardEmulator::KeyboardEmulator():
+KeyboardEmulator::KeyboardEmulator(
+    std::shared_ptr<ILogger> logger
+):
+    _logger(logger),
     _kbMatrix(std::vector<uint8_t>(17))
 {
 }
 
 void KeyboardEmulator::Start()
 {
+    _logger->LogTrace(
+        "Starting %s",
+        NAMEOF_TYPE(KeyboardEmulator)
+    );
+
     Reset();
 }
 
 void KeyboardEmulator::Stop()
 {
+    _logger->LogTrace(
+        "Stopping %s",
+        NAMEOF_TYPE(KeyboardEmulator)
+    );
+
     Reset();
 }
 
 uint8_t KeyboardEmulator::Read(uint8_t port)
 {
+    /*
+    _logger->LogTrace(
+        "Reading keyboard byte %d in %s",
+        port,
+        NAMEOF_TYPE(KeyboardEmulator)
+    );
+    */
+
     return _kbMatrix[port];
 }
 
 void KeyboardEmulator::Reset()
 {
+    _logger->LogTrace(
+        "Resetting in %s",
+        NAMEOF_TYPE(KeyboardEmulator)
+    );
+
     for(uint8_t i = 0; i < 17; i++)
     {
         _kbMatrix[i] = 0xFF;
@@ -33,6 +59,14 @@ void KeyboardEmulator::OnKeyUp(CompucolorIIKey key)
     std::optional<int> row = GetRow(key);
     std::optional<int> bit = GetBit(key);
 
+    _logger->LogTrace(
+        "OnKeyUp for %d (%d, %d) in %s",
+        key,
+        row,
+        bit,
+        NAMEOF_TYPE(KeyboardEmulator)
+    );
+
     if(row.has_value() && bit.has_value())
     {
         _kbMatrix[row.value()] = 0xFF;
@@ -43,6 +77,14 @@ void KeyboardEmulator::OnKeyDown(CompucolorIIKey key)
 {
     std::optional<int> row = GetRow(key);
     std::optional<int> bit = GetBit(key);
+
+    _logger->LogTrace(
+        "OnKeyDown for %d (%d, %d) in %s",
+        key,
+        row,
+        bit,
+        NAMEOF_TYPE(KeyboardEmulator)
+    );
 
     if(row.has_value() && bit.has_value())
     {

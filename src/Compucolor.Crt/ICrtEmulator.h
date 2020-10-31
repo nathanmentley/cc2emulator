@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include "Compucolor.Core/IDisplay.h"

@@ -1,7 +1,7 @@
 project(
     'compucolor2 emulator',
     'cpp',
-    default_options : ['c_std=c17', 'cpp_std=c++17']
+    default_options : ['c_std=c2a', 'cpp_std=c++2a']
 )
 
 includeDirectories = include_directories('src')
@@ -99,6 +99,19 @@ keyboardImplLib = declare_dependency(
     include_directories: includeDirectories
 )
 
+configurationImplLib = declare_dependency(
+    link_with: shared_library(
+        'Compucolor.Configuration.Impl',
+        [
+            'src/Compucolor.Configuration.Impl/Configuration.cpp'
+        ],
+        dependencies: [
+            coreLib
+        ]
+    ),
+    include_directories: includeDirectories
+)
+
 loggerImplLib = declare_dependency(
     link_with: shared_library(
         'Compucolor.Logger.Impl',
@@ -149,6 +162,7 @@ appLib = declare_dependency(
             crtImplLib,
             floppyImplLib,
             keyboardImplLib,
+            configurationImplLib,
             loggerImplLib,
 
             compucolorImplLib
@@ -172,4 +186,10 @@ executable(
         appLib
     ],
     include_directories: includeDirectories
+)
+
+configure_file(
+    input : 'data/app.config',
+    output : 'app.config',
+    copy : configuration_data()
 )

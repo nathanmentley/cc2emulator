@@ -1,9 +1,9 @@
-#include "GtkDisplay.h"
+#include <Compucolor.App.Impl.Gtk/GtkDisplay.h>
 
 GtkDisplay::GtkDisplay():
     _loggerProvider(
         std::shared_ptr<ILoggerProvider>(
-            new GtkLoggerProvider()
+            new GtkLoggerProvider(LogLevel::Trace)
         )
     ),
     _emulator(get_emulator(_loggerProvider)),

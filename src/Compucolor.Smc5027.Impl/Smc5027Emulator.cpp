@@ -1,6 +1,9 @@
 #include <Compucolor.Smc5027.Impl/Smc5027Emulator.h>
 
-Smc5027Emulator::Smc5027Emulator():
+Smc5027Emulator::Smc5027Emulator(
+    std::shared_ptr<ILogger> logger
+):
+    _logger(logger),
     _registers(std::vector<uint8_t>(Smc5027Emulator::REGISTER_COUNT))
 {
 }
@@ -31,6 +34,13 @@ uint8_t Smc5027Emulator::Read(uint8_t port)
 
 void Smc5027Emulator::Write(uint8_t port, uint8_t data)
 {
+    _logger->LogTrace(
+        "Writing data: 0x%02x to port: 0x%02x in %s",
+        data,
+        port,
+        NAMEOF_TYPE(Smc5027Emulator)
+    );
+
     switch (ConvertPort(port))
     {
         case 0x06:

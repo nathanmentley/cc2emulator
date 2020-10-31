@@ -1,4 +1,4 @@
-#include "GtkKeyboard.h"
+#include <Compucolor.App.Impl.Gtk/GtkKeyboard.h>
 
 GtkKeyboard::GtkKeyboard(
     std::shared_ptr<ICompucolorEmulator> emulator

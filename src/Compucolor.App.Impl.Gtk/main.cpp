@@ -1,16 +1,14 @@
 #include <memory>
 
-#include <gtk/gtk.h>
-
-
-
 #include <stdio.h>
 #include <execinfo.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "GtkDisplay.h"
+#include <gtk/gtk.h>
+
+#include <Compucolor.App.Impl.Gtk/GtkDisplay.h>
 
 void handler(int sig) {
   void *array[10];

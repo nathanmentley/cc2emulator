@@ -5,17 +5,18 @@
 #include <gtk/gtk.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 
-#include "Compucolor.App/get_emulator.h"
-#include "Compucolor.Core/IDisplay.h"
+#include <Compucolor.App/get_emulator.h>
+#include <Compucolor.Core/IDisplay.h>
 
-#include "GtkLoggerProvider.h"
-#include "GtkKeyboard.h"
-#include "GObjectDeleter.h"
-#include "GWidgetDeleter.h"
+#include <Compucolor.App.Impl.Gtk/GtkLoggerProvider.h>
+#include <Compucolor.App.Impl.Gtk/GtkKeyboard.h>
+#include <Compucolor.App.Impl.Gtk/GObjectDeleter.h>
+#include <Compucolor.App.Impl.Gtk/GWidgetDeleter.h>
 
 class GtkDisplay: public IDisplay {
     public:
         GtkDisplay();
+
         virtual void DrawPixel(Color color, int x, int y) override;
         virtual void Repaint() override;
 

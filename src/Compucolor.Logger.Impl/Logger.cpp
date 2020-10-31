@@ -1,19 +1,13 @@
 #include <Compucolor.Logger.Impl/Logger.h>
 
 Logger::Logger():
-    _provider({}),
-    _logLevel({})
+    _providers(std::vector<std::shared_ptr<ILoggerProvider>>())
 {
 }
 
-void Logger::SetProvider(std::shared_ptr<ILoggerProvider> provider)
+void Logger::AddProvider(std::shared_ptr<ILoggerProvider> provider)
 {
-    _provider = provider;
-}
-
-void Logger::SetLogLevel(LogLevel level)
-{
-    _logLevel = level;
+    _providers.push_back(provider);
 }
 
 void Logger::Log(LogLevel level, std::string message, ...)
@@ -84,13 +78,18 @@ void Logger::LogError(std::string message, ...)
 
 void Logger::Log(LogLevel level, std::string message, va_list args)
 {
-    if (_provider.has_value())
+    std::vector<std::shared_ptr<ILoggerProvider>>::iterator provider;
+
+    for(provider = _providers.begin(); provider != _providers.end(); provider++)
     {
-        LogLevel currentLevel = _logLevel.value_or(LogLevel::Error);
+        LogLevel currentLevel = (*provider)->GetLogLevel();
 
         if (level >= currentLevel)
         {
-            _provider.value()->Log(level, message, args);
+            va_list loggerArgs;
+            va_copy(loggerArgs, args);
+
+            (*provider)->Write(level, message, loggerArgs);
         }
     }
 }

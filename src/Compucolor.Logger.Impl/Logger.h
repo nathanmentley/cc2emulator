@@ -1,6 +1,6 @@
 #pragma once
 
-#include <optional>
+#include <vector>
 
 #include <Compucolor.Logger/ILogger.h>
 #include <Compucolor.Logger/ILoggerProvider.h>
@@ -9,9 +9,7 @@ class Logger: public ILogger {
     public:
         Logger();
 
-        virtual void SetProvider(std::shared_ptr<ILoggerProvider> provider) override;
-
-        virtual void SetLogLevel(LogLevel level) override;
+        virtual void AddProvider(std::shared_ptr<ILoggerProvider> provider) override;
 
         virtual void Log(LogLevel level, std::string message, ...) override;
 
@@ -22,8 +20,7 @@ class Logger: public ILogger {
         virtual void LogError(std::string message, ...) override;
 
     private:
-        std::optional<std::shared_ptr<ILoggerProvider>> _provider;
-        std::optional<LogLevel> _logLevel;
+        std::vector<std::shared_ptr<ILoggerProvider>> _providers;
 
         void Log(LogLevel level, std::string message, va_list args);
 };

@@ -6,7 +6,10 @@
 #include <optional>
 #include <vector>
 
+#include <Compucolor.Core/ThirdParty/nameof.hpp>
+
 #include <Compucolor.Keyboard/IKeyboardEmulator.h>
+#include <Compucolor.Logger/ILogger.h>
 
 /**
  * @brief  
@@ -21,7 +24,9 @@ class KeyboardEmulator: public IKeyboardEmulator {
          * @param  memory: 
          * @retval 
          */
-        KeyboardEmulator();
+        KeyboardEmulator(
+            std::shared_ptr<ILogger> logger
+        );
 
         /**
          * @brief  
@@ -69,9 +74,10 @@ class KeyboardEmulator: public IKeyboardEmulator {
         virtual void OnKeyDown(CompucolorIIKey key) override;
 
     private:
+        std::shared_ptr<ILogger> _logger;
         std::vector<uint8_t> _kbMatrix;
 
-        std::optional<int> GetRow(CompucolorIIKey key);
+        static std::optional<int> GetRow(CompucolorIIKey key);
 
-        std::optional<int> GetBit(CompucolorIIKey key);
+        static std::optional<int> GetBit(CompucolorIIKey key);
 };

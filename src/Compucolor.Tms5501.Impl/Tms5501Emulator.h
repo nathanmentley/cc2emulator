@@ -5,15 +5,17 @@
 #include <memory>
 #include <thread>
 
-#include "Compucolor.Floppy/IFloppyEmulator.h"
-#include "Compucolor.Intel8080/IIntel8080Emulator.h"
-#include "Compucolor.Keyboard/IKeyboardEmulator.h"
-#include "Compucolor.Tms5501/ITms5501Emulator.h"
-#include "Tms5501EmulatorContext.h"
+#include <Compucolor.Floppy/IFloppyEmulator.h>
+#include <Compucolor.Intel8080/IIntel8080Emulator.h>
+#include <Compucolor.Keyboard/IKeyboardEmulator.h>
+#include <Compucolor.Logger/ILogger.h>
+#include <Compucolor.Tms5501/ITms5501Emulator.h>
+#include <Compucolor.Tms5501.Impl/Tms5501EmulatorContext.h>
 
 class Tms5501Emulator: public ITms5501Emulator {
     public:
         Tms5501Emulator(
+            std::shared_ptr<ILogger> logger,
             std::shared_ptr<IIntel8080Emulator> intel8080,
             std::shared_ptr<IKeyboardEmulator> keyboard,
             std::shared_ptr<IFloppyEmulator> floppy1,
@@ -29,6 +31,7 @@ class Tms5501Emulator: public ITms5501Emulator {
 
         virtual void Reset() override;
     private:
+        std::shared_ptr<ILogger> _logger;
         std::unique_ptr<Tms5501EmulatorContext> _context;
         std::shared_ptr<IIntel8080Emulator> _intel8080;
         std::atomic<bool> _isRunning;

@@ -53,12 +53,12 @@ void Intel8080Emulator::RegisterInterrupt(uint8_t opcode)
     i8080_interrupt(_cpu.get(), opcode);
 }
 
-
 void Intel8080Emulator::Run()
 {
     while(_isRunning) {
         i8080_step(_cpu.get());
-        //i8080_debug_output(_cpu.get(), false);
+
+        //std::this_thread::sleep_for(std::chrono::nanoseconds(1));
     }
 }
 

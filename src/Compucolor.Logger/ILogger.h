@@ -10,9 +10,7 @@ class ILogger {
     public:
         virtual ~ILogger() {}
 
-        virtual void SetProvider(std::shared_ptr<ILoggerProvider> provider) = 0;
-
-        virtual void SetLogLevel(LogLevel level) = 0;
+        virtual void AddProvider(std::shared_ptr<ILoggerProvider> provider) = 0;
 
         virtual void Log(LogLevel level, std::string message, ...) = 0;
 
