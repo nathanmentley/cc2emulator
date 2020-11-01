@@ -14,8 +14,11 @@ std::unique_ptr<ICompucolorEmulator> get_emulator(
 
     configuration->LoadFile("app.config");
 
+    std::shared_ptr<IScheduler> scheduler =
+        std::shared_ptr<IScheduler>(new Scheduler(logger));
+
     std::shared_ptr<IMemory> memory =
-        std::shared_ptr<IMemory>(new ByteArrayMemory());
+        std::shared_ptr<IMemory>(new VectorMemory());
 
     std::shared_ptr<IIntel8080Emulator> intel8080Emulator =
         std::shared_ptr<IIntel8080Emulator>(new Intel8080Emulator(memory));
@@ -58,6 +61,7 @@ std::unique_ptr<ICompucolorEmulator> get_emulator(
             intel8080Emulator,
             keyboardEmulator,
             memory,
+            scheduler,
             smc5027Emulator,
             tms5501Emulator
         )

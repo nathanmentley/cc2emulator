@@ -5,11 +5,11 @@
 #include <memory>
 #include <thread>
 
-#include "Compucolor.Core/IMemory.h"
-#include "Compucolor.Intel8080/IIntel8080Emulator.h"
+#include <Compucolor.Memory/IMemory.h>
+#include <Compucolor.Intel8080/IIntel8080Emulator.h>
 
-#include "Intel8080.h"
-#include "Intel8080EmulatorContext.h"
+#include <Compucolor.Intel8080.Impl/Intel8080.h>
+#include <Compucolor.Intel8080.Impl/Intel8080EmulatorContext.h>
 
 class Intel8080Emulator: public IIntel8080Emulator {
     public:
@@ -27,14 +27,12 @@ class Intel8080Emulator: public IIntel8080Emulator {
 
         virtual void RegisterInterrupt(uint8_t opcode) override;
 
+        virtual void Step() override;
+
     private:
         std::unique_ptr<Intel8080EmulatorContext> _context;
         std::unique_ptr<i8080> _cpu;
         std::shared_ptr<IMemory> _memory;
-        std::atomic<bool> _isRunning;
-        std::thread _thread;
-
-        void Run();
 
         static uint8_t ReadByte(void* userdata, uint16_t addr);
         static void WriteByte(void* userdata, uint16_t addr, uint8_t data);

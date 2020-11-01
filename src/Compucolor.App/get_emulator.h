@@ -4,8 +4,8 @@
 
 #include <Compucolor.Core/IDisplay.h>
 
-#include <Compucolor.Core/IMemory.h>
-#include <Compucolor.Core/ByteArrayMemory.h>
+#include <Compucolor.Memory/IMemory.h>
+#include <Compucolor.Memory.Impl/VectorMemory.h>
 
 #include <Compucolor.Configuration/IConfiguration.h>
 #include <Compucolor.Configuration.Impl/Configuration.h>
@@ -27,6 +27,9 @@
 
 #include <Compucolor.Crt/ICrtEmulator.h>
 #include <Compucolor.Crt.Impl/CrtEmulator.h>
+
+#include <Compucolor.Scheduler/IScheduler.h>
+#include <Compucolor.Scheduler.Impl/Scheduler.h>
 
 #include <Compucolor.Logger/ILogger.h>
 #include <Compucolor.Logger.Impl/Logger.h>

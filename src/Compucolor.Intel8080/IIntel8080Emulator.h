@@ -15,4 +15,6 @@ class IIntel8080Emulator: public IEmulatable, public IResetable {
         virtual void SetBus(std::shared_ptr<IIntel8080Bus> intel8080Bus) = 0;
 
         virtual void RegisterInterrupt(uint8_t opcode) = 0;
+
+        virtual void Step() = 0;
 };

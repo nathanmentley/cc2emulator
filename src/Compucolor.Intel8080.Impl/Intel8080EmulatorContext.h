@@ -4,8 +4,8 @@
 #include <memory>
 #include <optional>
 
-#include "Compucolor.Core/IMemory.h"
-#include "Compucolor.Intel8080/IIntel8080Bus.h"
+#include <Compucolor.Memory/IMemory.h>
+#include <Compucolor.Intel8080/IIntel8080Bus.h>
 
 class Intel8080EmulatorContext {
     public:

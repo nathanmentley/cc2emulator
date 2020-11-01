@@ -5,8 +5,7 @@ Intel8080Emulator::Intel8080Emulator(
 ):
     _context(std::unique_ptr<Intel8080EmulatorContext>(new Intel8080EmulatorContext())),
     _cpu(std::unique_ptr<i8080>(new i8080())),
-    _memory(memory),
-    _isRunning(false)
+    _memory(memory)
 {
     _context->SetMemory(_memory);
 }
@@ -22,15 +21,15 @@ void Intel8080Emulator::Start()
     _cpu->port_out = Intel8080Emulator::WritePort;
 
     _cpu->userdata = _context.get();
+}
 
-    _isRunning = true;
-    _thread = std::thread([this]() { this->Run(); });
+void Intel8080Emulator::Step()
+{
+    i8080_step(_cpu.get());
 }
 
 void Intel8080Emulator::Stop()
 {
-    _isRunning = false;
-    _thread.join();
 }
 
 void Intel8080Emulator::Reset()
@@ -51,15 +50,6 @@ void Intel8080Emulator::SetBus(std::shared_ptr<IIntel8080Bus> intel8080Bus)
 void Intel8080Emulator::RegisterInterrupt(uint8_t opcode)
 {
     i8080_interrupt(_cpu.get(), opcode);
-}
-
-void Intel8080Emulator::Run()
-{
-    while(_isRunning) {
-        i8080_step(_cpu.get());
-
-        //std::this_thread::sleep_for(std::chrono::nanoseconds(1));
-    }
 }
 
 uint8_t Intel8080Emulator::ReadByte(void* userdata, uint16_t addr)

@@ -2,11 +2,11 @@
 
 #include <vector>
 
-#include "IMemory.h"
+#include <Compucolor.Memory/IMemory.h>
 
-class ByteArrayMemory: public IMemory {
+class VectorMemory: public IMemory {
     public:
-        ByteArrayMemory();
+        VectorMemory();
 
         virtual uint8_t GetByte(uint16_t address) override;
         virtual void SetByte(uint16_t address, uint8_t data) override;

@@ -13,6 +13,7 @@ CompucolorEmulator::CompucolorEmulator(
     std::shared_ptr<IIntel8080Emulator> intel8080,
     std::shared_ptr<IKeyboardEmulator> keyboard,
     std::shared_ptr<IMemory> memory,
+    std::shared_ptr<IScheduler> scheduler,
     std::shared_ptr<ISmc5027Emulator> smc5027,
     std::shared_ptr<ITms5501Emulator> tms5501
 ):
@@ -20,8 +21,10 @@ CompucolorEmulator::CompucolorEmulator(
     _intel8080(intel8080),
     _keyboard(keyboard),
     _memory(memory),
+    _scheduler(scheduler),
     _smc5027(smc5027),
-    _tms5501(tms5501)
+    _tms5501(tms5501),
+    _loop({})
 {
     _intel8080->SetBus(
         std::shared_ptr<CompucolorIntel8080Bus>(
@@ -42,6 +45,15 @@ void CompucolorEmulator::Start()
     _smc5027->Start();
     _tms5501->Start();
     _intel8080->Start();
+
+    _loop = _scheduler->SetupReoccuringTask(
+        0,
+        [=] {
+            _intel8080->Step();
+
+            return 0;
+        }
+    );
 }
 
 void CompucolorEmulator::Stop()
