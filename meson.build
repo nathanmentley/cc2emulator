@@ -4,10 +4,12 @@ project(
     default_options : ['c_std=c2a', 'cpp_std=c++2a']
 )
 
-includeDirectories = include_directories('src')
-
 headerLib = declare_dependency(
-    include_directories: includeDirectories
+    include_directories: include_directories('src')
+)
+
+testHeaderLib = declare_dependency(
+    include_directories: include_directories('test')
 )
 
 memoryImplLib = declare_dependency(
@@ -21,6 +23,23 @@ memoryImplLib = declare_dependency(
         ]
     )
 )
+memoryImplTests = executable(
+    'Compucolor.Tests.Memory.Impl',
+    [
+        'test/Compucolor.Tests.Memory.Impl/main.cpp',
+        'test/Compucolor.Tests.Memory.Impl/VectoryMemoryTests.cpp',
+    ],
+    dependencies: [
+        dependency('gtest'),
+        dependency('gmock'),
+
+        headerLib,
+        testHeaderLib,
+
+        memoryImplLib
+    ]
+)
+test('Compucolor.Tests.Memory.Impl', memoryImplTests)
 
 intel8080ImplLib = declare_dependency(
     link_with: static_library(
@@ -47,6 +66,23 @@ smc5027ImplLib = declare_dependency(
         ]
     )
 )
+smc5027ImplTests = executable(
+    'Compucolor.Tests.Smc5027.Impl',
+    [
+        'test/Compucolor.Tests.Smc5027.Impl/main.cpp',
+        'test/Compucolor.Tests.Smc5027.Impl/Smc5027EmulatorTests.cpp'
+    ],
+    dependencies: [
+        dependency('gtest'),
+        dependency('gmock'),
+
+        headerLib,
+        testHeaderLib,
+
+        smc5027ImplLib
+    ]
+)
+test('Compucolor.Tests.Smc5027.Impl', smc5027ImplTests)
 
 tms5501ImplLib = declare_dependency(
     link_with: static_library(
@@ -73,6 +109,23 @@ crtImplLib = declare_dependency(
         ]
     )
 )
+crtImplTests = executable(
+    'Compucolor.Tests.Crt.Impl',
+    [
+        'test/Compucolor.Tests.Crt.Impl/main.cpp',
+        'test/Compucolor.Tests.Crt.Impl/CrtEmulatorTests.cpp',
+    ],
+    dependencies: [
+        dependency('gtest'),
+        dependency('gmock'),
+
+        headerLib,
+        testHeaderLib,
+
+        crtImplLib
+    ]
+)
+test('Compucolor.Tests.Crt.Impl', crtImplTests)
 
 floppyImplLib = declare_dependency(
     link_with: static_library(
