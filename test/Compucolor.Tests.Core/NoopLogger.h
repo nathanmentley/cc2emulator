@@ -4,8 +4,6 @@
 
 class NoopLogger: public ILogger
 {
-    virtual void AddProvider(std::shared_ptr<ILoggerProvider> provider) override {};
-
     virtual void Log(LogLevel level, std::string message, ...) override {};
 
     virtual void LogTrace(std::string message, ...) override {};

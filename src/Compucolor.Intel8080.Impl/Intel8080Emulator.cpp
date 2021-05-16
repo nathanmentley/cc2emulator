@@ -70,8 +70,8 @@ void Intel8080Emulator::WriteByte(void* userdata, uint16_t addr, uint8_t data)
 
     if (memory.has_value())
     {
-        //Only write above the 0-5ffff rom.
-        if (addr >= 0x6000)
+        //Only write above the 0-3fff rom.
+        if (addr >= 0x4000)
         {
             memory.value()->SetByte(addr, data);
         }

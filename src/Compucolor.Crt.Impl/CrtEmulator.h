@@ -56,13 +56,6 @@ class CrtEmulator: public ICrtEmulator {
         /**
          * @brief  
          * @note   
-         * @retval None
-         */
-        virtual void RefreshDisplay() override;
-
-        /**
-         * @brief  
-         * @note   
          * @param  display: 
          * @retval None
          */
@@ -84,6 +77,13 @@ class CrtEmulator: public ICrtEmulator {
         std::thread _thread;
 
         int _phase;
+
+        /**
+         * @brief  
+         * @note   
+         * @retval None
+         */
+        void RefreshDisplay();
 
         /**
          * @brief  

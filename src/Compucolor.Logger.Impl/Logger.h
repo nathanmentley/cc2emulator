@@ -7,9 +7,7 @@
 
 class Logger: public ILogger {
     public:
-        Logger();
-
-        virtual void AddProvider(std::shared_ptr<ILoggerProvider> provider) override;
+        Logger(std::shared_ptr<ILoggerProvider> provider);
 
         virtual void Log(LogLevel level, std::string message, ...) override;
 
@@ -20,7 +18,7 @@ class Logger: public ILogger {
         virtual void LogError(std::string message, ...) override;
 
     private:
-        std::vector<std::shared_ptr<ILoggerProvider>> _providers;
+        std::shared_ptr<ILoggerProvider> _provider;
 
         void Log(LogLevel level, std::string message, va_list args);
 };

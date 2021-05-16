@@ -1,6 +1,14 @@
 # cc2
 
 ## Deps
-catch2
+meson
 gtk
 googletest
+
+## building
+
+meson setup build
+cd build
+meson compile
+meson test
+./Compucolor.App.Impl.Gtk
