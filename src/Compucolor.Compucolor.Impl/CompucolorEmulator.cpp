@@ -47,7 +47,7 @@ void CompucolorEmulator::Start()
     _intel8080->Start();
 
     _loop = _scheduler->SetupReoccuringTask(
-        0,
+        0,//2000,
         [=] {
             _intel8080->Step();
 

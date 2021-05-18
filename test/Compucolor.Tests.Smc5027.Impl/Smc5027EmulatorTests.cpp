@@ -7,7 +7,8 @@
 TEST(Smc5027Emulator, SetBytePersistsData) {
     //Arrange
     std::shared_ptr<ILogger> logger = std::shared_ptr<ILogger>(new NoopLogger());
-    Smc5027Emulator smc5027Emulator = Smc5027Emulator(logger);
+    Compucolor::Smc5027::Impl::Smc5027Emulator smc5027Emulator =
+        Compucolor::Smc5027::Impl::Smc5027Emulator(logger);
 
     //Act
     smc5027Emulator.Start();

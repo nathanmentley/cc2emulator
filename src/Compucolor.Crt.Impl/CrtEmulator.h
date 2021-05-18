@@ -11,8 +11,9 @@
 
 #include <Compucolor.Core/IDisplay.h>
 
-#include <Compucolor.Memory/IMemory.h>
 #include <Compucolor.Logger/ILogger.h>
+#include <Compucolor.Scheduler/IScheduler.h>
+#include <Compucolor.Memory/IMemory.h>
 #include <Compucolor.Smc5027/ISmc5027Emulator.h>
 
 #include <Compucolor.Crt/ICrtEmulator.h>
@@ -35,6 +36,7 @@ class CrtEmulator: public ICrtEmulator {
          */
         CrtEmulator(
             std::shared_ptr<ILogger> logger,
+            std::shared_ptr<IScheduler> scheduler,
             std::shared_ptr<IMemory> memory,
             std::shared_ptr<ISmc5027Emulator> smc5027emulator
         );
@@ -71,10 +73,10 @@ class CrtEmulator: public ICrtEmulator {
 
         std::optional<IDisplay*> _display;
         std::shared_ptr<ILogger> _logger;
+        std::shared_ptr<IScheduler> _scheduler;
         std::shared_ptr<IMemory> _memory;
         std::shared_ptr<ISmc5027Emulator> _smc5027emulator;
-        std::atomic<bool> _isRunning;
-        std::thread _thread;
+        std::optional<std::thread> _loop;
 
         int _phase;
 

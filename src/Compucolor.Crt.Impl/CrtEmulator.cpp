@@ -2,14 +2,15 @@
 
 CrtEmulator::CrtEmulator(
     std::shared_ptr<ILogger> logger,
+    std::shared_ptr<IScheduler> scheduler,
     std::shared_ptr<IMemory> memory,
     std::shared_ptr<ISmc5027Emulator> smc5027emulator
 ):
     _display({}),
     _logger(logger),
+    _scheduler(scheduler),
     _memory(memory),
     _smc5027emulator(smc5027emulator),
-    _isRunning(false),
     _phase(0)
 {
 }
@@ -18,34 +19,28 @@ void CrtEmulator::Start()
 {
     _logger->LogTrace("Starting %s", NAMEOF_TYPE(CrtEmulator));
 
-    _isRunning = true;
-    _thread = std::thread(
-        [this]()
-        {
-            while(_isRunning)
+    _loop = _scheduler->SetupReoccuringTask(
+        10000000,
+        [=] {
+            if(_display.has_value())
             {
-                if(_display.has_value())
-                {
-                    RefreshDisplay();
-                }
-
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-                _phase++;
-
-                if (_phase >= 16)
-                {
-                    _phase = 0;
-                }
+                RefreshDisplay();
             }
+
+            _phase++;
+
+            if (_phase >= 16)
+            {
+                _phase = 0;
+            }
+
+            return 0;
         }
     );
 }
 
 void CrtEmulator::Stop()
 {
-    _isRunning = false;
-    _thread.join();
 }
 
 void CrtEmulator::RefreshDisplay()

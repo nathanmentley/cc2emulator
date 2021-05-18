@@ -73,8 +73,6 @@ void Logger::LogError(std::string message, ...)
 
 void Logger::Log(LogLevel level, std::string message, va_list args)
 {
-    std::vector<std::shared_ptr<ILoggerProvider>>::iterator provider;
-
     LogLevel currentLevel = _provider->GetLogLevel();
 
     if (level >= currentLevel)
