@@ -17,11 +17,11 @@ CrtEmulator::CrtEmulator(
 
 void CrtEmulator::Start()
 {
-    _logger->LogTrace("Starting %s", NAMEOF_TYPE(CrtEmulator));
+    _logger->LogTrace("Starting CrtEmulator");
 
     _loop = _scheduler->SetupReoccuringTask(
         10000000,
-        [=] {
+        [=, this] {
             if(_display.has_value())
             {
                 RefreshDisplay();
@@ -48,8 +48,7 @@ void CrtEmulator::RefreshDisplay()
     if (_display.has_value())
     {
         _logger->LogTrace(
-            "Refereshing Display in %s",
-            NAMEOF_TYPE(CrtEmulator)
+            "Refereshing Display in CrtEmulator"
         );
 
         for (uint16_t i = 0x7000; i < 0x8000; i += 2)
@@ -85,7 +84,7 @@ void CrtEmulator::RefreshDisplay()
 
 void CrtEmulator::SetDisplay(IDisplay* display)
 {
-    _logger->LogTrace("Setting up a new display for %s", NAMEOF_TYPE(CrtEmulator));
+    _logger->LogTrace("Setting up a new display for CrtEmulator");
 
     _display = display;
 }
@@ -111,8 +110,7 @@ void CrtEmulator::DrawCursor()
         else
         {
             _logger->LogDebug(
-                "Not Drawing Cursor in %s because the cursor is off the screen at x: %d y: %d",
-                NAMEOF_TYPE(CrtEmulator),
+                "Not Drawing Cursor in CrtEmulator because the cursor is off the screen at x: %d y: %d",
                 x,
                 y
             );

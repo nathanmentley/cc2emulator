@@ -1,6 +1,6 @@
 #include <Compucolor.Keyboard.Impl/KeyboardEmulator.h>
 
-KeyboardEmulator::KeyboardEmulator(
+Compucolor::Keyboard::Impl::KeyboardEmulator::KeyboardEmulator(
     std::shared_ptr<ILogger> logger
 ):
     _logger(logger),
@@ -8,44 +8,44 @@ KeyboardEmulator::KeyboardEmulator(
 {
 }
 
-void KeyboardEmulator::Start()
+void Compucolor::Keyboard::Impl::KeyboardEmulator::Start()
 {
     _logger->LogTrace(
         "Starting %s",
-        NAMEOF_TYPE(KeyboardEmulator)
+        "KeyboardEmulator"
     );
 
     Reset();
 }
 
-void KeyboardEmulator::Stop()
+void Compucolor::Keyboard::Impl::KeyboardEmulator::Stop()
 {
     _logger->LogTrace(
         "Stopping %s",
-        NAMEOF_TYPE(KeyboardEmulator)
+        "KeyboardEmulator"
     );
 
     Reset();
 }
 
-uint8_t KeyboardEmulator::Read(uint8_t port)
+uint8_t Compucolor::Keyboard::Impl::KeyboardEmulator::Read(uint8_t port)
 {
     /*
     _logger->LogTrace(
         "Reading keyboard byte %d in %s",
         port,
-        NAMEOF_TYPE(KeyboardEmulator)
+        "KeyboardEmulator"
     );
     */
 
     return _kbMatrix[port];
 }
 
-void KeyboardEmulator::Reset()
+void Compucolor::Keyboard::Impl::KeyboardEmulator::Reset()
 {
     _logger->LogTrace(
         "Resetting in %s",
-        NAMEOF_TYPE(KeyboardEmulator)
+        "KeyboardEmulator"
     );
 
     for(uint8_t i = 0; i < 17; i++)
@@ -54,7 +54,7 @@ void KeyboardEmulator::Reset()
     }
 }
 
-void KeyboardEmulator::OnKeyUp(CompucolorIIKey key)
+void Compucolor::Keyboard::Impl::KeyboardEmulator::OnKeyUp(CompucolorIIKey key)
 {
     std::optional<int> row = GetRow(key);
     std::optional<int> bit = GetBit(key);
@@ -64,7 +64,7 @@ void KeyboardEmulator::OnKeyUp(CompucolorIIKey key)
         key,
         row,
         bit,
-        NAMEOF_TYPE(KeyboardEmulator)
+        "KeyboardEmulator"
     );
 
     if(row.has_value() && bit.has_value())
@@ -73,7 +73,7 @@ void KeyboardEmulator::OnKeyUp(CompucolorIIKey key)
     }
 }
 
-void KeyboardEmulator::OnKeyDown(CompucolorIIKey key)
+void Compucolor::Keyboard::Impl::KeyboardEmulator::OnKeyDown(CompucolorIIKey key)
 {
     std::optional<int> row = GetRow(key);
     std::optional<int> bit = GetBit(key);
@@ -83,7 +83,7 @@ void KeyboardEmulator::OnKeyDown(CompucolorIIKey key)
         key,
         row,
         bit,
-        NAMEOF_TYPE(KeyboardEmulator)
+        "KeyboardEmulator"
     );
 
     if(row.has_value() && bit.has_value())
@@ -92,7 +92,7 @@ void KeyboardEmulator::OnKeyDown(CompucolorIIKey key)
     }
 }
 
-std::optional<int> KeyboardEmulator::GetRow(CompucolorIIKey key)
+std::optional<int> Compucolor::Keyboard::Impl::KeyboardEmulator::GetRow(CompucolorIIKey key)
 {
     switch (key)
     {
@@ -137,7 +137,7 @@ std::optional<int> KeyboardEmulator::GetRow(CompucolorIIKey key)
     }
 }
 
- std::optional<int> KeyboardEmulator::GetBit(CompucolorIIKey key)
+ std::optional<int> Compucolor::Keyboard::Impl::KeyboardEmulator::GetBit(CompucolorIIKey key)
 {
     switch (key)
     {

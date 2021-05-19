@@ -11,8 +11,7 @@ Configuration::Configuration(
 void Configuration::LoadFile(std::string filename)
 {
     _logger->LogTrace(
-        "In %s, loading config file",//: %s",
-        NAMEOF_TYPE(Configuration)//,
+        "In Configuration, loading config file"//: %s",
         //filename.c_str()
     );
 
@@ -31,8 +30,7 @@ void Configuration::LoadFile(std::string filename)
                 std::string value = line.substr(split, line.length());
                 /*
                 _logger->LogTrace(
-                    "In %s, Setting up a configuration setting with key: %s and value: %s",
-                    NAMEOF_TYPE(Configuration),
+                    "In Configuration, Setting up a configuration setting with key: %s and value: %s",
                     key.c_str(),
                     value.c_str()
                 );*/
@@ -40,8 +38,7 @@ void Configuration::LoadFile(std::string filename)
             else
             {
                 /*_logger->LogWarning(
-                    "In %s, Found unparsable configuration line",//: %s",
-                    NAMEOF_TYPE(Configuration)//,
+                    "In Configuration, Found unparsable configuration line",//: %s",
                     //line.c_str()
                 );*/
             }
@@ -52,8 +49,7 @@ void Configuration::LoadFile(std::string filename)
     else
     {
         _logger->LogTrace(
-            "In %s, could not load file",//: %s",
-            NAMEOF_TYPE(Configuration)//,
+            "In Configuration, could not load file"//: %s",
             //filename.c_str()
         );
     }
@@ -66,8 +62,7 @@ std::optional<std::string> Configuration::GetSetting(std::string key)
         std::string value = _data[key];
 
         _logger->LogTrace(
-            "In %s, Found key: %s with value: %s",
-            NAMEOF_TYPE(Configuration),
+            "In Configuration, Found key: %s with value: %s",
             key.c_str(),
             value.c_str()
         );
@@ -76,8 +71,7 @@ std::optional<std::string> Configuration::GetSetting(std::string key)
     }
 
     _logger->LogTrace(
-        "In %s, requested setting key: %s not found",
-        NAMEOF_TYPE(Configuration),
+        "In Configuration, requested setting key: %s not found",
         key.c_str()
     );
 

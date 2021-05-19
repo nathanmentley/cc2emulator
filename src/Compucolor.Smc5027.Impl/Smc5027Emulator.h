@@ -2,8 +2,6 @@
 
 #include <vector>
 
-#include <Compucolor.Core/ThirdParty/nameof.hpp>
-
 #include <Compucolor.Logger/ILogger.h>
 #include <Compucolor.Smc5027/ISmc5027Emulator.h>
 

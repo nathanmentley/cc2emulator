@@ -6,7 +6,8 @@ TEST(VectorMemory, SetBytePersistsData) {
     //Arrange
     const uint8_t value = 0x12;
     const uint16_t address = 0x100;
-    VectorMemory memory = VectorMemory();
+    Compucolor::Memory::Impl::VectorMemory memory =
+        Compucolor::Memory::Impl::VectorMemory();
 
     //Act
     memory.SetByte(address, value);
@@ -19,7 +20,8 @@ TEST(VectorMemory, GetByteFetchesPersistedData) {
     //Arrange
     const uint8_t value = 0x12;
     const uint16_t address = 0x100;
-    VectorMemory memory = VectorMemory();
+    Compucolor::Memory::Impl::VectorMemory memory =
+        Compucolor::Memory::Impl::VectorMemory();
     memory.SetByte(address, value);
 
     //Act

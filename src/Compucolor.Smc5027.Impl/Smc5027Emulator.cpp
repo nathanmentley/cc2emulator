@@ -13,7 +13,7 @@ void Compucolor::Smc5027::Impl::Smc5027Emulator::Start()
 {
     _logger->LogTrace(
         "Starting %s",
-        NAMEOF_TYPE(Smc5027Emulator)
+        "Smc5027Emulator"
     );
 
     Reset();
@@ -23,7 +23,7 @@ void Compucolor::Smc5027::Impl::Smc5027Emulator::Stop()
 {
     _logger->LogTrace(
         "Stopping %s",
-        NAMEOF_TYPE(Smc5027Emulator)
+        "Smc5027Emulator"
     );
 
     Reset();
@@ -48,7 +48,7 @@ uint8_t Compucolor::Smc5027::Impl::Smc5027Emulator::Read(uint8_t port)
         "Read data: 0x%02x from port: 0x%02x in %s",
         data,
         port,
-        NAMEOF_TYPE(Smc5027Emulator)
+        "Smc5027Emulator"
     );
 
     return data;
@@ -60,7 +60,7 @@ void Compucolor::Smc5027::Impl::Smc5027Emulator::Write(uint8_t port, uint8_t dat
         "Writing data: 0x%02x to port: 0x%02x in %s",
         data,
         port,
-        NAMEOF_TYPE(Smc5027Emulator)
+        "Smc5027Emulator"
     );
 
     switch (ConvertPort(port))
@@ -86,7 +86,7 @@ void Compucolor::Smc5027::Impl::Smc5027Emulator::Reset()
 {
     _logger->LogTrace(
         "Resetting %s",
-        NAMEOF_TYPE(Smc5027Emulator)
+        "Smc5027Emulator"
     );
 
     for(

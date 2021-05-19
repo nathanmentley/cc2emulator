@@ -34,4 +34,5 @@ class GtkLoggerProvider: public ILoggerProvider {
         inline const static std::string LevelInformationName = "Information";
         inline const static std::string LevelWarningName = "Warning";
         inline const static std::string LevelErrorName = "Error";
+        inline const static std::string LevelUnknownName = "Unknown Log Level";
 };

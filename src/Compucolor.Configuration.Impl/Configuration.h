@@ -4,8 +4,6 @@
 #include <map>
 #include <memory>
 
-#include <Compucolor.Core/ThirdParty/nameof.hpp>
-
 #include <Compucolor.Logger/ILogger.h>
 
 #include <Compucolor.Configuration/IConfiguration.h>

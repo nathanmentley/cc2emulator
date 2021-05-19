@@ -57,5 +57,7 @@ std::string GtkLoggerProvider::GetLogLevel(LogLevel logLevel)
             return GtkLoggerProvider::Yellow + GtkLoggerProvider::LevelWarningName;
         case LogLevel::Error:
             return GtkLoggerProvider::Red + GtkLoggerProvider::LevelErrorName;
+        default:
+            return GtkLoggerProvider::Yellow + GtkLoggerProvider::LevelUnknownName;
     }
 }

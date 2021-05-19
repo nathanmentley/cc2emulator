@@ -7,8 +7,6 @@
 #include <optional>
 #include <thread>
 
-#include <Compucolor.Core/ThirdParty/nameof.hpp>
-
 #include <Compucolor.Core/IDisplay.h>
 
 #include <Compucolor.Logger/ILogger.h>

@@ -237,6 +237,7 @@ executable(
     dependencies: [
         dependency('gtk+-3.0'),
         dependency('gdk-pixbuf-2.0'),
+        dependency('threads'),
 
         headerLib,
         appLib

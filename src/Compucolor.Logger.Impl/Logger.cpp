@@ -1,11 +1,11 @@
 #include <Compucolor.Logger.Impl/Logger.h>
 
-Logger::Logger(std::shared_ptr<ILoggerProvider> provider):
+Compucolor::Logger::Impl::Logger::Logger(std::shared_ptr<ILoggerProvider> provider):
     _provider(provider)
 {
 }
 
-void Logger::Log(LogLevel level, std::string message, ...)
+void Compucolor::Logger::Impl::Logger::Log(LogLevel level, std::string message, ...)
 {
     va_list args;
 
@@ -16,7 +16,7 @@ void Logger::Log(LogLevel level, std::string message, ...)
     va_end(args);
 }
 
-void Logger::LogTrace(std::string message, ...)
+void Compucolor::Logger::Impl::Logger::LogTrace(std::string message, ...)
 {
     va_list args;
 
@@ -27,7 +27,7 @@ void Logger::LogTrace(std::string message, ...)
     va_end(args);
 }
 
-void Logger::LogDebug(std::string message, ...)
+void Compucolor::Logger::Impl::Logger::LogDebug(std::string message, ...)
 {
     va_list args;
 
@@ -38,7 +38,7 @@ void Logger::LogDebug(std::string message, ...)
     va_end(args);
 }
 
-void Logger::LogInformation(std::string message, ...)
+void Compucolor::Logger::Impl::Logger::LogInformation(std::string message, ...)
 {
     va_list args;
 
@@ -49,7 +49,7 @@ void Logger::LogInformation(std::string message, ...)
     va_end(args);
 }
 
-void Logger::LogWarning(std::string message, ...)
+void Compucolor::Logger::Impl::Logger::LogWarning(std::string message, ...)
 {
     va_list args;
 
@@ -60,7 +60,7 @@ void Logger::LogWarning(std::string message, ...)
     va_end(args);
 }
 
-void Logger::LogError(std::string message, ...)
+void Compucolor::Logger::Impl::Logger::LogError(std::string message, ...)
 {
     va_list args;
 
@@ -71,7 +71,7 @@ void Logger::LogError(std::string message, ...)
     va_end(args);
 }
 
-void Logger::Log(LogLevel level, std::string message, va_list args)
+void Compucolor::Logger::Impl::Logger::Log(LogLevel level, std::string message, va_list args)
 {
     LogLevel currentLevel = _provider->GetLogLevel();
 

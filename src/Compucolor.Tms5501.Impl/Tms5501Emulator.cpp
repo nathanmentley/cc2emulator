@@ -1,6 +1,6 @@
 #include "Tms5501Emulator.h"
 
-Tms5501Emulator::Tms5501Emulator(
+Compucolor::Tms5501::Impl::Tms5501Emulator::Tms5501Emulator(
     std::shared_ptr<ILogger> logger,
     std::shared_ptr<IIntel8080Emulator> intel8080,
     std::shared_ptr<IKeyboardEmulator> keyboard,
@@ -8,7 +8,9 @@ Tms5501Emulator::Tms5501Emulator(
     std::shared_ptr<IFloppyEmulator> floppy2
 ):
     _logger(logger),
-    _context(std::unique_ptr<Tms5501EmulatorContext>(new Tms5501EmulatorContext())),
+    _context(std::unique_ptr<Compucolor::Tms5501::Impl::Tms5501EmulatorContext>(
+        new Compucolor::Tms5501::Impl::Tms5501EmulatorContext())
+    ),
     _intel8080(intel8080),
     _isRunning(false),
     _keyboard(keyboard),
@@ -17,7 +19,7 @@ Tms5501Emulator::Tms5501Emulator(
 {
 }
 
-void Tms5501Emulator::Start()
+void Compucolor::Tms5501::Impl::Tms5501Emulator::Start()
 {
     Reset();
 
@@ -59,14 +61,14 @@ void Tms5501Emulator::Start()
     );
 }
 
-void Tms5501Emulator::Stop()
+void Compucolor::Tms5501::Impl::Tms5501Emulator::Stop()
 {
     _isRunning = false;
     _thread.join();
     _keyboardThread.join();
 }
 
-uint8_t Tms5501Emulator::Read(uint8_t port)
+uint8_t Compucolor::Tms5501::Impl::Tms5501Emulator::Read(uint8_t port)
 {
     uint8_t convertedPort = ConvertPort(port);
 
@@ -134,7 +136,7 @@ uint8_t Tms5501Emulator::Read(uint8_t port)
     return 0x00;
 }
 
-void Tms5501Emulator::Write(uint8_t port, uint8_t data)
+void Compucolor::Tms5501::Impl::Tms5501Emulator::Write(uint8_t port, uint8_t data)
 {
     uint8_t convertedPort = ConvertPort(port);
     switch (convertedPort)
@@ -273,22 +275,22 @@ void Tms5501Emulator::Write(uint8_t port, uint8_t data)
     }
 }
 
-void Tms5501Emulator::Reset()
+void Compucolor::Tms5501::Impl::Tms5501Emulator::Reset()
 {
     SetOutport(0x00);
 }
 
-uint8_t Tms5501Emulator::ConvertPort(uint8_t port)
+uint8_t Compucolor::Tms5501::Impl::Tms5501Emulator::ConvertPort(uint8_t port)
 {
     return port & 0x0F;
 }
 
-void Tms5501Emulator::SetOutport(uint8_t value)
+void Compucolor::Tms5501::Impl::Tms5501Emulator::SetOutport(uint8_t value)
 {
     _outport = value;
 }
 
-uint8_t Tms5501Emulator::GetIntAddr() {
+uint8_t Compucolor::Tms5501::Impl::Tms5501Emulator::GetIntAddr() {
     uint8_t masked = _context->intStatus & _context->intMask;
 
     if (IsBitSet(masked, 1))
@@ -312,7 +314,7 @@ uint8_t Tms5501Emulator::GetIntAddr() {
 }
 
 // clear an interrupt bit on interrupt ack, or when polled
-void Tms5501Emulator::ClearIntAddr(uint8_t op) {
+void Compucolor::Tms5501::Impl::Tms5501Emulator::ClearIntAddr(uint8_t op) {
     uint8_t mask = 0xFF;
     if (op == 0xC7) mask = (uint8_t)~0x01;
     if (op == 0xCF) mask = (uint8_t)~0x02;
@@ -337,7 +339,7 @@ void Tms5501Emulator::ClearIntAddr(uint8_t op) {
     CheckInterruptStatus();
 }
 
-void Tms5501Emulator::CheckInterruptStatus()
+void Compucolor::Tms5501::Impl::Tms5501Emulator::CheckInterruptStatus()
 {
     if((_context->intStatus & _context->intMask) != 0)
     {
@@ -354,22 +356,22 @@ void Tms5501Emulator::CheckInterruptStatus()
     }
 }
 
-bool Tms5501Emulator::IsBitSet(uint8_t data, uint8_t pos)
+bool Compucolor::Tms5501::Impl::Tms5501Emulator::IsBitSet(uint8_t data, uint8_t pos)
 {
     return (data & (1 << pos)) != 0;
 }
 
-bool Tms5501Emulator::IsSerialSelected()
+bool Compucolor::Tms5501::Impl::Tms5501Emulator::IsSerialSelected()
 {
     return ((_context->outport >> 4) & 3) == 0;
 }
 
-bool Tms5501Emulator::IsFloppy1Selected()
+bool Compucolor::Tms5501::Impl::Tms5501Emulator::IsFloppy1Selected()
 {
     return ((_context->outport >> 4) & 3) == 1;
 }
 
-bool Tms5501Emulator::IsFloppy2Selected()
+bool Compucolor::Tms5501::Impl::Tms5501Emulator::IsFloppy2Selected()
 {
     return ((_context->outport >> 4) & 3) == 2;
 }
