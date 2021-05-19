@@ -3,8 +3,8 @@
 #include <memory>
 #include <string>
 
-#include <Compucolor.Logger/ILoggerProvider.h>
-#include <Compucolor.Logger/LogLevel.h>
+#include <Compucolor/Logger/ILoggerProvider.h>
+#include <Compucolor/Logger/LogLevel.h>
 
 class ILogger {
     public:

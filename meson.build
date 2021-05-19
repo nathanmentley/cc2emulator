@@ -5,7 +5,7 @@ project(
 )
 
 headerLib = declare_dependency(
-    include_directories: include_directories('src')
+    include_directories: include_directories('src', 'include')
 )
 
 testHeaderLib = declare_dependency(

@@ -7,16 +7,15 @@
 #include <optional>
 #include <thread>
 
-#include <Compucolor.Core/IDisplay.h>
+#include <Compucolor/Common/IDisplay.h>
 
-#include <Compucolor.Logger/ILogger.h>
-#include <Compucolor.Scheduler/IScheduler.h>
-#include <Compucolor.Memory/IMemory.h>
-#include <Compucolor.Smc5027/ISmc5027Emulator.h>
+#include <Compucolor/Logger/ILogger.h>
+#include <Compucolor/Scheduler/IScheduler.h>
+#include <Compucolor/Memory/IMemory.h>
+#include <Compucolor/Smc5027/ISmc5027Emulator.h>
+#include <Compucolor/Crt/ICrtEmulator.h>
 
-#include <Compucolor.Crt/ICrtEmulator.h>
-
-#include <Compucolor.Crt.Impl/FontRom.h>
+#include "FontRom.h"
 
 namespace Compucolor::Crt::Impl
 {

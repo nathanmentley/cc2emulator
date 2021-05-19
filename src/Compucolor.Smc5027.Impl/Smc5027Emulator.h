@@ -2,8 +2,9 @@
 
 #include <vector>
 
-#include <Compucolor.Logger/ILogger.h>
-#include <Compucolor.Smc5027/ISmc5027Emulator.h>
+#include <Compucolor/Logger/ILogger.h>
+
+#include <Compucolor/Smc5027/ISmc5027Emulator.h>
 
 namespace Compucolor::Smc5027::Impl {
     /**

@@ -3,8 +3,8 @@
 #include <memory>
 #include <optional>
 
-#include <Compucolor.Memory/IMemory.h>
-#include <Compucolor.Intel8080/IIntel8080Bus.h>
+#include <Compucolor/Memory/IMemory.h>
+#include <Compucolor/Intel8080/IIntel8080Bus.h>
 
 namespace Compucolor::Intel8080::Impl
 {

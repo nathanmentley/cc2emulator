@@ -1,9 +1,9 @@
 
 #pragma once
 
-#include <Compucolor.Core/IEmulatable.h>
-#include <Compucolor.Core/IOutputDevice.h>
-#include <Compucolor.Core/IResetable.h>
+#include <Compucolor/Common/IEmulatable.h>
+#include <Compucolor/Common/IOutputDevice.h>
+#include <Compucolor/Common/IResetable.h>
 
 class IFloppyEmulator: public IEmulatable, public IOutputDevice, public IResetable {
     public:

@@ -5,12 +5,13 @@
 #include <memory>
 #include <thread>
 
-#include <Compucolor.Floppy/IFloppyEmulator.h>
-#include <Compucolor.Intel8080/IIntel8080Emulator.h>
-#include <Compucolor.Keyboard/IKeyboardEmulator.h>
-#include <Compucolor.Logger/ILogger.h>
-#include <Compucolor.Tms5501/ITms5501Emulator.h>
-#include <Compucolor.Tms5501.Impl/Tms5501EmulatorContext.h>
+#include <Compucolor/Floppy/IFloppyEmulator.h>
+#include <Compucolor/Intel8080/IIntel8080Emulator.h>
+#include <Compucolor/Keyboard/IKeyboardEmulator.h>
+#include <Compucolor/Logger/ILogger.h>
+#include <Compucolor/Tms5501/ITms5501Emulator.h>
+
+#include "Tms5501EmulatorContext.h"
 
 namespace Compucolor::Tms5501::Impl {
     class Tms5501Emulator: public ITms5501Emulator {

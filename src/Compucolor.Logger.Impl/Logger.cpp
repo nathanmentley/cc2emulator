@@ -1,4 +1,4 @@
-#include <Compucolor.Logger.Impl/Logger.h>
+#include "Logger.h"
 
 Compucolor::Logger::Impl::Logger::Logger(std::shared_ptr<ILoggerProvider> provider):
     _provider(provider)

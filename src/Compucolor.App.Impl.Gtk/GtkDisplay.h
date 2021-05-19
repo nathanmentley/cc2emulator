@@ -6,7 +6,7 @@
 #include <gdk-pixbuf/gdk-pixbuf.h>
 
 #include <Compucolor.App/get_emulator.h>
-#include <Compucolor.Core/IDisplay.h>
+#include <Compucolor/Common/IDisplay.h>
 
 #include <Compucolor.App.Impl.Gtk/GtkLoggerProvider.h>
 #include <Compucolor.App.Impl.Gtk/GtkKeyboard.h>

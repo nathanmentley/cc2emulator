@@ -2,7 +2,7 @@
 
 #include <gmock/gmock.h>
 
-#include <Compucolor.Memory/IMemory.h>
+#include <Compucolor/Memory/IMemory.h>
 
 class MockMemory: public IMemory
 {

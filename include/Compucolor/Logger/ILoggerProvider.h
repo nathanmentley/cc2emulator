@@ -3,7 +3,7 @@
 #include <stdarg.h>
 #include <string>
 
-#include <Compucolor.Logger/LogLevel.h>
+#include <Compucolor/Logger/LogLevel.h>
 
 class ILoggerProvider {
     public:

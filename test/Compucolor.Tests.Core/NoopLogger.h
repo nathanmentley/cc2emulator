@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Compucolor.Logger/ILogger.h>
+#include <Compucolor/Logger/ILogger.h>
 
 class NoopLogger: public ILogger
 {

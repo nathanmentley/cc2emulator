@@ -1,4 +1,4 @@
-#include <Compucolor.Configuration.Impl/Configuration.h>
+#include "Configuration.h"
 
 Compucolor::Configuration::Impl::Configuration::Configuration(
     std::shared_ptr<ILogger> logger

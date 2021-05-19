@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include <Compucolor.Memory/IMemory.h>
+#include <Compucolor/Memory/IMemory.h>
 
 namespace Compucolor::Memory::Impl
 {

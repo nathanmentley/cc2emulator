@@ -2,9 +2,9 @@
 
 #include <memory>
 
-#include <Compucolor.Intel8080/IIntel8080Bus.h>
-#include <Compucolor.Smc5027/ISmc5027Emulator.h>
-#include <Compucolor.Tms5501/ITms5501Emulator.h>
+#include <Compucolor/Intel8080/IIntel8080Bus.h>
+#include <Compucolor/Smc5027/ISmc5027Emulator.h>
+#include <Compucolor/Tms5501/ITms5501Emulator.h>
 
 namespace Compucolor::Compucolor::Impl
 {

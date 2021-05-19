@@ -1,4 +1,4 @@
-#include <Compucolor.Smc5027.Impl/Smc5027Emulator.h>
+#include "Smc5027Emulator.h"
 
 Compucolor::Smc5027::Impl::Smc5027Emulator::Smc5027Emulator(
     std::shared_ptr<ILogger> logger

@@ -5,11 +5,11 @@
 #include <memory>
 #include <thread>
 
-#include <Compucolor.Memory/IMemory.h>
-#include <Compucolor.Intel8080/IIntel8080Emulator.h>
+#include <Compucolor/Memory/IMemory.h>
+#include <Compucolor/Intel8080/IIntel8080Emulator.h>
 
-#include <Compucolor.Intel8080.Impl/Intel8080.h>
-#include <Compucolor.Intel8080.Impl/Intel8080EmulatorContext.h>
+#include "Intel8080.h"
+#include "Intel8080EmulatorContext.h"
 
 namespace Compucolor::Intel8080::Impl
 {

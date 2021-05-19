@@ -2,7 +2,7 @@
 
 #include <gmock/gmock.h>
 
-#include <Compucolor.Smc5027/ISmc5027Emulator.h>
+#include <Compucolor/Smc5027/ISmc5027Emulator.h>
 
 class MockSmc5027Emulator: public ISmc5027Emulator
 {

@@ -3,8 +3,8 @@
 
 #include <memory>
 
-#include "Compucolor.Core/IEmulatable.h"
-#include "Compucolor.Core/IResetable.h"
+#include <Compucolor/Common/IEmulatable.h>
+#include <Compucolor/Common/IResetable.h>
 
 #include "IIntel8080Bus.h"
 

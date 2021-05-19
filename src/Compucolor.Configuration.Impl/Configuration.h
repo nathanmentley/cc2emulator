@@ -4,9 +4,9 @@
 #include <map>
 #include <memory>
 
-#include <Compucolor.Logger/ILogger.h>
+#include <Compucolor/Logger/ILogger.h>
 
-#include <Compucolor.Configuration/IConfiguration.h>
+#include <Compucolor/Configuration/IConfiguration.h>
 
 namespace Compucolor::Configuration::Impl
 {

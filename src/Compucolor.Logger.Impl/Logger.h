@@ -2,8 +2,8 @@
 
 #include <vector>
 
-#include <Compucolor.Logger/ILogger.h>
-#include <Compucolor.Logger/ILoggerProvider.h>
+#include <Compucolor/Logger/ILogger.h>
+#include <Compucolor/Logger/ILoggerProvider.h>
 
 namespace Compucolor::Logger::Impl
 {

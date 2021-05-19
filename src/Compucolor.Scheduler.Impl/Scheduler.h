@@ -1,8 +1,8 @@
 #pragma once
 
-#include <Compucolor.Logger/ILogger.h>
+#include <Compucolor/Logger/ILogger.h>
 
-#include <Compucolor.Scheduler/IScheduler.h>
+#include <Compucolor/Scheduler/IScheduler.h>
 
 namespace Compucolor::Scheduler::Impl
 {

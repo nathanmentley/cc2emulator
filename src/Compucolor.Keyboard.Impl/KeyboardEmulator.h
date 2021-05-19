@@ -6,8 +6,8 @@
 #include <optional>
 #include <vector>
 
-#include <Compucolor.Keyboard/IKeyboardEmulator.h>
-#include <Compucolor.Logger/ILogger.h>
+#include <Compucolor/Keyboard/IKeyboardEmulator.h>
+#include <Compucolor/Logger/ILogger.h>
 
 namespace Compucolor::Keyboard::Impl
 {

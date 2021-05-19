@@ -1,4 +1,4 @@
-#include <Compucolor.Core/ThirdParty/boost/di.hpp>
+#include <Compucolor.App/ThirdParty/boost/di.hpp>
 
 #include <Compucolor.App/get_emulator.h>
 

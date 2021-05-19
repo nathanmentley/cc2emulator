@@ -1,4 +1,4 @@
-#include <Compucolor.Crt.Impl/CrtEmulator.h>
+#include "CrtEmulator.h"
 
 Compucolor::Crt::Impl::CrtEmulator::CrtEmulator(
     std::shared_ptr<ILogger> logger,

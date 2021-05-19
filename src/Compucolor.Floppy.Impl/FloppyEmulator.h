@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include <Compucolor.Floppy/IFloppyEmulator.h>
+#include <Compucolor/Floppy/IFloppyEmulator.h>
 
 namespace Compucolor::Floppy::Impl
 {

@@ -1,4 +1,4 @@
-#include <Compucolor.Scheduler.Impl/Scheduler.h>
+#include "Scheduler.h"
 
 Compucolor::Scheduler::Impl::Scheduler::Scheduler(
     std::shared_ptr<ILogger> logger

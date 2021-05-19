@@ -1,4 +1,4 @@
-#include <Compucolor.Memory.Impl/VectorMemory.h>
+#include "VectorMemory.h"
 
 Compucolor::Memory::Impl::VectorMemory::VectorMemory():
     _data(std::vector<uint8_t>(64 * 1024))

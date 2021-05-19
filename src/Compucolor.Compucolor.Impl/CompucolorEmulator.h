@@ -4,15 +4,15 @@
 #include <optional>
 #include <thread>
 
-#include <Compucolor.Memory/IMemory.h>
-#include <Compucolor.Compucolor/ICompucolorEmulator.h>
-#include <Compucolor.Crt/ICrtEmulator.h>
-#include <Compucolor.Intel8080/IIntel8080Emulator.h>
-#include <Compucolor.Keyboard/IKeyboardEmulator.h>
-#include <Compucolor.Scheduler/IScheduler.h>
-#include <Compucolor.Smc5027/ISmc5027Emulator.h>
-#include <Compucolor.Tms5501/ITms5501Emulator.h>
+#include <Compucolor/Memory/IMemory.h>
+#include <Compucolor/Crt/ICrtEmulator.h>
+#include <Compucolor/Intel8080/IIntel8080Emulator.h>
+#include <Compucolor/Keyboard/IKeyboardEmulator.h>
+#include <Compucolor/Scheduler/IScheduler.h>
+#include <Compucolor/Smc5027/ISmc5027Emulator.h>
+#include <Compucolor/Tms5501/ITms5501Emulator.h>
 
+#include <Compucolor.Compucolor/ICompucolorEmulator.h>
 #include <Compucolor.Compucolor.Impl/CompucolorIntel8080Bus.h>
 #include <Compucolor.Compucolor.Impl/Roms.h>
 

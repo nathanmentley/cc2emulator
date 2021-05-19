@@ -3,7 +3,7 @@
 #include <chrono>
 #include <optional>
 
-#include <Compucolor.Logger/ILoggerProvider.h>
+#include <Compucolor/Logger/ILoggerProvider.h>
 
 class GtkLoggerProvider: public ILoggerProvider {
     public:

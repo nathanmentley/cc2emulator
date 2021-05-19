@@ -1,4 +1,4 @@
-#include <Compucolor.Keyboard.Impl/KeyboardEmulator.h>
+#include "KeyboardEmulator.h"
 
 Compucolor::Keyboard::Impl::KeyboardEmulator::KeyboardEmulator(
     std::shared_ptr<ILogger> logger

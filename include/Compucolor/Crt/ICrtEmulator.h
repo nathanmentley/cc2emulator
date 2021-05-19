@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Compucolor.Core/IDisplay.h"
-#include "Compucolor.Core/IEmulatable.h"
+#include <Compucolor/Common/IDisplay.h>
+#include <Compucolor/Common/IEmulatable.h>
 
 class ICrtEmulator: public IEmulatable {
     public:

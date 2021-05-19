@@ -1,4 +1,4 @@
-#include <Compucolor.Floppy.Impl/FloppyEmulator.h>
+#include "FloppyEmulator.h"
 
 Compucolor::Floppy::Impl::FloppyEmulator::FloppyEmulator()
 {
