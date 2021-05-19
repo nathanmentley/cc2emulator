@@ -21,7 +21,7 @@ std::optional<std::shared_ptr<IMemory>> Compucolor::Intel8080::Impl::Intel8080Em
     return _memory;
 }
 
-std::optional<std::shared_ptr<IIntel8080Bus>> Compucolor::Intel8080::Impl::Intel8080EmulatorContext::GetBus()
+std::optional<std::shared_ptr<Compucolor::Intel8080::IIntel8080Bus>> Compucolor::Intel8080::Impl::Intel8080EmulatorContext::GetBus()
 {
     return _bus;
 }

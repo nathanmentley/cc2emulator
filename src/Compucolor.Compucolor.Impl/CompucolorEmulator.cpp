@@ -9,8 +9,8 @@ void Compucolor::Compucolor::Impl::LoadRom(IMemory* memory, uint8_t* rom, uint16
 }
 
 Compucolor::Compucolor::Impl::CompucolorEmulator::CompucolorEmulator(
-    std::shared_ptr<ICrtEmulator> crt,
-    std::shared_ptr<IIntel8080Emulator> intel8080,
+    std::shared_ptr<Crt::ICrtEmulator> crt,
+    std::shared_ptr<Intel8080::IIntel8080Emulator> intel8080,
     std::shared_ptr<IKeyboardEmulator> keyboard,
     std::shared_ptr<IMemory> memory,
     std::shared_ptr<IScheduler> scheduler,

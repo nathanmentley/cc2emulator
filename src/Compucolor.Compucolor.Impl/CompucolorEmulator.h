@@ -24,8 +24,8 @@ namespace Compucolor::Compucolor::Impl
     class CompucolorEmulator: public ICompucolorEmulator {
         public:
             CompucolorEmulator(
-                std::shared_ptr<ICrtEmulator> crt,
-                std::shared_ptr<IIntel8080Emulator> intel8080,
+                std::shared_ptr<Crt::ICrtEmulator> crt,
+                std::shared_ptr<Intel8080::IIntel8080Emulator> intel8080,
                 std::shared_ptr<IKeyboardEmulator> keyboard,
                 std::shared_ptr<IMemory> memory,
                 std::shared_ptr<IScheduler> scheduler,
@@ -43,8 +43,8 @@ namespace Compucolor::Compucolor::Impl
             virtual void OnKeyDown(CompucolorIIKey key) override;
 
         private:
-            std::shared_ptr<ICrtEmulator> _crt;
-            std::shared_ptr<IIntel8080Emulator> _intel8080;
+            std::shared_ptr<Crt::ICrtEmulator> _crt;
+            std::shared_ptr<Intel8080::IIntel8080Emulator> _intel8080;
             std::shared_ptr<IKeyboardEmulator> _keyboard;
             std::shared_ptr<IMemory> _memory;
             std::shared_ptr<IScheduler> _scheduler;

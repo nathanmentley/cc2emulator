@@ -6,7 +6,7 @@ GtkDisplay::GtkDisplay():
             new GtkLoggerProvider(LogLevel::Trace)
         )
     ),
-    _emulator(get_emulator(_loggerProvider)),
+    _emulator(Compucolor::App::get_emulator(_loggerProvider)),
     _window(
         std::unique_ptr<GtkWindow, GWidgetDeleter>(
             (GtkWindow*)gtk_window_new(GTK_WINDOW_TOPLEVEL)

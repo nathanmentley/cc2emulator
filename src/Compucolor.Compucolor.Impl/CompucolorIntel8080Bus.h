@@ -8,7 +8,7 @@
 
 namespace Compucolor::Compucolor::Impl
 {
-    class CompucolorIntel8080Bus: public IIntel8080Bus
+    class CompucolorIntel8080Bus: public Intel8080::IIntel8080Bus
     {
         public:
             CompucolorIntel8080Bus(

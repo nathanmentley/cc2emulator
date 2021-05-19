@@ -6,7 +6,9 @@
 #include <Compucolor/Common/IInputDevice.h>
 #include <Compucolor/Common/IOutputDevice.h>
 
-class IIntel8080Bus: public IInputDevice, public IOutputDevice
+namespace Compucolor::Intel8080
 {
-
-};
+    class IIntel8080Bus: public IInputDevice, public IOutputDevice
+    {
+    };
+}

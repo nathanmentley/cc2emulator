@@ -18,10 +18,10 @@ namespace Compucolor::Tms5501::Impl {
         public:
             Tms5501Emulator(
                 std::shared_ptr<ILogger> logger,
-                std::shared_ptr<IIntel8080Emulator> intel8080,
+                std::shared_ptr<Intel8080::IIntel8080Emulator> intel8080,
                 std::shared_ptr<IKeyboardEmulator> keyboard,
-                std::shared_ptr<IFloppyEmulator> floppy1,
-                std::shared_ptr<IFloppyEmulator> floppy2
+                std::shared_ptr<Floppy::IFloppyEmulator> floppy1,
+                std::shared_ptr<Floppy::IFloppyEmulator> floppy2
             );
 
             virtual void Start() override;
@@ -35,11 +35,11 @@ namespace Compucolor::Tms5501::Impl {
         private:
             std::shared_ptr<ILogger> _logger;
             std::unique_ptr<Compucolor::Tms5501::Impl::Tms5501EmulatorContext> _context;
-            std::shared_ptr<IIntel8080Emulator> _intel8080;
+            std::shared_ptr<Intel8080::IIntel8080Emulator> _intel8080;
             std::atomic<bool> _isRunning;
             std::shared_ptr<IKeyboardEmulator> _keyboard;
-            std::shared_ptr<IFloppyEmulator> _floppy1;
-            std::shared_ptr<IFloppyEmulator> _floppy2;
+            std::shared_ptr<Floppy::IFloppyEmulator> _floppy1;
+            std::shared_ptr<Floppy::IFloppyEmulator> _floppy2;
             uint8_t _outport;
             std::thread _thread;
             std::thread _keyboardThread;

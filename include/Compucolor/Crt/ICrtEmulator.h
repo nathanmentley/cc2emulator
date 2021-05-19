@@ -3,9 +3,12 @@
 #include <Compucolor/Common/IDisplay.h>
 #include <Compucolor/Common/IEmulatable.h>
 
-class ICrtEmulator: public IEmulatable {
-    public:
-        virtual ~ICrtEmulator() {}
+namespace Compucolor::Crt
+{
+    class ICrtEmulator: public IEmulatable {
+        public:
+            virtual ~ICrtEmulator() {}
 
-        virtual void SetDisplay(IDisplay* display) = 0;
-};
+            virtual void SetDisplay(IDisplay* display) = 0;
+    };
+}

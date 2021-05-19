@@ -37,6 +37,9 @@
 #include <Compucolor/ICompucolorEmulator.h>
 #include <Compucolor.Compucolor.Impl/CompucolorEmulator.h>
 
-std::unique_ptr<ICompucolorEmulator> get_emulator(
-    std::shared_ptr<ILoggerProvider> loggerProvider
-);
+namespace Compucolor::App
+{
+    std::unique_ptr<ICompucolorEmulator> get_emulator(
+        std::shared_ptr<ILoggerProvider> loggerProvider
+    );
+}
