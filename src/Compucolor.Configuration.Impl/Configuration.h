@@ -8,17 +8,20 @@
 
 #include <Compucolor.Configuration/IConfiguration.h>
 
-class Configuration: public IConfiguration {
-    public:
-        Configuration(
-            std::shared_ptr<ILogger> logger
-        );
+namespace Compucolor::Configuration::Impl
+{
+    class Configuration: public IConfiguration {
+        public:
+            Configuration(
+                std::shared_ptr<ILogger> logger
+            );
 
-        virtual void LoadFile(std::string filename) override;
+            virtual void LoadFile(std::string filename) override;
 
-        virtual std::optional<std::string> GetSetting(std::string key) override;
+            virtual std::optional<std::string> GetSetting(std::string key) override;
 
-    private:
-        std::map<std::string, std::string> _data;
-        std::shared_ptr<ILogger> _logger;
-};
+        private:
+            std::map<std::string, std::string> _data;
+            std::shared_ptr<ILogger> _logger;
+    };
+}

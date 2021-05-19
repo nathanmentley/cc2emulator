@@ -1,25 +1,25 @@
 #include <Compucolor.Floppy.Impl/FloppyEmulator.h>
 
-FloppyEmulator::FloppyEmulator()
+Compucolor::Floppy::Impl::FloppyEmulator::FloppyEmulator()
 {
 }
 
-void FloppyEmulator::Start()
+void Compucolor::Floppy::Impl::FloppyEmulator::Start()
 {
 }
 
-void FloppyEmulator::Stop()
+void Compucolor::Floppy::Impl::FloppyEmulator::Stop()
 {
 }
 
-void FloppyEmulator::Reset()
+void Compucolor::Floppy::Impl::FloppyEmulator::Reset()
 {
 }
 
-void FloppyEmulator::Write(uint8_t port, uint8_t data)
+void Compucolor::Floppy::Impl::FloppyEmulator::Write(uint8_t port, uint8_t data)
 {
 }
 
-void FloppyEmulator::Select(bool selected, bool write, uint8_t stepper)
+void Compucolor::Floppy::Impl::FloppyEmulator::Select(bool selected, bool write, uint8_t stepper)
 {
 }

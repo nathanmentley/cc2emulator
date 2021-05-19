@@ -1,6 +1,6 @@
 #include <Compucolor.Crt.Impl/CrtEmulator.h>
 
-CrtEmulator::CrtEmulator(
+Compucolor::Crt::Impl::CrtEmulator::CrtEmulator(
     std::shared_ptr<ILogger> logger,
     std::shared_ptr<IScheduler> scheduler,
     std::shared_ptr<IMemory> memory,
@@ -15,7 +15,7 @@ CrtEmulator::CrtEmulator(
 {
 }
 
-void CrtEmulator::Start()
+void Compucolor::Crt::Impl::CrtEmulator::Start()
 {
     _logger->LogTrace("Starting CrtEmulator");
 
@@ -39,11 +39,11 @@ void CrtEmulator::Start()
     );
 }
 
-void CrtEmulator::Stop()
+void Compucolor::Crt::Impl::CrtEmulator::Stop()
 {
 }
 
-void CrtEmulator::RefreshDisplay()
+void Compucolor::Crt::Impl::CrtEmulator::RefreshDisplay()
 {
     if (_display.has_value())
     {
@@ -82,14 +82,14 @@ void CrtEmulator::RefreshDisplay()
     }
 }
 
-void CrtEmulator::SetDisplay(IDisplay* display)
+void Compucolor::Crt::Impl::CrtEmulator::SetDisplay(IDisplay* display)
 {
     _logger->LogTrace("Setting up a new display for CrtEmulator");
 
     _display = display;
 }
 
-void CrtEmulator::DrawCursor()
+void Compucolor::Crt::Impl::CrtEmulator::DrawCursor()
 {
     if (IsBlinkOn())
     {
@@ -119,14 +119,14 @@ void CrtEmulator::DrawCursor()
     }
 }
 
-void CrtEmulator::DrawGlyph(Color foreground, Color background, uint8_t glyphData, bool blink, int x, int y)
+void Compucolor::Crt::Impl::CrtEmulator::DrawGlyph(Color foreground, Color background, uint8_t glyphData, bool blink, int x, int y)
 {
     const uint16_t xPos = x * CharacterWidth;
     const uint16_t yPos = y * CharacterHeight;
 
     for(uint16_t row = 0; row < CharacterHeight; row++)
     {
-        const uint8_t* uf6_rom = get_uf6_rom();
+        const uint8_t* uf6_rom = Compucolor::Crt::Impl::get_uf6_rom();
 
         const bool isTall = IsBitSet(7, glyphData);
         const uint8_t ch = glyphData & 0x7F;
@@ -149,27 +149,27 @@ void CrtEmulator::DrawGlyph(Color foreground, Color background, uint8_t glyphDat
     }
 }
 
-bool CrtEmulator::IsBlinkOn()
+bool Compucolor::Crt::Impl::CrtEmulator::IsBlinkOn()
 {
     return _phase % 2 == 0;
 }
 
-Color CrtEmulator::GetForegroundColor(uint8_t data)
+Color Compucolor::Crt::Impl::CrtEmulator::GetForegroundColor(uint8_t data)
 {
     return GetColor(data & 0x7);
 }
 
-Color CrtEmulator::GetBackgroundColor(uint8_t data)
+Color Compucolor::Crt::Impl::CrtEmulator::GetBackgroundColor(uint8_t data)
 {
     return GetColor((data >> 3) & 0x7);
 }
 
-Color CrtEmulator::GetColor(uint8_t data)
+Color Compucolor::Crt::Impl::CrtEmulator::GetColor(uint8_t data)
 {
     return (Color)data;
 }
 
-bool CrtEmulator::IsBitSet(int bit, uint8_t data)
+bool Compucolor::Crt::Impl::CrtEmulator::IsBitSet(int bit, uint8_t data)
 {
     return ((data >> bit) & 0x1) == 1;
 }

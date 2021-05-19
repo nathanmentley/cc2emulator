@@ -1,6 +1,6 @@
 #include <Compucolor.Configuration.Impl/Configuration.h>
 
-Configuration::Configuration(
+Compucolor::Configuration::Impl::Configuration::Configuration(
     std::shared_ptr<ILogger> logger
 ):
     _data(std::map<std::string, std::string>()),
@@ -8,7 +8,7 @@ Configuration::Configuration(
 {
 }
 
-void Configuration::LoadFile(std::string filename)
+void Compucolor::Configuration::Impl::Configuration::LoadFile(std::string filename)
 {
     _logger->LogTrace(
         "In Configuration, loading config file"//: %s",
@@ -55,7 +55,7 @@ void Configuration::LoadFile(std::string filename)
     }
 }
 
-std::optional<std::string> Configuration::GetSetting(std::string key)
+std::optional<std::string> Compucolor::Configuration::Impl::Configuration::GetSetting(std::string key)
 {
     if(_data.count(key))
     {

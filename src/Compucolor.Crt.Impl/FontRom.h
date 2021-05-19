@@ -7,5 +7,8 @@
 
 #include <memory>
 
-uint8_t* get_uf6_rom();
-uint8_t* get_uf6_rom_lowercase();
+namespace Compucolor::Crt::Impl
+{
+    uint8_t* get_uf6_rom();
+    uint8_t* get_uf6_rom_lowercase();
+}

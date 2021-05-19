@@ -1,6 +1,6 @@
 #include <Compucolor.Compucolor.Impl/CompucolorEmulator.h>
 
-void LoadRom(IMemory* memory, uint8_t* rom, uint16_t startPosition, uint16_t length)
+void Compucolor::Compucolor::Impl::LoadRom(IMemory* memory, uint8_t* rom, uint16_t startPosition, uint16_t length)
 {
     for(uint16_t i = 0; i < length - 1; i++)
     {
@@ -8,7 +8,7 @@ void LoadRom(IMemory* memory, uint8_t* rom, uint16_t startPosition, uint16_t len
     }
 }
 
-CompucolorEmulator::CompucolorEmulator(
+Compucolor::Compucolor::Impl::CompucolorEmulator::CompucolorEmulator(
     std::shared_ptr<ICrtEmulator> crt,
     std::shared_ptr<IIntel8080Emulator> intel8080,
     std::shared_ptr<IKeyboardEmulator> keyboard,
@@ -27,8 +27,8 @@ CompucolorEmulator::CompucolorEmulator(
     _loop({})
 {
     _intel8080->SetBus(
-        std::shared_ptr<CompucolorIntel8080Bus>(
-            new CompucolorIntel8080Bus(
+        std::shared_ptr<Compucolor::Impl::CompucolorIntel8080Bus>(
+            new Compucolor::Impl::CompucolorIntel8080Bus(
                 _smc5027,
                 _tms5501
             )
@@ -36,9 +36,9 @@ CompucolorEmulator::CompucolorEmulator(
     );
 }
 
-void CompucolorEmulator::Start()
+void Compucolor::Compucolor::Impl::CompucolorEmulator::Start()
 {
-    LoadRom(_memory.get(), get_system_rom_6_78(), 0, get_system_rom_6_78_length());
+    Compucolor::Impl::LoadRom(_memory.get(), get_system_rom_6_78(), 0, get_system_rom_6_78_length());
 
     _crt->Start();
     _keyboard->Start();
@@ -56,7 +56,7 @@ void CompucolorEmulator::Start()
     );
 }
 
-void CompucolorEmulator::Stop()
+void Compucolor::Compucolor::Impl::CompucolorEmulator::Stop()
 {
     _crt->Stop();
     _keyboard->Stop();
@@ -65,17 +65,17 @@ void CompucolorEmulator::Stop()
     _intel8080->Stop();
 }
 
-void CompucolorEmulator::SetDisplay(IDisplay* display)
+void Compucolor::Compucolor::Impl::CompucolorEmulator::SetDisplay(IDisplay* display)
 {
     _crt->SetDisplay(display);
 }
 
-void CompucolorEmulator::OnKeyUp(CompucolorIIKey key)
+void Compucolor::Compucolor::Impl::CompucolorEmulator::OnKeyUp(CompucolorIIKey key)
 {
     _keyboard->OnKeyUp(key);
 }
 
-void CompucolorEmulator::OnKeyDown(CompucolorIIKey key)
+void Compucolor::Compucolor::Impl::CompucolorEmulator::OnKeyDown(CompucolorIIKey key)
 {
     _keyboard->OnKeyDown(key);
 }

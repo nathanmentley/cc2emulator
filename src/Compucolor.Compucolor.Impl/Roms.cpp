@@ -2110,22 +2110,22 @@ uint8_t crt_timing_rom[] = {
     0x00   /* 0x1f */
 };
 
-uint8_t* get_system_rom_6_78()
+uint8_t* Compucolor::Compucolor::Impl::get_system_rom_6_78()
 {
     return system_rom_6_78;
 }
 
-uint16_t get_system_rom_6_78_length()
+uint16_t Compucolor::Compucolor::Impl::get_system_rom_6_78_length()
 {
     return sizeof(system_rom_6_78) / sizeof(system_rom_6_78[0]);
 }
 
-uint8_t* get_system_rom_8_79()
+uint8_t* Compucolor::Compucolor::Impl::get_system_rom_8_79()
 {
     return system_rom_8_79;
 }
 
-uint16_t get_system_rom_8_79_length()
+uint16_t Compucolor::Compucolor::Impl::get_system_rom_8_79_length()
 {
     return sizeof(system_rom_8_79) / sizeof(system_rom_8_79[0]);
 }

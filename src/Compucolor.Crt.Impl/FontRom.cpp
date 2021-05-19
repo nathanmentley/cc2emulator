@@ -2308,12 +2308,12 @@ uint8_t uf6_rom_lowercase[] = {
     0x02
 };
 
-uint8_t* get_uf6_rom()
+uint8_t* Compucolor::Crt::Impl::get_uf6_rom()
 {
     return uf6_rom;
 }
 
-uint8_t* get_uf6_rom_lowercase()
+uint8_t* Compucolor::Crt::Impl::get_uf6_rom_lowercase()
 {
     return uf6_rom_lowercase;
 }

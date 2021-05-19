@@ -1,6 +1,6 @@
 #include <Compucolor.Compucolor.Impl/CompucolorIntel8080Bus.h>
 
-CompucolorIntel8080Bus::CompucolorIntel8080Bus(
+Compucolor::Compucolor::Impl::CompucolorIntel8080Bus::CompucolorIntel8080Bus(
     std::shared_ptr<ISmc5027Emulator> smc5027,
     std::shared_ptr<ITms5501Emulator> tms5501
 ):
@@ -9,7 +9,7 @@ CompucolorIntel8080Bus::CompucolorIntel8080Bus(
 {
 }
 
-uint8_t CompucolorIntel8080Bus::Read(uint8_t port)
+uint8_t Compucolor::Compucolor::Impl::CompucolorIntel8080Bus::Read(uint8_t port)
 {
     if (port >= 0x00 && port <= 0x1F) {
         return _tms5501->Read(port & 0x0F);
@@ -18,7 +18,7 @@ uint8_t CompucolorIntel8080Bus::Read(uint8_t port)
     return port;
 }
 
-void CompucolorIntel8080Bus::Write(uint8_t port, uint8_t data)
+void Compucolor::Compucolor::Impl::CompucolorIntel8080Bus::Write(uint8_t port, uint8_t data)
 {
     // TMS5501 I/O chip
     if ((port >= 0x00 && port <= 0x0F) || (port >= 0x10 && port <= 0x1F)) {
