@@ -1,4 +1,4 @@
-#include <Compucolor.Compucolor.Impl/CompucolorEmulator.h>
+#include "CompucolorEmulator.h"
 
 void Compucolor::Compucolor::Impl::LoadRom(IMemory* memory, uint8_t* rom, uint16_t startPosition, uint16_t length)
 {

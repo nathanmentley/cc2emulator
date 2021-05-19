@@ -12,9 +12,10 @@
 #include <Compucolor/Smc5027/ISmc5027Emulator.h>
 #include <Compucolor/Tms5501/ITms5501Emulator.h>
 
-#include <Compucolor.Compucolor/ICompucolorEmulator.h>
-#include <Compucolor.Compucolor.Impl/CompucolorIntel8080Bus.h>
-#include <Compucolor.Compucolor.Impl/Roms.h>
+#include <Compucolor/ICompucolorEmulator.h>
+
+#include "CompucolorIntel8080Bus.h"
+#include "Roms.h"
 
 namespace Compucolor::Compucolor::Impl
 {

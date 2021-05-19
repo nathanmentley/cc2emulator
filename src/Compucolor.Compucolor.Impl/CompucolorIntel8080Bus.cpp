@@ -1,4 +1,4 @@
-#include <Compucolor.Compucolor.Impl/CompucolorIntel8080Bus.h>
+#include "CompucolorIntel8080Bus.h"
 
 Compucolor::Compucolor::Impl::CompucolorIntel8080Bus::CompucolorIntel8080Bus(
     std::shared_ptr<ISmc5027Emulator> smc5027,

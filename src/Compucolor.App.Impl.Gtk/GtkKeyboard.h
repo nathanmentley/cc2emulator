@@ -5,7 +5,7 @@
 
 #include <gtk/gtk.h>
 
-#include "Compucolor.Compucolor/ICompucolorEmulator.h"
+#include "Compucolor/ICompucolorEmulator.h"
 
 class GtkKeyboard {
     public:

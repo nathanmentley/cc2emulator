@@ -4,8 +4,12 @@ project(
     default_options : ['c_std=c2a', 'cpp_std=c++2a']
 )
 
-headerLib = declare_dependency(
-    include_directories: include_directories('src', 'include')
+publicHeaderLib = declare_dependency(
+    include_directories: include_directories('include')
+)
+
+internalHeaderLib = declare_dependency(
+    include_directories: include_directories('src')
 )
 
 testHeaderLib = declare_dependency(
@@ -19,7 +23,7 @@ memoryImplLib = declare_dependency(
             'src/Compucolor.Memory.Impl/VectorMemory.cpp'
         ],
         dependencies: [
-            headerLib
+            publicHeaderLib
         ]
     )
 )
@@ -33,7 +37,8 @@ memoryImplTests = executable(
         dependency('gtest'),
         dependency('gmock'),
 
-        headerLib,
+        publicHeaderLib,
+        internalHeaderLib,
         testHeaderLib,
 
         memoryImplLib
@@ -50,7 +55,7 @@ intel8080ImplLib = declare_dependency(
             'src/Compucolor.Intel8080.Impl/Intel8080EmulatorContext.cpp'
         ],
         dependencies: [
-            headerLib
+            publicHeaderLib
         ]
     )
 )
@@ -62,7 +67,7 @@ smc5027ImplLib = declare_dependency(
             'src/Compucolor.Smc5027.Impl/Smc5027Emulator.cpp'
         ],
         dependencies: [
-            headerLib
+            publicHeaderLib
         ]
     )
 )
@@ -76,7 +81,8 @@ smc5027ImplTests = executable(
         dependency('gtest'),
         dependency('gmock'),
 
-        headerLib,
+        publicHeaderLib,
+        internalHeaderLib,
         testHeaderLib,
 
         smc5027ImplLib
@@ -92,7 +98,7 @@ tms5501ImplLib = declare_dependency(
             'src/Compucolor.Tms5501.Impl/Tms5501EmulatorContext.cpp'
         ],
         dependencies: [
-            headerLib
+            publicHeaderLib
         ]
     )
 )
@@ -105,7 +111,7 @@ crtImplLib = declare_dependency(
             'src/Compucolor.Crt.Impl/CrtEmulator.cpp'
         ],
         dependencies: [
-            headerLib
+            publicHeaderLib
         ]
     )
 )
@@ -119,7 +125,8 @@ crtImplTests = executable(
         dependency('gtest'),
         dependency('gmock'),
 
-        headerLib,
+        publicHeaderLib,
+        internalHeaderLib,
         testHeaderLib,
 
         crtImplLib
@@ -134,7 +141,7 @@ floppyImplLib = declare_dependency(
             'src/Compucolor.Floppy.Impl/FloppyEmulator.cpp'
         ],
         dependencies: [
-            headerLib
+            publicHeaderLib
         ]
     )
 )
@@ -146,7 +153,7 @@ keyboardImplLib = declare_dependency(
             'src/Compucolor.Keyboard.Impl/KeyboardEmulator.cpp'
         ],
         dependencies: [
-            headerLib
+            publicHeaderLib
         ]
     )
 )
@@ -158,7 +165,7 @@ configurationImplLib = declare_dependency(
             'src/Compucolor.Configuration.Impl/Configuration.cpp'
         ],
         dependencies: [
-            headerLib
+            publicHeaderLib
         ]
     )
 )
@@ -170,7 +177,7 @@ schedulerImplLib = declare_dependency(
             'src/Compucolor.Scheduler.Impl/Scheduler.cpp'
         ],
         dependencies: [
-            headerLib
+            publicHeaderLib
         ]
     )
 )
@@ -182,7 +189,7 @@ loggerImplLib = declare_dependency(
             'src/Compucolor.Logger.Impl/Logger.cpp'
         ],
         dependencies: [
-            headerLib
+            publicHeaderLib
         ]
     )
 )
@@ -196,7 +203,7 @@ compucolorImplLib = declare_dependency(
             'src/Compucolor.Compucolor.Impl/Roms.cpp'
         ],
         dependencies: [
-            headerLib
+            publicHeaderLib
         ]
     )
 )
@@ -208,7 +215,8 @@ appLib = declare_dependency(
             'src/Compucolor.App/get_emulator.cpp',
         ],
         dependencies: [
-            headerLib,
+            publicHeaderLib,
+            internalHeaderLib,
 
             memoryImplLib,
             intel8080ImplLib,
@@ -239,7 +247,8 @@ executable(
         dependency('gdk-pixbuf-2.0'),
         dependency('threads'),
 
-        headerLib,
+        publicHeaderLib,
+        internalHeaderLib,
         appLib
     ],
     install: true

@@ -34,7 +34,7 @@
 #include <Compucolor/Logger/ILogger.h>
 #include <Compucolor.Logger.Impl/Logger.h>
 
-#include <Compucolor.Compucolor/ICompucolorEmulator.h>
+#include <Compucolor/ICompucolorEmulator.h>
 #include <Compucolor.Compucolor.Impl/CompucolorEmulator.h>
 
 std::unique_ptr<ICompucolorEmulator> get_emulator(
