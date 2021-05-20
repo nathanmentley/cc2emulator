@@ -1,15 +1,12 @@
 #include <memory>
-#include <optional>
 
 #include <SFML/Graphics.hpp>
 
 #include <Compucolor/Logger/ConsoleLoggerProvider.h>
-#include <Compucolor/EmulatorBackgroundTask.h>
 
 #include <Compucolor.App/get_emulator.h>
 
 #include "Display.h"
-#include "ErrorHandler.h"
 #include "KeyboardTranslator.h"
 
 namespace Compucolor::App::Impl::Sfml

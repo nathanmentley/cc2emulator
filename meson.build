@@ -234,26 +234,6 @@ appLib = declare_dependency(
     )
 )
 
-# executable(
-#     'Compucolor.App.Impl.Gtk',
-#     [
-#         'src/Compucolor.App.Impl.Gtk/GtkDisplay.cpp',
-#         'src/Compucolor.App.Impl.Gtk/GtkKeyboard.cpp',
-#         'src/Compucolor.App.Impl.Gtk/GtkLoggerProvider.cpp',
-#         'src/Compucolor.App.Impl.Gtk/main.cpp'
-#     ],
-#     dependencies: [
-#         dependency('gtk+-3.0'),
-#         dependency('gdk-pixbuf-2.0'),
-#         dependency('threads'),
-# 
-#         publicHeaderLib,
-#         internalHeaderLib,
-#         appLib
-#     ],
-#     install: true
-# )
-
 executable(
     'Compucolor.App.Impl.Sfml',
     [
