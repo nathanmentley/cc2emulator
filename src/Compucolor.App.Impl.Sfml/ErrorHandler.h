@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-namespace Compucolor::App::Impl::Smfl
+namespace Compucolor::App::Impl::Sfml
 {
     void ErrorHandler(int sig);
 }

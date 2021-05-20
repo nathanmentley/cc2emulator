@@ -6,7 +6,7 @@
 
 #include <Compucolor/Common/IDisplay.h>
 
-namespace Compucolor::App::Impl::Smfl
+namespace Compucolor::App::Impl::Sfml
 {
     class Display: public Common::IDisplay {
         public:

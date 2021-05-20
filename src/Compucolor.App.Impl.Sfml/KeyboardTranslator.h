@@ -4,7 +4,7 @@
 
 #include <Compucolor/Keyboard/CompucolorIIKey.h>
 
-namespace Compucolor::App::Impl::Smfl
+namespace Compucolor::App::Impl::Sfml
 {
     class KeyboardTranslator {
         public:

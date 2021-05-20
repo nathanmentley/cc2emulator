@@ -1,19 +1,20 @@
 #pragma once
 
-#include <atomic>
 #include <memory>
+#include <optional>
 #include <thread>
 
 #include <Compucolor.App/get_emulator.h>
 #include <Compucolor/Common/IDisplay.h>
+#include <Compucolor/Logger/ILoggerProvider.h>
 
-#include <Compucolor.App.Impl.Sfml/LoggerProvider.h>
-
-namespace Compucolor::App::Impl::Smfl
+namespace Compucolor::App
 {
     class Emulator {
         public:
-            Emulator();
+            Emulator(
+                std::shared_ptr<Logger::ILoggerProvider> loggerProvider
+            );
 
             void Start();
             void Stop();
@@ -25,9 +26,7 @@ namespace Compucolor::App::Impl::Smfl
         private:
             std::shared_ptr<Logger::ILoggerProvider> _loggerProvider;
             std::shared_ptr<ICompucolorEmulator> _emulator;
-
-            std::atomic<bool> _isRunning;
-            std::thread _thread;
+            std::optional<std::thread> _thread;
 
             static uint32_t GetColor(Common::Color color);
     };

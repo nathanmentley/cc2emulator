@@ -5,11 +5,11 @@
 
 #include <Compucolor/Logger/ILoggerProvider.h>
 
-namespace Compucolor::App::Impl::Smfl
+namespace Compucolor::App
 {
-    class LoggerProvider: public Logger::ILoggerProvider {
+    class ConsoleLoggerProvider: public Logger::ILoggerProvider {
         public:
-            LoggerProvider(Logger::LogLevel logLevel);
+            ConsoleLoggerProvider(Logger::LogLevel logLevel);
 
             virtual void Write(Logger::LogLevel logLevel, std::string message, va_list args) override;
 

@@ -1,13 +1,13 @@
 #include <Compucolor.App.Impl.Sfml/Display.h>
 
-Compucolor::App::Impl::Smfl::Display::Display(
+Compucolor::App::Impl::Sfml::Display::Display(
     std::shared_ptr<sf::RenderWindow> window
 ):
     _window(window)
 {
 }
 
-void Compucolor::App::Impl::Smfl::Display::DrawPixel(Common::Color color, int x, int y)
+void Compucolor::App::Impl::Sfml::Display::DrawPixel(Common::Color color, int x, int y)
 {
     //TODO: Buffer this, and draw the collection of pixels at the end.
     //  That'll be much quicker, and allow for simple retro effects to be added.
@@ -19,13 +19,13 @@ void Compucolor::App::Impl::Smfl::Display::DrawPixel(Common::Color color, int x,
     _window->draw(rect);
 }
 
-void Compucolor::App::Impl::Smfl::Display::Repaint()
+void Compucolor::App::Impl::Sfml::Display::Repaint()
 {
     _window->display();
     _window->clear();
 }
 
-uint32_t Compucolor::App::Impl::Smfl::Display::GetColor(Common::Color color)
+uint32_t Compucolor::App::Impl::Sfml::Display::GetColor(Common::Color color)
 {
     switch (color)
     {

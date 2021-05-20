@@ -2,13 +2,15 @@
 
 #include <SFML/Graphics.hpp>
 
+#include <Compucolor.App/ConsoleLoggerProvider.h>
+#include <Compucolor.App/Emulator.h>
+
 #include "Display.h"
-#include "Emulator.h"
 #include "ErrorHandler.h"
 #include "KeyboardTranslator.h"
 
 int main(int argc, char** argv) {
-    signal(SIGSEGV, Compucolor::App::Impl::Smfl::ErrorHandler);   // install our handler
+    signal(SIGSEGV, Compucolor::App::Impl::Sfml::ErrorHandler);   // install our handler
 
     // Create the main window
     std::shared_ptr<sf::RenderWindow> window =
@@ -16,21 +18,27 @@ int main(int argc, char** argv) {
             new sf::RenderWindow(sf::VideoMode(384, 256), "Compucolor II Emulator")
         );
 
-    std::unique_ptr<Compucolor::App::Impl::Smfl::Display> display = 
-        std::unique_ptr<Compucolor::App::Impl::Smfl::Display>(
-            new Compucolor::App::Impl::Smfl::Display(window)
+    std::shared_ptr<Compucolor::Logger::ILoggerProvider> loggerProvider = 
+        std::shared_ptr<Compucolor::Logger::ILoggerProvider>(
+            new Compucolor::App::ConsoleLoggerProvider(
+                Compucolor::Logger::LogLevel::Trace
+            )
         );
 
-    std::unique_ptr<Compucolor::App::Impl::Smfl::KeyboardTranslator> keyboardTranslator = 
-        std::unique_ptr<Compucolor::App::Impl::Smfl::KeyboardTranslator>(
-            new Compucolor::App::Impl::Smfl::KeyboardTranslator()
+    std::unique_ptr<Compucolor::App::Impl::Sfml::Display> display = 
+        std::unique_ptr<Compucolor::App::Impl::Sfml::Display>(
+            new Compucolor::App::Impl::Sfml::Display(window)
         );
 
-    std::unique_ptr<Compucolor::App::Impl::Smfl::Emulator> emulator = 
-        std::unique_ptr<Compucolor::App::Impl::Smfl::Emulator>(
-            new Compucolor::App::Impl::Smfl::Emulator()
+    std::unique_ptr<Compucolor::App::Emulator> emulator = 
+        std::unique_ptr<Compucolor::App::Emulator>(
+            new Compucolor::App::Emulator(loggerProvider)
         );
-    
+
+    std::unique_ptr<Compucolor::App::Impl::Sfml::KeyboardTranslator> keyboardTranslator = 
+        std::unique_ptr<Compucolor::App::Impl::Sfml::KeyboardTranslator>(
+            new Compucolor::App::Impl::Sfml::KeyboardTranslator()
+        );
 
     emulator->SetDisplay(display.get());
 

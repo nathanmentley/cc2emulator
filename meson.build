@@ -213,6 +213,8 @@ appLib = declare_dependency(
         'Compucolor.App',
         [
             'src/Compucolor.App/get_emulator.cpp',
+            'src/Compucolor.App/ConsoleLoggerProvider.cpp',
+            'src/Compucolor.App/Emulator.cpp',
         ],
         dependencies: [
             publicHeaderLib,
@@ -258,10 +260,8 @@ executable(
     'Compucolor.App.Impl.Sfml',
     [
         'src/Compucolor.App.Impl.Sfml/Display.cpp',
-        'src/Compucolor.App.Impl.Sfml/Emulator.cpp',
         'src/Compucolor.App.Impl.Sfml/ErrorHandler.cpp',
         'src/Compucolor.App.Impl.Sfml/KeyboardTranslator.cpp',
-        'src/Compucolor.App.Impl.Sfml/LoggerProvider.cpp',
         'src/Compucolor.App.Impl.Sfml/main.cpp'
     ],
     dependencies: [
