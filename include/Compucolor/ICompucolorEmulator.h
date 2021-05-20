@@ -5,15 +5,18 @@
 
 #include <Compucolor/Keyboard/CompucolorIIKey.h>
 
-class ICompucolorEmulator: public ISystem {
-    public:
-        ICompucolorEmulator() {}
+namespace Compucolor
+{
+    class ICompucolorEmulator: public Common::ISystem {
+        public:
+            ICompucolorEmulator() {}
 
-        virtual ~ICompucolorEmulator() {}
+            virtual ~ICompucolorEmulator() {}
 
-        virtual void SetDisplay(IDisplay* display) = 0;
+            virtual void SetDisplay(Common::IDisplay* display) = 0;
 
-        virtual void OnKeyUp(CompucolorIIKey key) = 0;
+            virtual void OnKeyUp(CompucolorIIKey key) = 0;
 
-        virtual void OnKeyDown(CompucolorIIKey key) = 0;
-};
+            virtual void OnKeyDown(CompucolorIIKey key) = 0;
+    };
+}

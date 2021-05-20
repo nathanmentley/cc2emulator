@@ -13,11 +13,11 @@
 #include <Compucolor.App.Impl.Gtk/GObjectDeleter.h>
 #include <Compucolor.App.Impl.Gtk/GWidgetDeleter.h>
 
-class GtkDisplay: public IDisplay {
+class GtkDisplay: public Compucolor::Common::IDisplay {
     public:
         GtkDisplay();
 
-        virtual void DrawPixel(Color color, int x, int y) override;
+        virtual void DrawPixel(Compucolor::Common::Color color, int x, int y) override;
         virtual void Repaint() override;
 
     private:
@@ -35,7 +35,7 @@ class GtkDisplay: public IDisplay {
         std::unique_ptr<GdkPixbuf, GObjectDeleter> _buffer;
         std::unique_ptr<GtkKeyboard> _keyboard;
 
-        static uint32_t GetColor(Color color);
+        static uint32_t GetColor(Compucolor::Common::Color color);
 
         static void QuitApp(ICompucolorEmulator* emulator);
         static void OnKeyUp(GtkWidget* widget, GdkEventKey* event, GtkKeyboard* keyboard);

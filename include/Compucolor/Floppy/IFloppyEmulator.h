@@ -7,7 +7,7 @@
 
 namespace Compucolor::Floppy
 {
-    class IFloppyEmulator: public IEmulatable, public IOutputDevice, public IResetable {
+    class IFloppyEmulator: public Common::IEmulatable, public Common::IOutputDevice, public Common::IResetable {
         public:
             virtual ~IFloppyEmulator() {}
 

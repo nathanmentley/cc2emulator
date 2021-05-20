@@ -5,7 +5,10 @@
 #include <Compucolor/Common/IOutputDevice.h>
 #include <Compucolor/Common/IResetable.h>
 
-class ITms5501Emulator: public IEmulatable, public IInputDevice, public IOutputDevice, public IResetable {
-    public:
-        virtual ~ITms5501Emulator() {}
-};
+namespace Compucolor::Tms5501
+{
+    class ITms5501Emulator: public Common::IEmulatable, public Common::IInputDevice, public Common::IOutputDevice, public Common::IResetable {
+        public:
+            virtual ~ITms5501Emulator() {}
+    };
+}

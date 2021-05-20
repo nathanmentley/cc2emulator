@@ -8,7 +8,7 @@
 
 namespace Compucolor::Intel8080
 {
-    class IIntel8080Bus: public IInputDevice, public IOutputDevice
+    class IIntel8080Bus: public Common::IInputDevice, public Common::IOutputDevice
     {
     };
 }

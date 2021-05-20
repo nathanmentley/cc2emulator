@@ -4,7 +4,7 @@
 
 #include <Compucolor/Memory/IMemory.h>
 
-class MockMemory: public IMemory
+class MockMemory: public Compucolor::Memory::IMemory
 {
     public:
         MOCK_METHOD(uint8_t, GetByte, (uint16_t), (override));

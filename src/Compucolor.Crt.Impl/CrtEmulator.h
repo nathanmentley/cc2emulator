@@ -105,8 +105,8 @@ namespace Compucolor::Crt::Impl
              * @retval None
              */
             void DrawGlyph(
-                Color foreground,
-                Color background,
+                Compucolor::Common::Color foreground,
+                Compucolor::Common::Color background,
                 uint8_t glyphData,
                 bool blink,
                 int x,
@@ -135,7 +135,7 @@ namespace Compucolor::Crt::Impl
              * @param  data: 
              * @retval 
              */
-            static Color GetForegroundColor(uint8_t data);
+            static Compucolor::Common::Color GetForegroundColor(uint8_t data);
 
             /**
              * @brief  
@@ -143,7 +143,7 @@ namespace Compucolor::Crt::Impl
              * @param  data: 
              * @retval 
              */
-            static Color GetBackgroundColor(uint8_t data);
+            static Compucolor::Common::Color GetBackgroundColor(uint8_t data);
 
             /**
              * @brief  
@@ -151,6 +151,6 @@ namespace Compucolor::Crt::Impl
              * @param  data: 
              * @retval 
              */
-            static Color GetColor(uint8_t data);
+            static Compucolor::Common::Color GetColor(uint8_t data);
     };
 }

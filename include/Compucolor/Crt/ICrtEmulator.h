@@ -5,10 +5,10 @@
 
 namespace Compucolor::Crt
 {
-    class ICrtEmulator: public IEmulatable {
+    class ICrtEmulator: public Common::IEmulatable {
         public:
             virtual ~ICrtEmulator() {}
 
-            virtual void SetDisplay(IDisplay* display) = 0;
+            virtual void SetDisplay(Common::IDisplay* display) = 0;
     };
 }

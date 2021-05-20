@@ -26,17 +26,17 @@ namespace Compucolor::Compucolor::Impl
             CompucolorEmulator(
                 std::shared_ptr<Crt::ICrtEmulator> crt,
                 std::shared_ptr<Intel8080::IIntel8080Emulator> intel8080,
-                std::shared_ptr<IKeyboardEmulator> keyboard,
-                std::shared_ptr<IMemory> memory,
-                std::shared_ptr<IScheduler> scheduler,
-                std::shared_ptr<ISmc5027Emulator> smc5027,
-                std::shared_ptr<ITms5501Emulator> tms5501
+                std::shared_ptr<Keyboard::IKeyboardEmulator> keyboard,
+                std::shared_ptr<Memory::IMemory> memory,
+                std::shared_ptr<Scheduler::IScheduler> scheduler,
+                std::shared_ptr<Smc5027::ISmc5027Emulator> smc5027,
+                std::shared_ptr<Tms5501::ITms5501Emulator> tms5501
             );
 
             virtual void Start() override;
             virtual void Stop() override;
 
-            virtual void SetDisplay(IDisplay* display) override;
+            virtual void SetDisplay(Common::IDisplay* display) override;
 
             virtual void OnKeyUp(CompucolorIIKey key) override;
 
@@ -45,11 +45,11 @@ namespace Compucolor::Compucolor::Impl
         private:
             std::shared_ptr<Crt::ICrtEmulator> _crt;
             std::shared_ptr<Intel8080::IIntel8080Emulator> _intel8080;
-            std::shared_ptr<IKeyboardEmulator> _keyboard;
-            std::shared_ptr<IMemory> _memory;
-            std::shared_ptr<IScheduler> _scheduler;
-            std::shared_ptr<ISmc5027Emulator> _smc5027;
-            std::shared_ptr<ITms5501Emulator> _tms5501;
+            std::shared_ptr<Keyboard::IKeyboardEmulator> _keyboard;
+            std::shared_ptr<Memory::IMemory> _memory;
+            std::shared_ptr<Scheduler::IScheduler> _scheduler;
+            std::shared_ptr<Smc5027::ISmc5027Emulator> _smc5027;
+            std::shared_ptr<Tms5501::ITms5501Emulator> _tms5501;
 
             std::optional<std::thread> _loop;
     };

@@ -1,8 +1,11 @@
 #pragma once
 
-class IResetable {
-    public:
-        virtual ~IResetable() {}
-
-        virtual void Reset() = 0;
-};
+namespace Compucolor::Common
+{
+    class IResetable {
+        public:
+            virtual ~IResetable() {}
+    
+            virtual void Reset() = 0;
+    };
+}

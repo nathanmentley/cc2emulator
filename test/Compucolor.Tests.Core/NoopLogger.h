@@ -2,9 +2,9 @@
 
 #include <Compucolor/Logger/ILogger.h>
 
-class NoopLogger: public ILogger
+class NoopLogger: public Compucolor::Logger::ILogger
 {
-    virtual void Log(LogLevel level, std::string message, ...) override {};
+    virtual void Log(Compucolor::Logger::LogLevel level, std::string message, ...) override {};
 
     virtual void LogTrace(std::string message, ...) override {};
     virtual void LogDebug(std::string message, ...) override {};

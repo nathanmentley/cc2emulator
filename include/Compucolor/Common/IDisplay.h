@@ -2,10 +2,13 @@
 
 #include "Color.h"
 
-class IDisplay {
-    public:
-        virtual void DrawPixel(Color color, int x, int y) = 0;
-        virtual void Repaint() = 0;
+namespace Compucolor::Common
+{
+    class IDisplay {
+        public:
+            virtual void DrawPixel(Compucolor::Common::Color color, int x, int y) = 0;
+            virtual void Repaint() = 0;
 
-        virtual ~IDisplay() {}
-};
+            virtual ~IDisplay() {}
+    };
+}

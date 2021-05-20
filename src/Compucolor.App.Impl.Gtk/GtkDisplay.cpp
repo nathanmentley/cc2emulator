@@ -54,7 +54,7 @@ GtkDisplay::GtkDisplay():
     _emulator->Start();
 }
 
-void GtkDisplay::DrawPixel(Color color, int x, int y)
+void GtkDisplay::DrawPixel(Compucolor::Common::Color color, int x, int y)
 {
     std::unique_ptr<GdkPixbuf, GObjectDeleter> pixel =
         std::unique_ptr<GdkPixbuf, GObjectDeleter>(
@@ -86,18 +86,18 @@ void GtkDisplay::Repaint()
     gtk_image_set_from_pixbuf(_image.get(), pxbscaled.get());
 }
 
-uint32_t GtkDisplay::GetColor(Color color)
+uint32_t GtkDisplay::GetColor(Compucolor::Common::Color color)
 {
     switch (color)
     {
-        case Color::Black:      return 0x000000FF;
-        case Color::Red:        return 0xFF0000FF;
-        case Color::Green:      return 0x00FF00FF;
-        case Color::Yellow:     return 0xFFFF00FF;
-        case Color::Blue:       return 0x0000FFFF;
-        case Color::Purple:     return 0xFF00FFFF;
-        case Color::Teal:       return 0x00FFFFFF;
-        case Color::White:      return 0xFFFFFFFF;
+        case Compucolor::Common::Color::Black:      return 0x000000FF;
+        case Compucolor::Common::Color::Red:        return 0xFF0000FF;
+        case Compucolor::Common::Color::Green:      return 0x00FF00FF;
+        case Compucolor::Common::Color::Yellow:     return 0xFFFF00FF;
+        case Compucolor::Common::Color::Blue:       return 0x0000FFFF;
+        case Compucolor::Common::Color::Purple:     return 0xFF00FFFF;
+        case Compucolor::Common::Color::Teal:       return 0x00FFFFFF;
+        case Compucolor::Common::Color::White:      return 0xFFFFFFFF;
         default:                return 0x000000FF;
     }
 }

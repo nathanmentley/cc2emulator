@@ -99,8 +99,8 @@ void Compucolor::Crt::Impl::CrtEmulator::DrawCursor()
         if (x <= CrtEmulator::Columns && y <= CrtEmulator::Rows)
         {
             DrawGlyph( //TODO: Setup cursor glyph.
-                Color::White,
-                Color::White,
+                Compucolor::Common::Color::White,
+                Compucolor::Common::Color::White,
                 0x20,
                 false,
                 x,
@@ -119,7 +119,7 @@ void Compucolor::Crt::Impl::CrtEmulator::DrawCursor()
     }
 }
 
-void Compucolor::Crt::Impl::CrtEmulator::DrawGlyph(Color foreground, Color background, uint8_t glyphData, bool blink, int x, int y)
+void Compucolor::Crt::Impl::CrtEmulator::DrawGlyph(Compucolor::Common::Color foreground, Compucolor::Common::Color background, uint8_t glyphData, bool blink, int x, int y)
 {
     const uint16_t xPos = x * CharacterWidth;
     const uint16_t yPos = y * CharacterHeight;
@@ -140,7 +140,7 @@ void Compucolor::Crt::Impl::CrtEmulator::DrawGlyph(Color foreground, Color backg
 
             _display.value()->DrawPixel(
                 IsBitSet(7 - column, romData) ?
-                    (blink && IsBlinkOn() ? Color::Black: foreground):
+                    (blink && IsBlinkOn() ? Compucolor::Common::Color::Black: foreground):
                     background,
                 targetX,
                 targetY

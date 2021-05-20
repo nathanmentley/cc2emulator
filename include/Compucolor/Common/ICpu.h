@@ -1,6 +1,9 @@
 #pragma once
 
-class ICpu {
-    public:
-        virtual ~ICpu() {}
-};
+namespace Compucolor::Common
+{
+    class ICpu {
+        public:
+            virtual ~ICpu() {}
+    };
+}

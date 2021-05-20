@@ -4,7 +4,7 @@
 
 #include <Compucolor/Smc5027/ISmc5027Emulator.h>
 
-class MockSmc5027Emulator: public ISmc5027Emulator
+class MockSmc5027Emulator: public Compucolor::Smc5027::ISmc5027Emulator
 {
     public:
         MOCK_METHOD(void, Start, (), (override));
