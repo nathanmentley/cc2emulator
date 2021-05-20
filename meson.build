@@ -254,6 +254,22 @@ executable(
     install: true
 )
 
+executable(
+    'Compucolor.App.Impl.Sfml',
+    [
+        'src/Compucolor.App.Impl.Sfml/main.cpp'
+    ],
+    dependencies: [
+        dependency('sfml-graphics'),
+        dependency('threads'),
+
+        publicHeaderLib,
+        internalHeaderLib,
+        appLib
+    ],
+    install: true
+)
+
 configure_file(
     input : 'data/app.config',
     output : 'app.config',
