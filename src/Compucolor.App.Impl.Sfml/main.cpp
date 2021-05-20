@@ -1,47 +1,65 @@
 #include <memory>
 
-#include <stdio.h>
-#include <execinfo.h>
-#include <signal.h>
-#include <stdlib.h>
-#include <unistd.h>
-
 #include <SFML/Graphics.hpp>
 
-void handler(int sig) {
-    void *array[10];
-    size_t size;
-
-    // get void*'s for all entries on the stack
-    size = backtrace(array, 10);
-
-    // print out all the frames to stderr
-    fprintf(stderr, "Error: signal %d:\n", sig);
-    backtrace_symbols_fd(array, size, STDERR_FILENO);
-    exit(1);
-}
+#include "Display.h"
+#include "Emulator.h"
+#include "ErrorHandler.h"
+#include "KeyboardTranslator.h"
 
 int main(int argc, char** argv) {
-    signal(SIGSEGV, handler);   // install our handler
+    signal(SIGSEGV, Compucolor::App::Impl::Smfl::ErrorHandler);   // install our handler
 
     // Create the main window
-    sf::RenderWindow window(sf::VideoMode(800, 600), "SFML window");
+    std::shared_ptr<sf::RenderWindow> window =
+        std::shared_ptr<sf::RenderWindow>(
+            new sf::RenderWindow(sf::VideoMode(384, 256), "Compucolor II Emulator")
+        );
 
-    while (window.isOpen())
-    {
+    std::unique_ptr<Compucolor::App::Impl::Smfl::Display> display = 
+        std::unique_ptr<Compucolor::App::Impl::Smfl::Display>(
+            new Compucolor::App::Impl::Smfl::Display(window)
+        );
+
+    std::unique_ptr<Compucolor::App::Impl::Smfl::KeyboardTranslator> keyboardTranslator = 
+        std::unique_ptr<Compucolor::App::Impl::Smfl::KeyboardTranslator>(
+            new Compucolor::App::Impl::Smfl::KeyboardTranslator()
+        );
+
+    std::unique_ptr<Compucolor::App::Impl::Smfl::Emulator> emulator = 
+        std::unique_ptr<Compucolor::App::Impl::Smfl::Emulator>(
+            new Compucolor::App::Impl::Smfl::Emulator()
+        );
+    
+
+    emulator->SetDisplay(display.get());
+
+    emulator->Start();
+
+    while (window->isOpen())
+    {  
         // Process events
         sf::Event event;
-        while (window.pollEvent(event))
+        while (window->pollEvent(event))
         {
             // Close window: exit
             if (event.type == sf::Event::Closed)
-                window.close();
-        }
-        // Clear screen
-        window.clear();
+            {
+                emulator->Stop();
 
-        // Update the window
-        window.display();
+                window->close();
+            }
+
+            if (event.type == sf::Event::KeyPressed)
+            {
+                emulator->OnKeyDown(keyboardTranslator->ConvertKey(event.key.code));
+            }
+
+            if (event.type == sf::Event::KeyReleased)
+            {
+                emulator->OnKeyUp(keyboardTranslator->ConvertKey(event.key.code));
+            }
+        }
     }
 
     return EXIT_SUCCESS;

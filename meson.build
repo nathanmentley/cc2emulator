@@ -257,6 +257,11 @@ executable(
 executable(
     'Compucolor.App.Impl.Sfml',
     [
+        'src/Compucolor.App.Impl.Sfml/Display.cpp',
+        'src/Compucolor.App.Impl.Sfml/Emulator.cpp',
+        'src/Compucolor.App.Impl.Sfml/ErrorHandler.cpp',
+        'src/Compucolor.App.Impl.Sfml/KeyboardTranslator.cpp',
+        'src/Compucolor.App.Impl.Sfml/LoggerProvider.cpp',
         'src/Compucolor.App.Impl.Sfml/main.cpp'
     ],
     dependencies: [
