@@ -35,6 +35,7 @@ namespace Compucolor::Crt::Impl
              */
             CrtEmulator(
                 std::shared_ptr<Logger::ILogger> logger,
+                std::shared_ptr<Common::IDisplay> display,
                 std::shared_ptr<Scheduler::IScheduler> scheduler,
                 std::shared_ptr<Memory::IMemory> memory,
                 std::shared_ptr<Smc5027::ISmc5027Emulator> smc5027emulator
@@ -54,14 +55,6 @@ namespace Compucolor::Crt::Impl
              */
             virtual void Stop() override;
 
-            /**
-             * @brief  
-             * @note   
-             * @param  display: 
-             * @retval None
-             */
-            virtual void SetDisplay(Common::IDisplay* display) override;
-
         private:
             static int const Columns = 64;
             static int const Rows = 32;
@@ -70,8 +63,8 @@ namespace Compucolor::Crt::Impl
             static int const Width = Columns * CharacterWidth;
             static int const Height = Rows * CharacterHeight;
 
-            std::optional<Common::IDisplay*> _display;
             std::shared_ptr<Logger::ILogger> _logger;
+            std::shared_ptr<Common::IDisplay> _display;
             std::shared_ptr<Scheduler::IScheduler> _scheduler;
             std::shared_ptr<Memory::IMemory> _memory;
             std::shared_ptr<Smc5027::ISmc5027Emulator> _smc5027emulator;

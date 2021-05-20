@@ -36,8 +36,6 @@ namespace Compucolor::Compucolor::Impl
             virtual void Start() override;
             virtual void Stop() override;
 
-            virtual void SetDisplay(Common::IDisplay* display) override;
-
             virtual void OnKeyUp(Keyboard::CompucolorIIKey key) override;
 
             virtual void OnKeyDown(Keyboard::CompucolorIIKey key) override;

@@ -16,6 +16,11 @@ void Compucolor::Floppy::Impl::FloppyEmulator::Reset()
 {
 }
 
+uint8_t Compucolor::Floppy::Impl::FloppyEmulator::Read(uint8_t port)
+{
+    return 0;
+}
+
 void Compucolor::Floppy::Impl::FloppyEmulator::Write(uint8_t port, uint8_t data)
 {
 }

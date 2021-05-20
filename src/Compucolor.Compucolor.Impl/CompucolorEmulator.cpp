@@ -65,11 +65,6 @@ void Compucolor::Compucolor::Impl::CompucolorEmulator::Stop()
     _intel8080->Stop();
 }
 
-void Compucolor::Compucolor::Impl::CompucolorEmulator::SetDisplay(Common::IDisplay* display)
-{
-    _crt->SetDisplay(display);
-}
-
 void Compucolor::Compucolor::Impl::CompucolorEmulator::OnKeyUp(Keyboard::CompucolorIIKey key)
 {
     _keyboard->OnKeyUp(key);

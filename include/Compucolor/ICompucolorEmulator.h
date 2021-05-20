@@ -1,6 +1,5 @@
 #pragma once
 
-#include <Compucolor/Common/IDisplay.h>
 #include <Compucolor/Common/ISystem.h>
 
 #include <Compucolor/Keyboard/CompucolorIIKey.h>
@@ -12,8 +11,6 @@ namespace Compucolor
             ICompucolorEmulator() {}
 
             virtual ~ICompucolorEmulator() {}
-
-            virtual void SetDisplay(Common::IDisplay* display) = 0;
 
             virtual void OnKeyUp(Keyboard::CompucolorIIKey key) = 0;
 

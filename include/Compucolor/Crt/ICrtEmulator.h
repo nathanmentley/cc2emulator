@@ -8,7 +8,5 @@ namespace Compucolor::Crt
     class ICrtEmulator: public Common::IEmulatable {
         public:
             virtual ~ICrtEmulator() {}
-
-            virtual void SetDisplay(Common::IDisplay* display) = 0;
     };
 }

@@ -2,12 +2,13 @@
 
 Compucolor::Crt::Impl::CrtEmulator::CrtEmulator(
     std::shared_ptr<Logger::ILogger> logger,
+    std::shared_ptr<Common::IDisplay> display,
     std::shared_ptr<Scheduler::IScheduler> scheduler,
     std::shared_ptr<Memory::IMemory> memory,
     std::shared_ptr<Smc5027::ISmc5027Emulator> smc5027emulator
 ):
-    _display({}),
     _logger(logger),
+    _display(display),
     _scheduler(scheduler),
     _memory(memory),
     _smc5027emulator(smc5027emulator),
@@ -22,10 +23,7 @@ void Compucolor::Crt::Impl::CrtEmulator::Start()
     _loop = _scheduler->SetupReoccuringTask(
         10000000,
         [=, this] {
-            if(_display.has_value())
-            {
-                RefreshDisplay();
-            }
+            RefreshDisplay();
 
             _phase++;
 
@@ -45,48 +43,38 @@ void Compucolor::Crt::Impl::CrtEmulator::Stop()
 
 void Compucolor::Crt::Impl::CrtEmulator::RefreshDisplay()
 {
-    if (_display.has_value())
+    _logger->LogTrace(
+        "Refereshing Display in CrtEmulator"
+    );
+
+    for (uint16_t i = 0x7000; i < 0x8000; i += 2)
     {
-        _logger->LogTrace(
-            "Refereshing Display in CrtEmulator"
+        // Update video memory
+        uint16_t baseAddress = i - 0x7000;   // 0x6... range to avoid wait for hblank
+        // two bytes per char, 64 char/row
+        uint16_t x = (baseAddress >> 1) & 0x3F;
+        // 128 bytes per row, 32 rows
+        uint16_t y = (baseAddress >> 7) & 0x1F;
+
+        uint16_t pair = (i & 0xFFFE);
+        uint8_t ch = _memory->GetByte(pair);
+        uint8_t attrib = _memory->GetByte((pair + 1));  // attribute byte
+
+        bool blink = IsBitSet(7, attrib);//((attrib & 0x40) != 0);
+
+        DrawGlyph(
+            GetForegroundColor(attrib),
+            GetBackgroundColor(attrib),
+            ch,
+            blink,
+            x,
+            y
         );
-
-        for (uint16_t i = 0x7000; i < 0x8000; i += 2)
-        {
-            // Update video memory
-            uint16_t baseAddress = i - 0x7000;   // 0x6... range to avoid wait for hblank
-            // two bytes per char, 64 char/row
-            uint16_t x = (baseAddress >> 1) & 0x3F;
-            // 128 bytes per row, 32 rows
-            uint16_t y = (baseAddress >> 7) & 0x1F;
-
-            uint16_t pair = (i & 0xFFFE);
-            uint8_t ch = _memory->GetByte(pair);
-            uint8_t attrib = _memory->GetByte((pair + 1));  // attribute byte
-
-            bool blink = IsBitSet(7, attrib);//((attrib & 0x40) != 0);
-
-            DrawGlyph(
-                GetForegroundColor(attrib),
-                GetBackgroundColor(attrib),
-                ch,
-                blink,
-                x,
-                y
-            );
-        }
-
-        DrawCursor();
-
-        _display.value()->Repaint();
     }
-}
 
-void Compucolor::Crt::Impl::CrtEmulator::SetDisplay(Common::IDisplay* display)
-{
-    _logger->LogTrace("Setting up a new display for CrtEmulator");
+    DrawCursor();
 
-    _display = display;
+    _display->Repaint();
 }
 
 void Compucolor::Crt::Impl::CrtEmulator::DrawCursor()
@@ -138,7 +126,7 @@ void Compucolor::Crt::Impl::CrtEmulator::DrawGlyph(Compucolor::Common::Color for
             const uint16_t targetX = column + xPos;
             const uint16_t targetY = row + yPos;
 
-            _display.value()->DrawPixel(
+            _display->DrawPixel(
                 IsBitSet(7 - column, romData) ?
                     (blink && IsBlinkOn() ? Compucolor::Common::Color::Black: foreground):
                     background,

@@ -212,9 +212,7 @@ appLib = declare_dependency(
     link_with: static_library(
         'Compucolor.App',
         [
-            'src/Compucolor.App/get_emulator.cpp',
-            'src/Compucolor.App/ConsoleLoggerProvider.cpp',
-            'src/Compucolor.App/Emulator.cpp',
+            'src/Compucolor.App/get_emulator.cpp'
         ],
         dependencies: [
             publicHeaderLib,
@@ -236,25 +234,25 @@ appLib = declare_dependency(
     )
 )
 
-executable(
-    'Compucolor.App.Impl.Gtk',
-    [
-        'src/Compucolor.App.Impl.Gtk/GtkDisplay.cpp',
-        'src/Compucolor.App.Impl.Gtk/GtkKeyboard.cpp',
-        'src/Compucolor.App.Impl.Gtk/GtkLoggerProvider.cpp',
-        'src/Compucolor.App.Impl.Gtk/main.cpp'
-    ],
-    dependencies: [
-        dependency('gtk+-3.0'),
-        dependency('gdk-pixbuf-2.0'),
-        dependency('threads'),
-
-        publicHeaderLib,
-        internalHeaderLib,
-        appLib
-    ],
-    install: true
-)
+# executable(
+#     'Compucolor.App.Impl.Gtk',
+#     [
+#         'src/Compucolor.App.Impl.Gtk/GtkDisplay.cpp',
+#         'src/Compucolor.App.Impl.Gtk/GtkKeyboard.cpp',
+#         'src/Compucolor.App.Impl.Gtk/GtkLoggerProvider.cpp',
+#         'src/Compucolor.App.Impl.Gtk/main.cpp'
+#     ],
+#     dependencies: [
+#         dependency('gtk+-3.0'),
+#         dependency('gdk-pixbuf-2.0'),
+#         dependency('threads'),
+# 
+#         publicHeaderLib,
+#         internalHeaderLib,
+#         appLib
+#     ],
+#     install: true
+# )
 
 executable(
     'Compucolor.App.Impl.Sfml',
@@ -262,7 +260,8 @@ executable(
         'src/Compucolor.App.Impl.Sfml/Display.cpp',
         'src/Compucolor.App.Impl.Sfml/ErrorHandler.cpp',
         'src/Compucolor.App.Impl.Sfml/KeyboardTranslator.cpp',
-        'src/Compucolor.App.Impl.Sfml/main.cpp'
+        'src/Compucolor.App.Impl.Sfml/main.cpp',
+        'src/Compucolor.App.Impl.Sfml/Program.cpp'
     ],
     dependencies: [
         dependency('sfml-graphics'),

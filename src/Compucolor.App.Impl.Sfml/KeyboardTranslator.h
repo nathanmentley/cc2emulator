@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include <SFML/Graphics.hpp>
 
 #include <Compucolor/Keyboard/CompucolorIIKey.h>
@@ -10,6 +12,6 @@ namespace Compucolor::App::Impl::Sfml
         public:
             KeyboardTranslator();
 
-            Keyboard::CompucolorIIKey ConvertKey(sf::Keyboard::Key key);
+            std::optional<Keyboard::CompucolorIIKey> ConvertKey(sf::Keyboard::Key key);
     };
 }

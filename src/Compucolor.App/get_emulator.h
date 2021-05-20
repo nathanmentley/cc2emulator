@@ -37,9 +37,12 @@
 #include <Compucolor/ICompucolorEmulator.h>
 #include <Compucolor.Compucolor.Impl/CompucolorEmulator.h>
 
+#include <Compucolor/EmulatorBackgroundTask.h>
+
 namespace Compucolor::App
 {
-    std::unique_ptr<ICompucolorEmulator> get_emulator(
-        std::shared_ptr<Logger::ILoggerProvider> loggerProvider
+    std::unique_ptr<EmulatorBackgroundTask> get_emulator(
+        std::shared_ptr<Logger::ILoggerProvider> loggerProvider,
+        std::shared_ptr<Common::IDisplay> display
     );
 }

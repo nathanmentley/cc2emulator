@@ -45,6 +45,14 @@ namespace Compucolor::Floppy::Impl
              * @brief  
              * @note   
              * @param  port: 
+             * @retval None
+             */
+            virtual uint8_t Read(uint8_t port) override;
+
+            /**
+             * @brief  
+             * @note   
+             * @param  port: 
              * @param  data: 
              * @retval None
              */
