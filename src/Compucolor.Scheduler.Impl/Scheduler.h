@@ -9,7 +9,7 @@ namespace Compucolor::Scheduler::Impl
     class Scheduler: public IScheduler {
         public:
             Scheduler(
-                std::shared_ptr<ILogger> logger
+                std::shared_ptr<Logger::ILogger> logger
             );
 
             virtual std::future<int> RunOnce(uint64_t afterNanoseconds, std::function<int()> logic) override;
@@ -17,6 +17,6 @@ namespace Compucolor::Scheduler::Impl
             virtual std::thread SetupReoccuringTask(uint64_t everyNanoseconds, std::function<int()> logic) override;
 
         private:
-            std::shared_ptr<ILogger> _logger;
+            std::shared_ptr<Logger::ILogger> _logger;
     };
 }

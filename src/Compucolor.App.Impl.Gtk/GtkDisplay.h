@@ -28,8 +28,8 @@ class GtkDisplay: public Compucolor::Common::IDisplay {
         static int const Width = Columns * CharacterWidth;
         static int const Height = Rows * CharacterHeight;
 
-        std::shared_ptr<ILoggerProvider> _loggerProvider;
-        std::shared_ptr<ICompucolorEmulator> _emulator;
+        std::shared_ptr<Compucolor::Logger::ILoggerProvider> _loggerProvider;
+        std::shared_ptr<Compucolor::ICompucolorEmulator> _emulator;
         std::unique_ptr<GtkWindow, GWidgetDeleter> _window;
         std::unique_ptr<GtkImage, GWidgetDeleter> _image;
         std::unique_ptr<GdkPixbuf, GObjectDeleter> _buffer;
@@ -37,7 +37,7 @@ class GtkDisplay: public Compucolor::Common::IDisplay {
 
         static uint32_t GetColor(Compucolor::Common::Color color);
 
-        static void QuitApp(ICompucolorEmulator* emulator);
+        static void QuitApp(Compucolor::ICompucolorEmulator* emulator);
         static void OnKeyUp(GtkWidget* widget, GdkEventKey* event, GtkKeyboard* keyboard);
         static void OnKeyDown(GtkWidget* widget, GdkEventKey* event, GtkKeyboard* keyboard);
 };

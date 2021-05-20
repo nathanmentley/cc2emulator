@@ -19,7 +19,7 @@
 
 namespace Compucolor::Compucolor::Impl
 {
-    void LoadRom(IMemory* memory, uint8_t* rom, uint16_t startPosition, uint16_t length);
+    void LoadRom(Memory::IMemory* memory, uint8_t* rom, uint16_t startPosition, uint16_t length);
 
     class CompucolorEmulator: public ICompucolorEmulator {
         public:
@@ -38,9 +38,9 @@ namespace Compucolor::Compucolor::Impl
 
             virtual void SetDisplay(Common::IDisplay* display) override;
 
-            virtual void OnKeyUp(CompucolorIIKey key) override;
+            virtual void OnKeyUp(Keyboard::CompucolorIIKey key) override;
 
-            virtual void OnKeyDown(CompucolorIIKey key) override;
+            virtual void OnKeyDown(Keyboard::CompucolorIIKey key) override;
 
         private:
             std::shared_ptr<Crt::ICrtEmulator> _crt;

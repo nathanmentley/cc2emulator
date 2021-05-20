@@ -1,7 +1,7 @@
 #include "Intel8080Emulator.h"
 
 Compucolor::Intel8080::Impl::Intel8080Emulator::Intel8080Emulator(
-    std::shared_ptr<IMemory> memory
+    std::shared_ptr<Memory::IMemory> memory
 ):
     _context(
         std::unique_ptr<Compucolor::Intel8080::Impl::Intel8080EmulatorContext>(
@@ -62,7 +62,7 @@ void Compucolor::Intel8080::Impl::Intel8080Emulator::RegisterInterrupt(uint8_t o
 
 uint8_t Compucolor::Intel8080::Impl::Intel8080Emulator::ReadByte(void* userdata, uint16_t addr)
 {
-    std::optional<std::shared_ptr<IMemory>> memory =
+    std::optional<std::shared_ptr<Compucolor::Memory::IMemory>> memory =
         ((Compucolor::Intel8080::Impl::Intel8080EmulatorContext*)userdata)->GetMemory();
 
     if (memory.has_value())
@@ -75,7 +75,7 @@ uint8_t Compucolor::Intel8080::Impl::Intel8080Emulator::ReadByte(void* userdata,
 
 void Compucolor::Intel8080::Impl::Intel8080Emulator::WriteByte(void* userdata, uint16_t addr, uint8_t data)
 {
-    std::optional<std::shared_ptr<IMemory>> memory =
+    std::optional<std::shared_ptr<Compucolor::Memory::IMemory>> memory =
         ((Compucolor::Intel8080::Impl::Intel8080EmulatorContext*)userdata)->GetMemory();
 
     if (memory.has_value())

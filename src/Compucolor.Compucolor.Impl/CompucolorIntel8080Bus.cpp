@@ -1,8 +1,8 @@
 #include "CompucolorIntel8080Bus.h"
 
 Compucolor::Compucolor::Impl::CompucolorIntel8080Bus::CompucolorIntel8080Bus(
-    std::shared_ptr<ISmc5027Emulator> smc5027,
-    std::shared_ptr<ITms5501Emulator> tms5501
+    std::shared_ptr<Smc5027::ISmc5027Emulator> smc5027,
+    std::shared_ptr<Tms5501::ITms5501Emulator> tms5501
 ):
     _smc5027(smc5027),
     _tms5501(tms5501)

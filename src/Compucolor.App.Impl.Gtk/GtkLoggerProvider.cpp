@@ -1,13 +1,14 @@
 #include <Compucolor.App.Impl.Gtk/GtkLoggerProvider.h>
 
-GtkLoggerProvider::GtkLoggerProvider(LogLevel logLevel):
+GtkLoggerProvider::GtkLoggerProvider(Compucolor::Logger::LogLevel logLevel):
     _logLevel(logLevel)
 {
 }
 
-void GtkLoggerProvider::Write(LogLevel logLevel, std::string message, va_list args)
+void GtkLoggerProvider::Write(Compucolor::Logger::LogLevel logLevel, std::string message, va_list args)
 {
-    LogLevel currentLevel = _logLevel.value_or(LogLevel::Error);
+    Compucolor::Logger::LogLevel currentLevel = _logLevel
+        .value_or(Compucolor::Logger::LogLevel::Error);
 
     if (logLevel < currentLevel)
     {
@@ -33,29 +34,29 @@ void GtkLoggerProvider::Write(LogLevel logLevel, std::string message, va_list ar
     printf("%s\n", GtkLoggerProvider::Reset.c_str());
 }
 
-void GtkLoggerProvider::SetLogLevel(LogLevel level)
+void GtkLoggerProvider::SetLogLevel(Compucolor::Logger::LogLevel level)
 {
     _logLevel = level;
 }
 
-LogLevel GtkLoggerProvider::GetLogLevel()
+Compucolor::Logger::LogLevel GtkLoggerProvider::GetLogLevel()
 {
-    return _logLevel.value_or(LogLevel::Error);
+    return _logLevel.value_or(Compucolor::Logger::LogLevel::Error);
 }
 
-std::string GtkLoggerProvider::GetLogLevel(LogLevel logLevel)
+std::string GtkLoggerProvider::GetLogLevel(Compucolor::Logger::LogLevel logLevel)
 {
     switch(logLevel)
     {
-        case LogLevel::Trace:
+        case Compucolor::Logger::LogLevel::Trace:
             return GtkLoggerProvider::White + GtkLoggerProvider::LevelTraceName;
-        case LogLevel::Debug:
+        case Compucolor::Logger::LogLevel::Debug:
             return GtkLoggerProvider::Cyan + GtkLoggerProvider::LevelDebugName;
-        case LogLevel::Information:
+        case Compucolor::Logger::LogLevel::Information:
             return GtkLoggerProvider::Magenta + GtkLoggerProvider::LevelInformationName;
-        case LogLevel::Warning:
+        case Compucolor::Logger::LogLevel::Warning:
             return GtkLoggerProvider::Yellow + GtkLoggerProvider::LevelWarningName;
-        case LogLevel::Error:
+        case Compucolor::Logger::LogLevel::Error:
             return GtkLoggerProvider::Red + GtkLoggerProvider::LevelErrorName;
         default:
             return GtkLoggerProvider::Yellow + GtkLoggerProvider::LevelUnknownName;

@@ -1,9 +1,9 @@
 #include "Tms5501Emulator.h"
 
 Compucolor::Tms5501::Impl::Tms5501Emulator::Tms5501Emulator(
-    std::shared_ptr<ILogger> logger,
+    std::shared_ptr<Logger::ILogger> logger,
     std::shared_ptr<Intel8080::IIntel8080Emulator> intel8080,
-    std::shared_ptr<IKeyboardEmulator> keyboard,
+    std::shared_ptr<Keyboard::IKeyboardEmulator> keyboard,
     std::shared_ptr<Floppy::IFloppyEmulator> floppy1,
     std::shared_ptr<Floppy::IFloppyEmulator> floppy2
 ):

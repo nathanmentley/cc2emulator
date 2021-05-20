@@ -1,6 +1,6 @@
 #include "CompucolorEmulator.h"
 
-void Compucolor::Compucolor::Impl::LoadRom(IMemory* memory, uint8_t* rom, uint16_t startPosition, uint16_t length)
+void Compucolor::Compucolor::Impl::LoadRom(Memory::IMemory* memory, uint8_t* rom, uint16_t startPosition, uint16_t length)
 {
     for(uint16_t i = 0; i < length - 1; i++)
     {
@@ -11,11 +11,11 @@ void Compucolor::Compucolor::Impl::LoadRom(IMemory* memory, uint8_t* rom, uint16
 Compucolor::Compucolor::Impl::CompucolorEmulator::CompucolorEmulator(
     std::shared_ptr<Crt::ICrtEmulator> crt,
     std::shared_ptr<Intel8080::IIntel8080Emulator> intel8080,
-    std::shared_ptr<IKeyboardEmulator> keyboard,
-    std::shared_ptr<IMemory> memory,
-    std::shared_ptr<IScheduler> scheduler,
-    std::shared_ptr<ISmc5027Emulator> smc5027,
-    std::shared_ptr<ITms5501Emulator> tms5501
+    std::shared_ptr<Keyboard::IKeyboardEmulator> keyboard,
+    std::shared_ptr<Memory::IMemory> memory,
+    std::shared_ptr<Scheduler::IScheduler> scheduler,
+    std::shared_ptr<Smc5027::ISmc5027Emulator> smc5027,
+    std::shared_ptr<Tms5501::ITms5501Emulator> tms5501
 ):
     _crt(crt),
     _intel8080(intel8080),
@@ -65,17 +65,17 @@ void Compucolor::Compucolor::Impl::CompucolorEmulator::Stop()
     _intel8080->Stop();
 }
 
-void Compucolor::Compucolor::Impl::CompucolorEmulator::SetDisplay(IDisplay* display)
+void Compucolor::Compucolor::Impl::CompucolorEmulator::SetDisplay(Common::IDisplay* display)
 {
     _crt->SetDisplay(display);
 }
 
-void Compucolor::Compucolor::Impl::CompucolorEmulator::OnKeyUp(CompucolorIIKey key)
+void Compucolor::Compucolor::Impl::CompucolorEmulator::OnKeyUp(Keyboard::CompucolorIIKey key)
 {
     _keyboard->OnKeyUp(key);
 }
 
-void Compucolor::Compucolor::Impl::CompucolorEmulator::OnKeyDown(CompucolorIIKey key)
+void Compucolor::Compucolor::Impl::CompucolorEmulator::OnKeyDown(Keyboard::CompucolorIIKey key)
 {
     _keyboard->OnKeyDown(key);
 }

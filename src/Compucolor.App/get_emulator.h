@@ -40,6 +40,6 @@
 namespace Compucolor::App
 {
     std::unique_ptr<ICompucolorEmulator> get_emulator(
-        std::shared_ptr<ILoggerProvider> loggerProvider
+        std::shared_ptr<Logger::ILoggerProvider> loggerProvider
     );
 }

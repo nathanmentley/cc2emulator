@@ -20,7 +20,7 @@ namespace Compucolor::Smc5027::Impl {
              * @retval 
              */
             Smc5027Emulator(
-                std::shared_ptr<ILogger> logger
+                std::shared_ptr<Logger::ILogger> logger
             );
     
             /**
@@ -76,7 +76,7 @@ namespace Compucolor::Smc5027::Impl {
         private:
             static const uint8_t REGISTER_COUNT = 16;
     
-            std::shared_ptr<ILogger> _logger;
+            std::shared_ptr<Logger::ILogger> _logger;
             std::vector<uint8_t> _registers;
     
             /**

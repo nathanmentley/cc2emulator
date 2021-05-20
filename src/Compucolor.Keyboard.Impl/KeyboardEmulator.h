@@ -25,7 +25,7 @@ namespace Compucolor::Keyboard::Impl
              * @retval 
              */
             KeyboardEmulator(
-                std::shared_ptr<ILogger> logger
+                std::shared_ptr<Logger::ILogger> logger
             );
 
             /**
@@ -74,7 +74,7 @@ namespace Compucolor::Keyboard::Impl
             virtual void OnKeyDown(CompucolorIIKey key) override;
 
         private:
-            std::shared_ptr<ILogger> _logger;
+            std::shared_ptr<Logger::ILogger> _logger;
             std::vector<uint8_t> _kbMatrix;
 
             static std::optional<int> GetRow(CompucolorIIKey key);

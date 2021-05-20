@@ -6,7 +6,7 @@ Compucolor::Intel8080::Impl::Intel8080EmulatorContext::Intel8080EmulatorContext(
 {
 }
 
-void Compucolor::Intel8080::Impl::Intel8080EmulatorContext::SetMemory(std::shared_ptr<IMemory> memory)
+void Compucolor::Intel8080::Impl::Intel8080EmulatorContext::SetMemory(std::shared_ptr<Compucolor::Memory::IMemory> memory)
 {
     _memory = memory;
 }
@@ -16,7 +16,7 @@ void Compucolor::Intel8080::Impl::Intel8080EmulatorContext::SetBus(std::shared_p
     _bus = intel8080Bus;
 }
 
-std::optional<std::shared_ptr<IMemory>> Compucolor::Intel8080::Impl::Intel8080EmulatorContext::GetMemory()
+std::optional<std::shared_ptr<Compucolor::Memory::IMemory>> Compucolor::Intel8080::Impl::Intel8080EmulatorContext::GetMemory()
 {
     return _memory;
 }

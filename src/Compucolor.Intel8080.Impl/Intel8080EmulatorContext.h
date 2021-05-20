@@ -12,14 +12,14 @@ namespace Compucolor::Intel8080::Impl
         public:
             Intel8080EmulatorContext();
     
-            void SetMemory(std::shared_ptr<IMemory> memory);
+            void SetMemory(std::shared_ptr<Compucolor::Memory::IMemory> memory);
             void SetBus(std::shared_ptr<IIntel8080Bus> intel8080Bus);
     
-            std::optional<std::shared_ptr<IMemory>> GetMemory();
+            std::optional<std::shared_ptr<Compucolor::Memory::IMemory>> GetMemory();
             std::optional<std::shared_ptr<IIntel8080Bus>> GetBus();
     
         private:
             std::optional<std::shared_ptr<IIntel8080Bus>> _bus;
-            std::optional<std::shared_ptr<IMemory>> _memory;
+            std::optional<std::shared_ptr<Compucolor::Memory::IMemory>> _memory;
     };
 }

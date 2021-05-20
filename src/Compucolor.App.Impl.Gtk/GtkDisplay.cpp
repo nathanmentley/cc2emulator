@@ -2,8 +2,8 @@
 
 GtkDisplay::GtkDisplay():
     _loggerProvider(
-        std::shared_ptr<ILoggerProvider>(
-            new GtkLoggerProvider(LogLevel::Trace)
+        std::shared_ptr<Compucolor::Logger::ILoggerProvider>(
+            new GtkLoggerProvider(Compucolor::Logger::LogLevel::Trace)
         )
     ),
     _emulator(Compucolor::App::get_emulator(_loggerProvider)),
@@ -98,11 +98,11 @@ uint32_t GtkDisplay::GetColor(Compucolor::Common::Color color)
         case Compucolor::Common::Color::Purple:     return 0xFF00FFFF;
         case Compucolor::Common::Color::Teal:       return 0x00FFFFFF;
         case Compucolor::Common::Color::White:      return 0xFFFFFFFF;
-        default:                return 0x000000FF;
+        default:                                    return 0x000000FF;
     }
 }
 
-void GtkDisplay::QuitApp(ICompucolorEmulator* emulator)
+void GtkDisplay::QuitApp(Compucolor::ICompucolorEmulator* emulator)
 {
     emulator->Stop();
 }

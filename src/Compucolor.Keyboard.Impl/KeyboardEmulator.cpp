@@ -1,7 +1,7 @@
 #include "KeyboardEmulator.h"
 
 Compucolor::Keyboard::Impl::KeyboardEmulator::KeyboardEmulator(
-    std::shared_ptr<ILogger> logger
+    std::shared_ptr<Logger::ILogger> logger
 ):
     _logger(logger),
     _kbMatrix(std::vector<uint8_t>(17))

@@ -10,14 +10,14 @@
 class GtkKeyboard {
     public:
         GtkKeyboard(
-            std::shared_ptr<ICompucolorEmulator> emulator
+            std::shared_ptr<Compucolor::ICompucolorEmulator> emulator
         );
 
         void OnKeyUp(GdkEventKey* event);
         void OnKeyDown(GdkEventKey* event);
 
     private:
-        std::shared_ptr<ICompucolorEmulator> _emulator;
+        std::shared_ptr<Compucolor::ICompucolorEmulator> _emulator;
 
-        std::optional<CompucolorIIKey> ConvertKey(GdkEventKey* event);
+        std::optional<Compucolor::Keyboard::CompucolorIIKey> ConvertKey(GdkEventKey* event);
 };

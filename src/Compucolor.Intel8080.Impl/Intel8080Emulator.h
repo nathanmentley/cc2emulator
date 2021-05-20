@@ -16,7 +16,7 @@ namespace Compucolor::Intel8080::Impl
     class Intel8080Emulator: public IIntel8080Emulator {
         public:
             Intel8080Emulator(
-                std::shared_ptr<IMemory> memory
+                std::shared_ptr<Memory::IMemory> memory
             );
 
             virtual void Start() override;
@@ -34,7 +34,7 @@ namespace Compucolor::Intel8080::Impl
         private:
             std::unique_ptr<Compucolor::Intel8080::Impl::Intel8080EmulatorContext> _context;
             std::unique_ptr<Compucolor::Intel8080::Impl::i8080> _cpu;
-            std::shared_ptr<IMemory> _memory;
+            std::shared_ptr<Memory::IMemory> _memory;
 
             static uint8_t ReadByte(void* userdata, uint16_t addr);
             static void WriteByte(void* userdata, uint16_t addr, uint8_t data);

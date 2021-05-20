@@ -1,7 +1,7 @@
 #include "Scheduler.h"
 
 Compucolor::Scheduler::Impl::Scheduler::Scheduler(
-    std::shared_ptr<ILogger> logger
+    std::shared_ptr<Logger::ILogger> logger
 ):
     _logger(logger) {}
 

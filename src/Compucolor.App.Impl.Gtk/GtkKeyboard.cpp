@@ -1,7 +1,7 @@
 #include <Compucolor.App.Impl.Gtk/GtkKeyboard.h>
 
 GtkKeyboard::GtkKeyboard(
-    std::shared_ptr<ICompucolorEmulator> emulator
+    std::shared_ptr<Compucolor::ICompucolorEmulator> emulator
 ):
     _emulator(emulator)
 {
@@ -9,7 +9,7 @@ GtkKeyboard::GtkKeyboard(
 
 void GtkKeyboard::OnKeyUp(GdkEventKey* event)
 {
-    std::optional<CompucolorIIKey> key = ConvertKey(event);
+    std::optional<Compucolor::Keyboard::CompucolorIIKey> key = ConvertKey(event);
     
     if (key.has_value())
     {
@@ -19,7 +19,7 @@ void GtkKeyboard::OnKeyUp(GdkEventKey* event)
 
 void GtkKeyboard::OnKeyDown(GdkEventKey* event)
 {
-    std::optional<CompucolorIIKey> key = ConvertKey(event);
+    std::optional<Compucolor::Keyboard::CompucolorIIKey> key = ConvertKey(event);
 
     if (key.has_value())
     {
@@ -27,7 +27,7 @@ void GtkKeyboard::OnKeyDown(GdkEventKey* event)
     }
 }
 
-std::optional<CompucolorIIKey> GtkKeyboard::ConvertKey(GdkEventKey* event)
+std::optional<Compucolor::Keyboard::CompucolorIIKey> GtkKeyboard::ConvertKey(GdkEventKey* event)
 {
     switch(event->keyval)
     {
@@ -87,7 +87,7 @@ std::optional<CompucolorIIKey> GtkKeyboard::ConvertKey(GdkEventKey* event)
         case GDK_KEY_Num_Lock: {};
         case GDK_KEY_KP_Space: {};
         case GDK_KEY_KP_Tab: {};
-        case GDK_KEY_KP_Enter: return CompucolorIIKey::Break;
+        case GDK_KEY_KP_Enter: return Compucolor::Keyboard::CompucolorIIKey::Break;
         case GDK_KEY_KP_F1: {};
         case GDK_KEY_KP_F2: {};
         case GDK_KEY_KP_F3: {};
@@ -207,7 +207,7 @@ std::optional<CompucolorIIKey> GtkKeyboard::ConvertKey(GdkEventKey* event)
         case GDK_KEY_ISO_Discontinuous_Underline: {};
         case GDK_KEY_ISO_Emphasize: {};
         case GDK_KEY_ISO_Center_Object: {};
-        case GDK_KEY_ISO_Enter: return CompucolorIIKey::Break;
+        case GDK_KEY_ISO_Enter: return Compucolor::Keyboard::CompucolorIIKey::Break;
         case GDK_KEY_dead_grave: {};
         case GDK_KEY_dead_acute: {};
         case GDK_KEY_dead_circumflex: {};
@@ -327,7 +327,7 @@ std::optional<CompucolorIIKey> GtkKeyboard::ConvertKey(GdkEventKey* event)
         case GDK_KEY_3270_ExSelect: {};
         case GDK_KEY_3270_CursorSelect: {};
         case GDK_KEY_3270_PrintScreen: {};
-        case GDK_KEY_3270_Enter: return CompucolorIIKey::Break;
+        case GDK_KEY_3270_Enter: return Compucolor::Keyboard::CompucolorIIKey::Break;
         case GDK_KEY_space: {};
         case GDK_KEY_exclam: {};
         case GDK_KEY_quotedbl: {};
@@ -344,16 +344,16 @@ std::optional<CompucolorIIKey> GtkKeyboard::ConvertKey(GdkEventKey* event)
         case GDK_KEY_minus: {};
         case GDK_KEY_period: {};
         case GDK_KEY_slash: {};
-        case GDK_KEY_0: return CompucolorIIKey::Zero;
-        case GDK_KEY_1: return CompucolorIIKey::One;
-        case GDK_KEY_2: return CompucolorIIKey::Two;
-        case GDK_KEY_3: return CompucolorIIKey::Three;
-        case GDK_KEY_4: return CompucolorIIKey::Four;
-        case GDK_KEY_5: return CompucolorIIKey::Five;
-        case GDK_KEY_6: return CompucolorIIKey::Six;
-        case GDK_KEY_7: return CompucolorIIKey::Seven;
-        case GDK_KEY_8: return CompucolorIIKey::Eight;
-        case GDK_KEY_9: return CompucolorIIKey::Nine;
+        case GDK_KEY_0: return Compucolor::Keyboard::CompucolorIIKey::Zero;
+        case GDK_KEY_1: return Compucolor::Keyboard::CompucolorIIKey::One;
+        case GDK_KEY_2: return Compucolor::Keyboard::CompucolorIIKey::Two;
+        case GDK_KEY_3: return Compucolor::Keyboard::CompucolorIIKey::Three;
+        case GDK_KEY_4: return Compucolor::Keyboard::CompucolorIIKey::Four;
+        case GDK_KEY_5: return Compucolor::Keyboard::CompucolorIIKey::Five;
+        case GDK_KEY_6: return Compucolor::Keyboard::CompucolorIIKey::Six;
+        case GDK_KEY_7: return Compucolor::Keyboard::CompucolorIIKey::Seven;
+        case GDK_KEY_8: return Compucolor::Keyboard::CompucolorIIKey::Eight;
+        case GDK_KEY_9: return Compucolor::Keyboard::CompucolorIIKey::Nine;
         case GDK_KEY_colon: {};
         case GDK_KEY_semicolon: {};
         case GDK_KEY_less: {};
@@ -361,64 +361,64 @@ std::optional<CompucolorIIKey> GtkKeyboard::ConvertKey(GdkEventKey* event)
         case GDK_KEY_greater: {};
         case GDK_KEY_question: {};
         case GDK_KEY_at: {};
-        case GDK_KEY_A: return CompucolorIIKey::A;
-        case GDK_KEY_B: return CompucolorIIKey::B;
-        case GDK_KEY_C: return CompucolorIIKey::C;
-        case GDK_KEY_D: return CompucolorIIKey::D;
-        case GDK_KEY_E: return CompucolorIIKey::E;
-        case GDK_KEY_F: return CompucolorIIKey::F;
-        case GDK_KEY_G: return CompucolorIIKey::G;
-        case GDK_KEY_H: return CompucolorIIKey::H;
-        case GDK_KEY_I: return CompucolorIIKey::I;
-        case GDK_KEY_J: return CompucolorIIKey::J;
-        case GDK_KEY_K: return CompucolorIIKey::K;
-        case GDK_KEY_L: return CompucolorIIKey::L;
-        case GDK_KEY_M: return CompucolorIIKey::M;
-        case GDK_KEY_N: return CompucolorIIKey::N;
-        case GDK_KEY_O: return CompucolorIIKey::O;
-        case GDK_KEY_P: return CompucolorIIKey::P;
-        case GDK_KEY_Q: return CompucolorIIKey::Q;
-        case GDK_KEY_R: return CompucolorIIKey::R;
-        case GDK_KEY_S: return CompucolorIIKey::S;
-        case GDK_KEY_T: return CompucolorIIKey::T;
-        case GDK_KEY_U: return CompucolorIIKey::U;
-        case GDK_KEY_V: return CompucolorIIKey::V;
-        case GDK_KEY_W: return CompucolorIIKey::W;
-        case GDK_KEY_X: return CompucolorIIKey::X;
-        case GDK_KEY_Y: return CompucolorIIKey::Y;
-        case GDK_KEY_Z: return CompucolorIIKey::Z;
+        case GDK_KEY_A: return Compucolor::Keyboard::CompucolorIIKey::A;
+        case GDK_KEY_B: return Compucolor::Keyboard::CompucolorIIKey::B;
+        case GDK_KEY_C: return Compucolor::Keyboard::CompucolorIIKey::C;
+        case GDK_KEY_D: return Compucolor::Keyboard::CompucolorIIKey::D;
+        case GDK_KEY_E: return Compucolor::Keyboard::CompucolorIIKey::E;
+        case GDK_KEY_F: return Compucolor::Keyboard::CompucolorIIKey::F;
+        case GDK_KEY_G: return Compucolor::Keyboard::CompucolorIIKey::G;
+        case GDK_KEY_H: return Compucolor::Keyboard::CompucolorIIKey::H;
+        case GDK_KEY_I: return Compucolor::Keyboard::CompucolorIIKey::I;
+        case GDK_KEY_J: return Compucolor::Keyboard::CompucolorIIKey::J;
+        case GDK_KEY_K: return Compucolor::Keyboard::CompucolorIIKey::K;
+        case GDK_KEY_L: return Compucolor::Keyboard::CompucolorIIKey::L;
+        case GDK_KEY_M: return Compucolor::Keyboard::CompucolorIIKey::M;
+        case GDK_KEY_N: return Compucolor::Keyboard::CompucolorIIKey::N;
+        case GDK_KEY_O: return Compucolor::Keyboard::CompucolorIIKey::O;
+        case GDK_KEY_P: return Compucolor::Keyboard::CompucolorIIKey::P;
+        case GDK_KEY_Q: return Compucolor::Keyboard::CompucolorIIKey::Q;
+        case GDK_KEY_R: return Compucolor::Keyboard::CompucolorIIKey::R;
+        case GDK_KEY_S: return Compucolor::Keyboard::CompucolorIIKey::S;
+        case GDK_KEY_T: return Compucolor::Keyboard::CompucolorIIKey::T;
+        case GDK_KEY_U: return Compucolor::Keyboard::CompucolorIIKey::U;
+        case GDK_KEY_V: return Compucolor::Keyboard::CompucolorIIKey::V;
+        case GDK_KEY_W: return Compucolor::Keyboard::CompucolorIIKey::W;
+        case GDK_KEY_X: return Compucolor::Keyboard::CompucolorIIKey::X;
+        case GDK_KEY_Y: return Compucolor::Keyboard::CompucolorIIKey::Y;
+        case GDK_KEY_Z: return Compucolor::Keyboard::CompucolorIIKey::Z;
         case GDK_KEY_bracketleft: {};
         case GDK_KEY_backslash: {};
         case GDK_KEY_bracketright: {};
         case GDK_KEY_asciicircum: {};
         case GDK_KEY_underscore: {};
         case GDK_KEY_grave: {};
-        case GDK_KEY_a: return CompucolorIIKey::A;
-        case GDK_KEY_b: return CompucolorIIKey::B;
-        case GDK_KEY_c: return CompucolorIIKey::C;
-        case GDK_KEY_d: return CompucolorIIKey::D;
-        case GDK_KEY_e: return CompucolorIIKey::E;
-        case GDK_KEY_f: return CompucolorIIKey::F;
-        case GDK_KEY_g: return CompucolorIIKey::G;
-        case GDK_KEY_h: return CompucolorIIKey::H;
-        case GDK_KEY_i: return CompucolorIIKey::I;
-        case GDK_KEY_j: return CompucolorIIKey::J;
-        case GDK_KEY_k: return CompucolorIIKey::K;
-        case GDK_KEY_l: return CompucolorIIKey::L;
-        case GDK_KEY_m: return CompucolorIIKey::M;
-        case GDK_KEY_n: return CompucolorIIKey::N;
-        case GDK_KEY_o: return CompucolorIIKey::O;
-        case GDK_KEY_p: return CompucolorIIKey::P;
-        case GDK_KEY_q: return CompucolorIIKey::Q;
-        case GDK_KEY_r: return CompucolorIIKey::R;
-        case GDK_KEY_s: return CompucolorIIKey::S;
-        case GDK_KEY_t: return CompucolorIIKey::T;
-        case GDK_KEY_u: return CompucolorIIKey::U;
-        case GDK_KEY_v: return CompucolorIIKey::V;
-        case GDK_KEY_w: return CompucolorIIKey::W;
-        case GDK_KEY_x: return CompucolorIIKey::X;
-        case GDK_KEY_y: return CompucolorIIKey::Y;
-        case GDK_KEY_z: return CompucolorIIKey::Z;
+        case GDK_KEY_a: return Compucolor::Keyboard::CompucolorIIKey::A;
+        case GDK_KEY_b: return Compucolor::Keyboard::CompucolorIIKey::B;
+        case GDK_KEY_c: return Compucolor::Keyboard::CompucolorIIKey::C;
+        case GDK_KEY_d: return Compucolor::Keyboard::CompucolorIIKey::D;
+        case GDK_KEY_e: return Compucolor::Keyboard::CompucolorIIKey::E;
+        case GDK_KEY_f: return Compucolor::Keyboard::CompucolorIIKey::F;
+        case GDK_KEY_g: return Compucolor::Keyboard::CompucolorIIKey::G;
+        case GDK_KEY_h: return Compucolor::Keyboard::CompucolorIIKey::H;
+        case GDK_KEY_i: return Compucolor::Keyboard::CompucolorIIKey::I;
+        case GDK_KEY_j: return Compucolor::Keyboard::CompucolorIIKey::J;
+        case GDK_KEY_k: return Compucolor::Keyboard::CompucolorIIKey::K;
+        case GDK_KEY_l: return Compucolor::Keyboard::CompucolorIIKey::L;
+        case GDK_KEY_m: return Compucolor::Keyboard::CompucolorIIKey::M;
+        case GDK_KEY_n: return Compucolor::Keyboard::CompucolorIIKey::N;
+        case GDK_KEY_o: return Compucolor::Keyboard::CompucolorIIKey::O;
+        case GDK_KEY_p: return Compucolor::Keyboard::CompucolorIIKey::P;
+        case GDK_KEY_q: return Compucolor::Keyboard::CompucolorIIKey::Q;
+        case GDK_KEY_r: return Compucolor::Keyboard::CompucolorIIKey::R;
+        case GDK_KEY_s: return Compucolor::Keyboard::CompucolorIIKey::S;
+        case GDK_KEY_t: return Compucolor::Keyboard::CompucolorIIKey::T;
+        case GDK_KEY_u: return Compucolor::Keyboard::CompucolorIIKey::U;
+        case GDK_KEY_v: return Compucolor::Keyboard::CompucolorIIKey::V;
+        case GDK_KEY_w: return Compucolor::Keyboard::CompucolorIIKey::W;
+        case GDK_KEY_x: return Compucolor::Keyboard::CompucolorIIKey::X;
+        case GDK_KEY_y: return Compucolor::Keyboard::CompucolorIIKey::Y;
+        case GDK_KEY_z: return Compucolor::Keyboard::CompucolorIIKey::Z;
         case GDK_KEY_braceleft: {};
         case GDK_KEY_bar: {};
         case GDK_KEY_braceright: {};

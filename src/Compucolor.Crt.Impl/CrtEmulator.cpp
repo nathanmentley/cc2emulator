@@ -1,10 +1,10 @@
 #include "CrtEmulator.h"
 
 Compucolor::Crt::Impl::CrtEmulator::CrtEmulator(
-    std::shared_ptr<ILogger> logger,
-    std::shared_ptr<IScheduler> scheduler,
-    std::shared_ptr<IMemory> memory,
-    std::shared_ptr<ISmc5027Emulator> smc5027emulator
+    std::shared_ptr<Logger::ILogger> logger,
+    std::shared_ptr<Scheduler::IScheduler> scheduler,
+    std::shared_ptr<Memory::IMemory> memory,
+    std::shared_ptr<Smc5027::ISmc5027Emulator> smc5027emulator
 ):
     _display({}),
     _logger(logger),
@@ -82,7 +82,7 @@ void Compucolor::Crt::Impl::CrtEmulator::RefreshDisplay()
     }
 }
 
-void Compucolor::Crt::Impl::CrtEmulator::SetDisplay(IDisplay* display)
+void Compucolor::Crt::Impl::CrtEmulator::SetDisplay(Common::IDisplay* display)
 {
     _logger->LogTrace("Setting up a new display for CrtEmulator");
 
@@ -154,19 +154,19 @@ bool Compucolor::Crt::Impl::CrtEmulator::IsBlinkOn()
     return _phase % 2 == 0;
 }
 
-Color Compucolor::Crt::Impl::CrtEmulator::GetForegroundColor(uint8_t data)
+Compucolor::Common::Color Compucolor::Crt::Impl::CrtEmulator::GetForegroundColor(uint8_t data)
 {
     return GetColor(data & 0x7);
 }
 
-Color Compucolor::Crt::Impl::CrtEmulator::GetBackgroundColor(uint8_t data)
+Compucolor::Common::Color Compucolor::Crt::Impl::CrtEmulator::GetBackgroundColor(uint8_t data)
 {
     return GetColor((data >> 3) & 0x7);
 }
 
-Color Compucolor::Crt::Impl::CrtEmulator::GetColor(uint8_t data)
+Compucolor::Common::Color Compucolor::Crt::Impl::CrtEmulator::GetColor(uint8_t data)
 {
-    return (Color)data;
+    return (Compucolor::Common::Color)data;
 }
 
 bool Compucolor::Crt::Impl::CrtEmulator::IsBitSet(int bit, uint8_t data)

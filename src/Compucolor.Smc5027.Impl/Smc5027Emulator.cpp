@@ -1,7 +1,7 @@
 #include "Smc5027Emulator.h"
 
 Compucolor::Smc5027::Impl::Smc5027Emulator::Smc5027Emulator(
-    std::shared_ptr<ILogger> logger
+    std::shared_ptr<Logger::ILogger> logger
 ):
     _logger(logger),
     _registers(std::vector<uint8_t>(Smc5027Emulator::REGISTER_COUNT))

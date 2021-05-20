@@ -5,20 +5,20 @@
 
 #include <Compucolor/Logger/ILoggerProvider.h>
 
-class GtkLoggerProvider: public ILoggerProvider {
+class GtkLoggerProvider: public Compucolor::Logger::ILoggerProvider {
     public:
-        GtkLoggerProvider(LogLevel logLevel);
+        GtkLoggerProvider(Compucolor::Logger::LogLevel logLevel);
 
-        virtual void Write(LogLevel logLevel, std::string message, va_list args) override;
+        virtual void Write(Compucolor::Logger::LogLevel logLevel, std::string message, va_list args) override;
 
-        virtual void SetLogLevel(LogLevel level) override;
+        virtual void SetLogLevel(Compucolor::Logger::LogLevel level) override;
 
-        virtual LogLevel GetLogLevel() override;
+        virtual Compucolor::Logger::LogLevel GetLogLevel() override;
 
     private:
-        std::optional<LogLevel> _logLevel;
+        std::optional<Compucolor::Logger::LogLevel> _logLevel;
 
-        std::string GetLogLevel(LogLevel logLevel);
+        std::string GetLogLevel(Compucolor::Logger::LogLevel logLevel);
 
         inline const static std::string Red = "\x1B[31m";
         inline const static std::string Green = "\x1B[32m";

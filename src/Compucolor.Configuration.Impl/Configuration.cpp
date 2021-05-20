@@ -1,7 +1,7 @@
 #include "Configuration.h"
 
 Compucolor::Configuration::Impl::Configuration::Configuration(
-    std::shared_ptr<ILogger> logger
+    std::shared_ptr<Logger::ILogger> logger
 ):
     _data(std::map<std::string, std::string>()),
     _logger(logger)

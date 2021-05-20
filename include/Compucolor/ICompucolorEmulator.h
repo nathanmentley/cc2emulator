@@ -15,8 +15,8 @@ namespace Compucolor
 
             virtual void SetDisplay(Common::IDisplay* display) = 0;
 
-            virtual void OnKeyUp(CompucolorIIKey key) = 0;
+            virtual void OnKeyUp(Keyboard::CompucolorIIKey key) = 0;
 
-            virtual void OnKeyDown(CompucolorIIKey key) = 0;
+            virtual void OnKeyDown(Keyboard::CompucolorIIKey key) = 0;
     };
 }

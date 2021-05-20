@@ -17,9 +17,9 @@ namespace Compucolor::Tms5501::Impl {
     class Tms5501Emulator: public ITms5501Emulator {
         public:
             Tms5501Emulator(
-                std::shared_ptr<ILogger> logger,
+                std::shared_ptr<Logger::ILogger> logger,
                 std::shared_ptr<Intel8080::IIntel8080Emulator> intel8080,
-                std::shared_ptr<IKeyboardEmulator> keyboard,
+                std::shared_ptr<Keyboard::IKeyboardEmulator> keyboard,
                 std::shared_ptr<Floppy::IFloppyEmulator> floppy1,
                 std::shared_ptr<Floppy::IFloppyEmulator> floppy2
             );
@@ -33,11 +33,11 @@ namespace Compucolor::Tms5501::Impl {
 
             virtual void Reset() override;
         private:
-            std::shared_ptr<ILogger> _logger;
+            std::shared_ptr<Logger::ILogger> _logger;
             std::unique_ptr<Compucolor::Tms5501::Impl::Tms5501EmulatorContext> _context;
             std::shared_ptr<Intel8080::IIntel8080Emulator> _intel8080;
             std::atomic<bool> _isRunning;
-            std::shared_ptr<IKeyboardEmulator> _keyboard;
+            std::shared_ptr<Keyboard::IKeyboardEmulator> _keyboard;
             std::shared_ptr<Floppy::IFloppyEmulator> _floppy1;
             std::shared_ptr<Floppy::IFloppyEmulator> _floppy2;
             uint8_t _outport;
