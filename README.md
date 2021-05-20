@@ -5,13 +5,19 @@ A work in progress compucolor II emulator. Currently compiles and runs on macOS,
 ## Deps
 
 meson
-gtk-3
+
+sfml
+
 gtest
 
 ## building
 
 meson setup build
+
 cd build
+
 meson compile
+
 meson test
-./Compucolor.App.Impl.Gtk
+
+./Compucolor.App.Impl.Sfml
