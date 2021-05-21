@@ -1,17 +1,16 @@
 #include <Compucolor.App.Impl.Sfml/Display.h>
 
-Compucolor::App::Impl::Sfml::Display::Display(
+Compucolor::Impl::App::Sfml::Display::Display(
     std::shared_ptr<sf::RenderWindow> window
 ):
     _window(window)
 {
 }
 
-void Compucolor::App::Impl::Sfml::Display::DrawPixel(Common::Color color, int x, int y)
+void Compucolor::Impl::App::Sfml::Display::DrawPixel(Compucolor::Common::Color color, int x, int y)
 {
     //TODO: Buffer this, and draw the collection of pixels at the end.
     //  That'll be much quicker, and allow for simple retro effects to be added.
-
     sf::RectangleShape rect = sf::RectangleShape({ 1, 1 });
     rect.setPosition({static_cast<float>(x), static_cast<float>(y)});
     rect.setFillColor(sf::Color(GetColor(color)));
@@ -19,13 +18,13 @@ void Compucolor::App::Impl::Sfml::Display::DrawPixel(Common::Color color, int x,
     _window->draw(rect);
 }
 
-void Compucolor::App::Impl::Sfml::Display::Repaint()
+void Compucolor::Impl::App::Sfml::Display::Repaint()
 {
     _window->display();
     _window->clear();
 }
 
-uint32_t Compucolor::App::Impl::Sfml::Display::GetColor(Common::Color color)
+uint32_t Compucolor::Impl::App::Sfml::Display::GetColor(Compucolor::Common::Color color)
 {
     switch (color)
     {

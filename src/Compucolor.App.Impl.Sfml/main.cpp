@@ -2,8 +2,8 @@
 #include "Program.h"
 
 int main(int argc, char** argv) {
-    signal(SIGSEGV, Compucolor::App::Impl::Sfml::ErrorHandler);
+    signal(SIGSEGV, Compucolor::Impl::App::Sfml::ErrorHandler);
 
-    return Compucolor::App::Impl::Sfml::Program()
+    return Compucolor::Impl::App::Sfml::Program()
         .Run();
 }

@@ -18,9 +18,9 @@ testHeaderLib = declare_dependency(
 
 memoryImplLib = declare_dependency(
     link_with: static_library(
-        'Compucolor.Memory.Impl',
+        'Compucolor.Impl.Memory',
         [
-            'src/Compucolor.Memory.Impl/VectorMemory.cpp'
+            'src/Compucolor.Impl.Memory/VectorMemory.cpp'
         ],
         dependencies: [
             publicHeaderLib
@@ -28,10 +28,10 @@ memoryImplLib = declare_dependency(
     )
 )
 memoryImplTests = executable(
-    'Compucolor.Tests.Memory.Impl',
+    'Compucolor.Impl.Tests.Memory',
     [
-        'test/Compucolor.Tests.Memory.Impl/main.cpp',
-        'test/Compucolor.Tests.Memory.Impl/VectoryMemoryTests.cpp',
+        'test/Compucolor.Impl.Tests.Memory/main.cpp',
+        'test/Compucolor.Impl.Tests.Memory/VectoryMemoryTests.cpp',
     ],
     dependencies: [
         dependency('gtest'),
@@ -44,15 +44,15 @@ memoryImplTests = executable(
         memoryImplLib
     ]
 )
-test('Compucolor.Tests.Memory.Impl', memoryImplTests)
+test('Compucolor.Impl.Tests.Memory', memoryImplTests)
 
 intel8080ImplLib = declare_dependency(
     link_with: static_library(
-        'Compucolor.Intel8080.Impl',
+        'Compucolor.Impl.Intel8080',
         [
-            'src/Compucolor.Intel8080.Impl/Intel8080.cpp',
-            'src/Compucolor.Intel8080.Impl/Intel8080Emulator.cpp',
-            'src/Compucolor.Intel8080.Impl/Intel8080EmulatorContext.cpp'
+            'src/Compucolor.Impl.Intel8080/Intel8080.cpp',
+            'src/Compucolor.Impl.Intel8080/Intel8080Emulator.cpp',
+            'src/Compucolor.Impl.Intel8080/Intel8080EmulatorContext.cpp'
         ],
         dependencies: [
             publicHeaderLib
@@ -62,9 +62,9 @@ intel8080ImplLib = declare_dependency(
 
 smc5027ImplLib = declare_dependency(
     link_with: static_library(
-        'Compucolor.Smc5027.Impl',
+        'Compucolor.Impl.Smc5027',
         [
-            'src/Compucolor.Smc5027.Impl/Smc5027Emulator.cpp'
+            'src/Compucolor.Impl.Smc5027/Smc5027Emulator.cpp'
         ],
         dependencies: [
             publicHeaderLib
@@ -72,10 +72,10 @@ smc5027ImplLib = declare_dependency(
     )
 )
 smc5027ImplTests = executable(
-    'Compucolor.Tests.Smc5027.Impl',
+    'Compucolor.Impl.Tests.Smc5027',
     [
-        'test/Compucolor.Tests.Smc5027.Impl/main.cpp',
-        'test/Compucolor.Tests.Smc5027.Impl/Smc5027EmulatorTests.cpp'
+        'test/Compucolor.Impl.Tests.Smc5027/main.cpp',
+        'test/Compucolor.Impl.Tests.Smc5027/Smc5027EmulatorTests.cpp'
     ],
     dependencies: [
         dependency('gtest'),
@@ -88,14 +88,14 @@ smc5027ImplTests = executable(
         smc5027ImplLib
     ]
 )
-test('Compucolor.Tests.Smc5027.Impl', smc5027ImplTests)
+test('Compucolor.Impl.Tests.Smc5027', smc5027ImplTests)
 
 tms5501ImplLib = declare_dependency(
     link_with: static_library(
-        'Compucolor.Tms5501.Impl',
+        'Compucolor.Impl.Tms5501',
         [
-            'src/Compucolor.Tms5501.Impl/Tms5501Emulator.cpp',
-            'src/Compucolor.Tms5501.Impl/Tms5501EmulatorContext.cpp'
+            'src/Compucolor.Impl.Tms5501/Tms5501Emulator.cpp',
+            'src/Compucolor.Impl.Tms5501/Tms5501EmulatorContext.cpp'
         ],
         dependencies: [
             publicHeaderLib
@@ -105,10 +105,10 @@ tms5501ImplLib = declare_dependency(
 
 crtImplLib = declare_dependency(
     link_with: static_library(
-        'Compucolor.Crt.Impl',
+        'Compucolor.Impl.Crt',
         [
-            'src/Compucolor.Crt.Impl/FontRom.cpp',
-            'src/Compucolor.Crt.Impl/CrtEmulator.cpp'
+            'src/Compucolor.Impl.Crt/FontRom.cpp',
+            'src/Compucolor.Impl.Crt/CrtEmulator.cpp'
         ],
         dependencies: [
             publicHeaderLib
@@ -116,10 +116,10 @@ crtImplLib = declare_dependency(
     )
 )
 crtImplTests = executable(
-    'Compucolor.Tests.Crt.Impl',
+    'Compucolor.Impl.Tests.Crt',
     [
-        'test/Compucolor.Tests.Crt.Impl/main.cpp',
-        'test/Compucolor.Tests.Crt.Impl/CrtEmulatorTests.cpp',
+        'test/Compucolor.Impl.Tests.Crt/main.cpp',
+        'test/Compucolor.Impl.Tests.Crt/CrtEmulatorTests.cpp',
     ],
     dependencies: [
         dependency('gtest'),
@@ -132,13 +132,13 @@ crtImplTests = executable(
         crtImplLib
     ]
 )
-test('Compucolor.Tests.Crt.Impl', crtImplTests)
+test('Compucolor.Impl.Tests.Crt', crtImplTests)
 
 floppyImplLib = declare_dependency(
     link_with: static_library(
-        'Compucolor.Floppy.Impl',
+        'Compucolor.Impl.Floppy',
         [
-            'src/Compucolor.Floppy.Impl/FloppyEmulator.cpp'
+            'src/Compucolor.Impl.Floppy/FloppyEmulator.cpp'
         ],
         dependencies: [
             publicHeaderLib
@@ -148,9 +148,9 @@ floppyImplLib = declare_dependency(
 
 keyboardImplLib = declare_dependency(
     link_with: static_library(
-        'Compucolor.Keyboard.Impl',
+        'Compucolor.Impl.Keyboard',
         [
-            'src/Compucolor.Keyboard.Impl/KeyboardEmulator.cpp'
+            'src/Compucolor.Impl.Keyboard/KeyboardEmulator.cpp'
         ],
         dependencies: [
             publicHeaderLib
@@ -160,9 +160,9 @@ keyboardImplLib = declare_dependency(
 
 configurationImplLib = declare_dependency(
     link_with: static_library(
-        'Compucolor.Configuration.Impl',
+        'Compucolor.Impl.Configuration',
         [
-            'src/Compucolor.Configuration.Impl/Configuration.cpp'
+            'src/Compucolor.Impl.Configuration/Configuration.cpp'
         ],
         dependencies: [
             publicHeaderLib
@@ -172,9 +172,9 @@ configurationImplLib = declare_dependency(
 
 schedulerImplLib = declare_dependency(
     link_with: static_library(
-        'Compucolor.Scheduler.Impl',
+        'Compucolor.Impl.Scheduler',
         [
-            'src/Compucolor.Scheduler.Impl/Scheduler.cpp'
+            'src/Compucolor.Impl.Scheduler/Scheduler.cpp'
         ],
         dependencies: [
             publicHeaderLib
@@ -184,9 +184,9 @@ schedulerImplLib = declare_dependency(
 
 loggerImplLib = declare_dependency(
     link_with: static_library(
-        'Compucolor.Logger.Impl',
+        'Compucolor.Impl.Logger',
         [
-            'src/Compucolor.Logger.Impl/Logger.cpp'
+            'src/Compucolor.Impl.Logger/Logger.cpp'
         ],
         dependencies: [
             publicHeaderLib
@@ -196,11 +196,11 @@ loggerImplLib = declare_dependency(
 
 compucolorImplLib = declare_dependency(
     link_with: static_library(
-        'Compucolor.Compucolor.Impl',
+        'Compucolor.Impl.Compucolor',
         [
-            'src/Compucolor.Compucolor.Impl/CompucolorEmulator.cpp',
-            'src/Compucolor.Compucolor.Impl/CompucolorIntel8080Bus.cpp',
-            'src/Compucolor.Compucolor.Impl/Roms.cpp'
+            'src/Compucolor.Impl.Compucolor/CompucolorEmulator.cpp',
+            'src/Compucolor.Impl.Compucolor/CompucolorIntel8080Bus.cpp',
+            'src/Compucolor.Impl.Compucolor/Roms.cpp'
         ],
         dependencies: [
             publicHeaderLib

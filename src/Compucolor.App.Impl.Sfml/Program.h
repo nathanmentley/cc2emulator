@@ -9,7 +9,7 @@
 #include "Display.h"
 #include "KeyboardTranslator.h"
 
-namespace Compucolor::App::Impl::Sfml
+namespace Compucolor::Impl::App::Sfml
 {
     class Program {
         public:

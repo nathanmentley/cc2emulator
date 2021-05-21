@@ -1,6 +1,6 @@
 #include "ErrorHandler.h"
 
-void Compucolor::App::Impl::Sfml::ErrorHandler(int sig) {
+void Compucolor::Impl::App::Sfml::ErrorHandler(int sig) {
     void *array[10];
     size_t size;
 

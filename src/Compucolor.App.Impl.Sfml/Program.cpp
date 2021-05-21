@@ -1,16 +1,16 @@
 #include "Program.h"
 
-Compucolor::App::Impl::Sfml::Program::Program():
+Compucolor::Impl::App::Sfml::Program::Program():
     _window(
         std::shared_ptr<sf::RenderWindow>(
             new sf::RenderWindow(sf::VideoMode(384, 256), "Compucolor II Emulator")
         )
     ),
     _emulator(
-        get_emulator(
-            std::shared_ptr<Logger::ILoggerProvider>(
-                new Logger::ConsoleLoggerProvider(
-                    Logger::LogLevel::Trace
+        Compucolor::App::get_emulator(
+            std::shared_ptr<Compucolor::Logger::ILoggerProvider>(
+                new Compucolor::Logger::ConsoleLoggerProvider(
+                    Compucolor::Logger::LogLevel::Trace
                 )
             ),
             std::shared_ptr<Display>(
@@ -26,7 +26,7 @@ Compucolor::App::Impl::Sfml::Program::Program():
 {
 }
 
-int Compucolor::App::Impl::Sfml::Program::Run()
+int Compucolor::Impl::App::Sfml::Program::Run()
 {
     _emulator->Start();
 
@@ -42,7 +42,7 @@ int Compucolor::App::Impl::Sfml::Program::Run()
     return EXIT_SUCCESS;
 }
 
-void Compucolor::App::Impl::Sfml::Program::ProcessEvent(sf::Event event)
+void Compucolor::Impl::App::Sfml::Program::ProcessEvent(sf::Event event)
 {
     if (event.type == sf::Event::Closed)
     {
@@ -53,7 +53,7 @@ void Compucolor::App::Impl::Sfml::Program::ProcessEvent(sf::Event event)
 
     if (event.type == sf::Event::KeyPressed)
     {
-        std::optional<Keyboard::CompucolorIIKey> key =
+        std::optional<Compucolor::Keyboard::CompucolorIIKey> key =
             _keyboardTranslator->ConvertKey(event.key.code);
 
         if (key.has_value())
@@ -64,7 +64,7 @@ void Compucolor::App::Impl::Sfml::Program::ProcessEvent(sf::Event event)
 
     if (event.type == sf::Event::KeyReleased)
     {
-        std::optional<Keyboard::CompucolorIIKey> key =
+        std::optional<Compucolor::Keyboard::CompucolorIIKey> key =
             _keyboardTranslator->ConvertKey(event.key.code);
 
         if (key.has_value())
