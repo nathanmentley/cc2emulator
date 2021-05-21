@@ -235,13 +235,13 @@ appLib = declare_dependency(
 )
 
 executable(
-    'Compucolor.App.Impl.Sfml',
+    'Compucolor.Impl.App.Sfml',
     [
-        'src/Compucolor.App.Impl.Sfml/Display.cpp',
-        'src/Compucolor.App.Impl.Sfml/ErrorHandler.cpp',
-        'src/Compucolor.App.Impl.Sfml/KeyboardTranslator.cpp',
-        'src/Compucolor.App.Impl.Sfml/main.cpp',
-        'src/Compucolor.App.Impl.Sfml/Program.cpp'
+        'src/Compucolor.Impl.App.Sfml/Display.cpp',
+        'src/Compucolor.Impl.App.Sfml/ErrorHandler.cpp',
+        'src/Compucolor.Impl.App.Sfml/KeyboardTranslator.cpp',
+        'src/Compucolor.Impl.App.Sfml/main.cpp',
+        'src/Compucolor.Impl.App.Sfml/Program.cpp'
     ],
     dependencies: [
         dependency('sfml-graphics'),

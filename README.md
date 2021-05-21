@@ -20,4 +20,4 @@ meson compile
 
 meson test
 
-./Compucolor.App.Impl.Sfml
+./Compucolor.Impl.App.Sfml
