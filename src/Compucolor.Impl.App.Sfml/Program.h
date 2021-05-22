@@ -4,9 +4,8 @@
 
 #include <Compucolor/Logger/ConsoleLoggerProvider.h>
 
-#include <Compucolor.App/get_emulator.h>
-
 #include "Display.h"
+#include "get_emulator.h"
 #include "KeyboardTranslator.h"
 
 namespace Compucolor::Impl::App::Sfml

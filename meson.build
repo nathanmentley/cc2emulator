@@ -208,37 +208,12 @@ compucolorImplLib = declare_dependency(
     )
 )
 
-appLib = declare_dependency(
-    link_with: static_library(
-        'Compucolor.App',
-        [
-            'src/Compucolor.App/get_emulator.cpp'
-        ],
-        dependencies: [
-            publicHeaderLib,
-            internalHeaderLib,
-
-            memoryImplLib,
-            intel8080ImplLib,
-            smc5027ImplLib,
-            tms5501ImplLib,
-            crtImplLib,
-            floppyImplLib,
-            keyboardImplLib,
-            configurationImplLib,
-            schedulerImplLib,
-            loggerImplLib,
-
-            compucolorImplLib
-        ]
-    )
-)
-
 executable(
     'Compucolor.Impl.App.Sfml',
     [
         'src/Compucolor.Impl.App.Sfml/Display.cpp',
         'src/Compucolor.Impl.App.Sfml/ErrorHandler.cpp',
+        'src/Compucolor.Impl.App.Sfml/get_emulator.cpp',
         'src/Compucolor.Impl.App.Sfml/KeyboardTranslator.cpp',
         'src/Compucolor.Impl.App.Sfml/main.cpp',
         'src/Compucolor.Impl.App.Sfml/Program.cpp'
@@ -247,9 +222,20 @@ executable(
         dependency('sfml-graphics'),
         dependency('threads'),
 
+        memoryImplLib,
+        intel8080ImplLib,
+        smc5027ImplLib,
+        tms5501ImplLib,
+        crtImplLib,
+        floppyImplLib,
+        keyboardImplLib,
+        configurationImplLib,
+        schedulerImplLib,
+        loggerImplLib,
+        compucolorImplLib,
+
         publicHeaderLib,
-        internalHeaderLib,
-        appLib
+        internalHeaderLib
     ],
     install: true
 )

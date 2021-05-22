@@ -7,7 +7,7 @@ Compucolor::Impl::App::Sfml::Program::Program():
         )
     ),
     _emulator(
-        Compucolor::App::get_emulator(
+        get_emulator(
             std::shared_ptr<Compucolor::Logger::ILoggerProvider>(
                 new Compucolor::Logger::ConsoleLoggerProvider(
                     Compucolor::Logger::LogLevel::Trace

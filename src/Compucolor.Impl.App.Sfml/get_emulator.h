@@ -39,7 +39,7 @@
 
 #include <Compucolor/EmulatorBackgroundTask.h>
 
-namespace Compucolor::App
+namespace Compucolor::Impl::App::Sfml
 {
     std::unique_ptr<EmulatorBackgroundTask> get_emulator(
         std::shared_ptr<Compucolor::Logger::ILoggerProvider> loggerProvider,
