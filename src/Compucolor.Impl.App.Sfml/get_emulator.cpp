@@ -2,7 +2,7 @@
 
 #include "get_emulator.h"
 
-std::unique_ptr<Compucolor::EmulatorBackgroundTask> Compucolor::Impl::App::Sfml::get_emulator(
+std::unique_ptr<Compucolor::CompucolorEmulatorProcessor> Compucolor::Impl::App::Sfml::get_emulator(
     std::shared_ptr<Compucolor::Logger::ILoggerProvider> loggerProvider,
     std::shared_ptr<Compucolor::Common::IDisplay> display
 )
@@ -22,5 +22,5 @@ std::unique_ptr<Compucolor::EmulatorBackgroundTask> Compucolor::Impl::App::Sfml:
         boost::di::bind<class Compucolor::Crt::ICrtEmulator>.to<Impl::Crt::CrtEmulator>(),
         boost::di::bind<class Compucolor::ICompucolorEmulator>.to<Impl::CompucolorII::CompucolorEmulator>()
     )
-        .create<std::unique_ptr<EmulatorBackgroundTask>>();
+        .create<std::unique_ptr<CompucolorEmulatorProcessor>>();
 }

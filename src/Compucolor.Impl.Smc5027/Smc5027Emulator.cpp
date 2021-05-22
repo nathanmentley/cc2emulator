@@ -65,14 +65,12 @@ void Compucolor::Impl::Smc5027::Smc5027Emulator::Write(uint8_t port, uint8_t dat
 
     switch (ConvertPort(port))
     {
-        /*
         case 0x06:
             _registers[0x06] = data;
             break;
         case 0x0B:
-            _registers[0x06] = (_registers[0x06] + 1) % 32;
+            _registers[0x06] = (_registers[0x6] + 1) % 32;
             break;
-        */
         case 0x0C:
             _registers[0x09] = data;
             break;

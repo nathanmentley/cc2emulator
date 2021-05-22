@@ -18,7 +18,7 @@ namespace Compucolor::Impl::App::Sfml
 
         private:
             std::shared_ptr<sf::RenderWindow> _window;
-            std::unique_ptr<EmulatorBackgroundTask> _emulator;
+            std::unique_ptr<CompucolorEmulatorProcessor> _emulator;
             std::unique_ptr<KeyboardTranslator> _keyboardTranslator;
 
             void ProcessEvent(sf::Event event);

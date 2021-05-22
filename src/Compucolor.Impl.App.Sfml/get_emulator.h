@@ -37,11 +37,11 @@
 #include <Compucolor/ICompucolorEmulator.h>
 #include <Compucolor.Impl.Compucolor/CompucolorEmulator.h>
 
-#include <Compucolor/EmulatorBackgroundTask.h>
+#include <Compucolor/CompucolorEmulatorProcessor.h>
 
 namespace Compucolor::Impl::App::Sfml
 {
-    std::unique_ptr<EmulatorBackgroundTask> get_emulator(
+    std::unique_ptr<CompucolorEmulatorProcessor> get_emulator(
         std::shared_ptr<Compucolor::Logger::ILoggerProvider> loggerProvider,
         std::shared_ptr<Compucolor::Common::IDisplay> display
     );

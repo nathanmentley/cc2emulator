@@ -1,6 +1,7 @@
 project(
     'compucolor2 emulator',
     'cpp',
+    version: '0.0.1',
     default_options : ['c_std=c2a', 'cpp_std=c++2a']
 )
 

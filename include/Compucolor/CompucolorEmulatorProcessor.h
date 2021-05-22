@@ -8,9 +8,9 @@
 
 namespace Compucolor
 {
-    class EmulatorBackgroundTask {
+    class CompucolorEmulatorProcessor {
         public:
-            EmulatorBackgroundTask(
+            CompucolorEmulatorProcessor(
                 std::shared_ptr<ICompucolorEmulator> emulator
             ):
                 _emulator(emulator),

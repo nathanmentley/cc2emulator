@@ -34,12 +34,24 @@ std::thread Compucolor::Impl::Scheduler::Scheduler::SetupReoccuringTask(uint64_t
         [=] {
             while (true)
             {
-                std::this_thread::sleep_for(std::chrono::nanoseconds{everyNanoseconds});
-
+                int64_t lastRunTime = GetCurrentTimeInNanoseconds();
+                int64_t nextRunTime = lastRunTime + everyNanoseconds;
                 logic();
+
+
+                while(nextRunTime > GetCurrentTimeInNanoseconds());
             }
         }
     );
 
     return std::thread(std::move(task));
+}
+
+int64_t Compucolor::Impl::Scheduler::Scheduler::GetCurrentTimeInNanoseconds()
+{
+    return
+        std::chrono::duration_cast<std::chrono::nanoseconds>(
+            std::chrono::system_clock::now().time_since_epoch()
+        )
+            .count();
 }

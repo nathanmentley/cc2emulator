@@ -18,5 +18,7 @@ namespace Compucolor::Impl::Scheduler
 
         private:
             std::shared_ptr<Compucolor::Logger::ILogger> _logger;
+
+            int64_t GetCurrentTimeInNanoseconds();
     };
 }
