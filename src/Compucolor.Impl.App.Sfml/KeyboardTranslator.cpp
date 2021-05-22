@@ -152,11 +152,12 @@ std::optional<Compucolor::Keyboard::CompucolorIIKey> Compucolor::Impl::App::Sfml
             return Compucolor::Keyboard::CompucolorIIKey::Space;
         case sf::Keyboard::Key::Backspace:
             return Compucolor::Keyboard::CompucolorIIKey::Bksp;
+        case sf::Keyboard::Key::Enter:
+            return Compucolor::Keyboard::CompucolorIIKey::Break;
         case sf::Keyboard::Key::Left:
         case sf::Keyboard::Key::Right:
         case sf::Keyboard::Key::Up:
         case sf::Keyboard::Key::Down:
-        case sf::Keyboard::Key::Enter:
         case sf::Keyboard::Key::Menu:
         case sf::Keyboard::Key::LBracket:
         case sf::Keyboard::Key::RBracket:

@@ -132,6 +132,7 @@ std::optional<int> Compucolor::Impl::Keyboard::KeyboardEmulator::GetRow(Compucol
         case Compucolor::Keyboard::CompucolorIIKey::X: return 7;
         case Compucolor::Keyboard::CompucolorIIKey::Y: return 6;
         case Compucolor::Keyboard::CompucolorIIKey::Z: return 5;
+        case Compucolor::Keyboard::CompucolorIIKey::Shift: return 16;
         case Compucolor::Keyboard::CompucolorIIKey::Break: return 15;
         default: return {};
     }
@@ -177,6 +178,7 @@ std::optional<int> Compucolor::Impl::Keyboard::KeyboardEmulator::GetRow(Compucol
         case Compucolor::Keyboard::CompucolorIIKey::X: return 2;
         case Compucolor::Keyboard::CompucolorIIKey::Y: return 2;
         case Compucolor::Keyboard::CompucolorIIKey::Z: return 2;
+        case Compucolor::Keyboard::CompucolorIIKey::Shift: return 5;
         case Compucolor::Keyboard::CompucolorIIKey::Break: return 4;
         default: return {};
     }
