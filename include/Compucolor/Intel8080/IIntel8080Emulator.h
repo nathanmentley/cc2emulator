@@ -5,12 +5,13 @@
 
 #include <Compucolor/Common/IEmulatable.h>
 #include <Compucolor/Common/IResetable.h>
+#include <Compucolor/Common/IPlugin.h>
 
 #include "IIntel8080Bus.h"
 
 namespace Compucolor::Intel8080
 {
-    class IIntel8080Emulator: public Common::IEmulatable, public Common::IResetable {
+    class IIntel8080Emulator: public Common::IPlugin, public Common::IEmulatable, public Common::IResetable {
         public:
             virtual ~IIntel8080Emulator() {}
 

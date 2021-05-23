@@ -3,9 +3,11 @@
 #include <optional>
 #include <string>
 
+#include <Compucolor/Common/IPlugin.h>
+
 namespace Compucolor::Configuration
 {
-    class IConfiguration {
+    class IConfiguration: public Common::IPlugin {
         public:
             virtual ~IConfiguration() {}
     

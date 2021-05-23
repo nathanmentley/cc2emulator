@@ -5,10 +5,11 @@
 #include <Compucolor/Common/IResetable.h>
 
 #include <Compucolor/Keyboard/CompucolorIIKey.h>
+#include <Compucolor/Common/IPlugin.h>
 
 namespace Compucolor::Keyboard
 {
-    class IKeyboardEmulator: public Common::IEmulatable, public Common::IInputDevice, public Common::IResetable {
+    class IKeyboardEmulator: public Common::IPlugin, public Common::IEmulatable, public Common::IInputDevice, public Common::IResetable {
         public:
             virtual ~IKeyboardEmulator() {}
 

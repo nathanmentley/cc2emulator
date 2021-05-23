@@ -2,9 +2,11 @@
 
 #include <stdint.h>
 
+#include <Compucolor/Common/IPlugin.h>
+
 namespace Compucolor::Memory
 {
-    class IMemory {
+    class IMemory: public Common::IPlugin {
         public:
             virtual ~IMemory() {}
 

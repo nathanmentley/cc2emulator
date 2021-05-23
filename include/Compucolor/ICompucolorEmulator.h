@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Compucolor/Common/ISystem.h>
+#include <Compucolor/Common/IPlugin.h>
 
 #include <Compucolor/Keyboard/CompucolorIIKey.h>
 

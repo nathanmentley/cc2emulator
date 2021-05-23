@@ -6,9 +6,11 @@
 #include <string>
 #include <thread>
 
+#include <Compucolor/Common/IPlugin.h>
+
 namespace Compucolor::Scheduler
 {
-    class IScheduler {
+    class IScheduler: public Common::IPlugin {
         public:
             virtual ~IScheduler() {}
 

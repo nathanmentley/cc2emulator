@@ -21,6 +21,7 @@ memoryImplLib = declare_dependency(
     link_with: static_library(
         'Compucolor.Impl.Memory',
         [
+            'src/Compucolor.Impl.Memory/PluginFactory.cpp',
             'src/Compucolor.Impl.Memory/VectorMemory.cpp'
         ],
         dependencies: [
@@ -32,7 +33,7 @@ memoryImplTests = executable(
     'Compucolor.Impl.Tests.Memory',
     [
         'test/Compucolor.Impl.Tests.Memory/main.cpp',
-        'test/Compucolor.Impl.Tests.Memory/VectoryMemoryTests.cpp',
+        'test/Compucolor.Impl.Tests.Memory/VectorMemoryTests.cpp',
     ],
     dependencies: [
         dependency('gtest'),
