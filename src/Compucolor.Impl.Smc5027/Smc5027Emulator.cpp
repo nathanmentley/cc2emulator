@@ -107,6 +107,12 @@ uint8_t Compucolor::Impl::Smc5027::Smc5027Emulator::GetCursorY()
     return Read(0x08);
 }
 
+uint8_t Compucolor::Impl::Smc5027::Smc5027Emulator::FirstDisplayRow() {
+    uint8_t rows = 32 - 1;
+    uint8_t curEnd = _registers[0x06];
+    return (curEnd + 1) % (rows + 1);
+}
+
 uint8_t Compucolor::Impl::Smc5027::Smc5027Emulator::ConvertPort(uint8_t port)
 {
     return port & 0x0F;

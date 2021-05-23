@@ -81,8 +81,10 @@ void Compucolor::Impl::Crt::CrtEmulator::DrawCursor()
 {
     if (IsBlinkOn())
     {
+        uint8_t firstRow = _smc5027emulator->FirstDisplayRow();
         uint8_t x = _smc5027emulator->GetCursorX();
         uint8_t y = _smc5027emulator->GetCursorY();
+        y = (y - firstRow + 32) % 32;  // scroll adjustment
 
         if (x <= CrtEmulator::Columns && y <= CrtEmulator::Rows)
         {

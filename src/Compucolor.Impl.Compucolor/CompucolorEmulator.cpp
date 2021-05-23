@@ -38,7 +38,7 @@ Compucolor::Impl::CompucolorII::CompucolorEmulator::CompucolorEmulator(
 
 void Compucolor::Impl::CompucolorII::CompucolorEmulator::Start()
 {
-    LoadRom(_memory.get(), get_system_rom_6_78(), 0, get_system_rom_6_78_length());
+    LoadRom(_memory.get(), get_system_rom_8_79(), 0, get_system_rom_8_79_length());
 
     _crt->Start();
     _keyboard->Start();

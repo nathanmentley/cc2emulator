@@ -73,6 +73,13 @@ namespace Compucolor::Impl::Smc5027 {
              * @retval 
              */
             virtual uint8_t GetCursorY() override;
+
+            /**
+             * @brief  
+             * @note   
+             * @retval 
+             */
+            virtual uint8_t FirstDisplayRow() override;
         private:
             static const uint8_t REGISTER_COUNT = 16;
     

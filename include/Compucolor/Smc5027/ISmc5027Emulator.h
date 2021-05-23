@@ -34,5 +34,12 @@ namespace Compucolor::Smc5027
              * @retval 
              */
             virtual uint8_t GetCursorY() = 0;
+
+            /**
+             * @brief  
+             * @note   
+             * @retval 
+             */
+            virtual uint8_t FirstDisplayRow() = 0;
     };
 }
