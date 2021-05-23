@@ -18,7 +18,7 @@ testHeaderLib = declare_dependency(
 )
 
 memoryImplLib = declare_dependency(
-    link_with: static_library(
+    link_with: shared_library(
         'Compucolor.Impl.Memory',
         [
             'src/Compucolor.Impl.Memory/PluginFactory.cpp',
@@ -223,8 +223,8 @@ executable(
     dependencies: [
         dependency('sfml-graphics'),
         dependency('threads'),
+        dependency('boost', modules : ['filesystem']),
 
-        memoryImplLib,
         intel8080ImplLib,
         smc5027ImplLib,
         tms5501ImplLib,

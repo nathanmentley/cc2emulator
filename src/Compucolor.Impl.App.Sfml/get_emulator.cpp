@@ -7,13 +7,23 @@ std::unique_ptr<Compucolor::CompucolorEmulatorProcessor> Compucolor::Impl::App::
     std::shared_ptr<Compucolor::Common::IDisplay> display
 )
 {
+    std::shared_ptr<Compucolor::Common::PluginLoader> loader =
+        std::shared_ptr<Compucolor::Common::PluginLoader>(
+            new Compucolor::Common::PluginLoader()
+        );
+        
     return boost::di::make_injector(
         boost::di::bind<class Compucolor::Logger::ILoggerProvider>.to(loggerProvider),
         boost::di::bind<class Compucolor::Common::IDisplay>.to(display),
         boost::di::bind<class Compucolor::Logger::ILogger>.to<Impl::Logger::Logger>(),
+        boost::di::bind<class Compucolor::Memory::IMemory>.to(
+            loader->Create<Compucolor::Memory::IMemory>(
+                "libCompucolor.Impl.Memory",
+                loader
+            )
+        ),
         boost::di::bind<class Compucolor::Configuration::IConfiguration>.to<Impl::Configuration::Configuration>(),
         boost::di::bind<class Compucolor::Scheduler::IScheduler>.to<Impl::Scheduler::Scheduler>(),
-        boost::di::bind<class Compucolor::Memory::IMemory>.to<Impl::Memory::VectorMemory>(),
         boost::di::bind<class Compucolor::Intel8080::IIntel8080Emulator>.to<Impl::Intel8080::Intel8080Emulator>(),
         boost::di::bind<class Compucolor::Smc5027::ISmc5027Emulator>.to<Impl::Smc5027::Smc5027Emulator>(),
         boost::di::bind<class Compucolor::Keyboard::IKeyboardEmulator>.to<Impl::Keyboard::KeyboardEmulator>(),

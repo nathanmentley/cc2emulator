@@ -5,7 +5,6 @@
 #include <Compucolor/Common/IDisplay.h>
 
 #include <Compucolor/Memory/IMemory.h>
-#include <Compucolor.Impl.Memory/VectorMemory.h>
 
 #include <Compucolor/Configuration/IConfiguration.h>
 #include <Compucolor.Impl.Configuration/Configuration.h>
@@ -36,6 +35,8 @@
 
 #include <Compucolor/ICompucolorEmulator.h>
 #include <Compucolor.Impl.Compucolor/CompucolorEmulator.h>
+
+#include <Compucolor/Common/PluginLoader.h>
 
 #include <Compucolor/CompucolorEmulatorProcessor.h>
 
