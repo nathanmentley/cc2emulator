@@ -44,6 +44,7 @@ namespace Compucolor::Impl::App::Sfml
 {
     std::unique_ptr<CompucolorEmulatorProcessor> get_emulator(
         std::shared_ptr<Compucolor::Logger::ILoggerProvider> loggerProvider,
-        std::shared_ptr<Compucolor::Common::IDisplay> display
+        std::shared_ptr<Compucolor::Common::IDisplay> display,
+        std::shared_ptr<Compucolor::Common::PluginLoader<Compucolor::Memory::IMemory>> loader
     );
 }

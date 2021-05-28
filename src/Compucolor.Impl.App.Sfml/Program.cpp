@@ -6,6 +6,13 @@ Compucolor::Impl::App::Sfml::Program::Program():
             new sf::RenderWindow(sf::VideoMode(384, 256), "Compucolor II Emulator")
         )
     ),
+    _loader(
+        std::shared_ptr<Compucolor::Common::PluginLoader<Compucolor::Memory::IMemory>>(
+            new Compucolor::Common::PluginLoader<Compucolor::Memory::IMemory>(
+                "libCompucolor.Impl.Memory"
+            )
+        )
+    ),
     _emulator(
         get_emulator(
             std::shared_ptr<Compucolor::Logger::ILoggerProvider>(
@@ -15,7 +22,8 @@ Compucolor::Impl::App::Sfml::Program::Program():
             ),
             std::shared_ptr<Display>(
                 new Display(_window)
-            )
+            ),
+            _loader
         )
     ),
     _keyboardTranslator(

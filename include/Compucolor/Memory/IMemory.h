@@ -2,11 +2,13 @@
 
 #include <stdint.h>
 
+#include <boost/config.hpp>
+
 #include <Compucolor/Common/IPlugin.h>
 
 namespace Compucolor::Memory
 {
-    class IMemory: public Common::IPlugin {
+    class BOOST_SYMBOL_VISIBLE IMemory: public Common::IPlugin {
         public:
             virtual ~IMemory() {}
 

@@ -4,24 +4,22 @@
 
 std::unique_ptr<Compucolor::CompucolorEmulatorProcessor> Compucolor::Impl::App::Sfml::get_emulator(
     std::shared_ptr<Compucolor::Logger::ILoggerProvider> loggerProvider,
-    std::shared_ptr<Compucolor::Common::IDisplay> display
+    std::shared_ptr<Compucolor::Common::IDisplay> display,
+    std::shared_ptr<Compucolor::Common::PluginLoader<Compucolor::Memory::IMemory>> loader
 )
 {
-    std::shared_ptr<Compucolor::Common::PluginLoader> loader =
-        std::shared_ptr<Compucolor::Common::PluginLoader>(
-            new Compucolor::Common::PluginLoader()
-        );
-        
+    std::shared_ptr<Compucolor::Memory::IMemory> memory = loader->Create();
+
+    memory->SetByte(0x1, 0x2);
+
+    printf("also here\n");
+
     return boost::di::make_injector(
+        boost::di::bind<class Compucolor::Common::PluginLoader<Compucolor::Memory::IMemory>>.to(loader),
         boost::di::bind<class Compucolor::Logger::ILoggerProvider>.to(loggerProvider),
         boost::di::bind<class Compucolor::Common::IDisplay>.to(display),
         boost::di::bind<class Compucolor::Logger::ILogger>.to<Impl::Logger::Logger>(),
-        boost::di::bind<class Compucolor::Memory::IMemory>.to(
-            loader->Create<Compucolor::Memory::IMemory>(
-                "libCompucolor.Impl.Memory",
-                loader
-            )
-        ),
+        boost::di::bind<class Compucolor::Memory::IMemory>.to(memory),
         boost::di::bind<class Compucolor::Configuration::IConfiguration>.to<Impl::Configuration::Configuration>(),
         boost::di::bind<class Compucolor::Scheduler::IScheduler>.to<Impl::Scheduler::Scheduler>(),
         boost::di::bind<class Compucolor::Intel8080::IIntel8080Emulator>.to<Impl::Intel8080::Intel8080Emulator>(),

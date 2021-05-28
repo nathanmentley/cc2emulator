@@ -6,33 +6,33 @@
 #include <boost/dll/import.hpp>
 #include <boost/function.hpp>
 
+#include "IPlugin.h"
+
 namespace Compucolor::Common
 {
+    template<typename TPlugin> 
     class PluginLoader {
+        typedef std::shared_ptr<TPlugin> (pluginapi_create_t)();
+
         public:
-            PluginLoader()
-            {
-            };
-
-            template<typename TPlugin> void RegisterPlugin(
-                std::string pluginFilePath
+            PluginLoader(
+                std::string pluginLibrary
             )
             {
-
+                _creator =
+                    boost::dll::import_alias<pluginapi_create_t>(
+                        pluginLibrary,
+                        "create",
+                        boost::dll::load_mode::append_decorations
+                    );
             };
 
-            template<typename TPlugin> std::shared_ptr<TPlugin> Create(
-                std::string pluginLibrary,
-                std::shared_ptr<PluginLoader> pluginLoader
-            )
+            std::shared_ptr<TPlugin> Create()
             {
-                auto creator = boost::dll::import_alias<std::shared_ptr<TPlugin>(PluginLoader*)>(
-                    pluginLibrary,
-                    "create",
-                    boost::dll::load_mode::append_decorations
-                );
-
-                return creator(pluginLoader.get());
+                return _creator();
             };
+
+        private:
+            boost::function<pluginapi_create_t> _creator;
     };
 }

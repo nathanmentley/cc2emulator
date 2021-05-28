@@ -18,6 +18,7 @@ namespace Compucolor::Impl::App::Sfml
 
         private:
             std::shared_ptr<sf::RenderWindow> _window;
+            std::shared_ptr<Compucolor::Common::PluginLoader<Compucolor::Memory::IMemory>> _loader;
             std::unique_ptr<CompucolorEmulatorProcessor> _emulator;
             std::unique_ptr<KeyboardTranslator> _keyboardTranslator;
 
