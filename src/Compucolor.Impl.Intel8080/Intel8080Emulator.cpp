@@ -60,6 +60,15 @@ void Compucolor::Impl::Intel8080::Intel8080Emulator::RegisterInterrupt(uint8_t o
     Compucolor::Impl::Intel8080::i8080_interrupt(_cpu.get(), opcode);
 }
 
+std::shared_ptr<Compucolor::Intel8080::IIntel8080Emulator> Compucolor::Impl::Intel8080::Intel8080Emulator::Creator(
+    Compucolor::Common::IPluginManager* manager
+)
+{
+    return std::shared_ptr<Compucolor::Intel8080::IIntel8080Emulator>(
+        new Compucolor::Impl::Intel8080::Intel8080Emulator(manager->GetMemory())
+    );
+}
+
 uint8_t Compucolor::Impl::Intel8080::Intel8080Emulator::ReadByte(void* userdata, uint16_t addr)
 {
     std::optional<std::shared_ptr<Compucolor::Memory::IMemory>> memory =

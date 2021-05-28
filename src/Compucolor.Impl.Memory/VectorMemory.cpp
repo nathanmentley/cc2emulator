@@ -15,13 +15,10 @@ void Compucolor::Impl::Memory::VectorMemory::SetByte(uint16_t address, uint8_t d
     _data[address] = data;
 }
 
-
-#include "stdio.h"
-
-std::shared_ptr<Compucolor::Memory::IMemory> Compucolor::Impl::Memory::VectorMemory::Creator()
+std::shared_ptr<Compucolor::Memory::IMemory> Compucolor::Impl::Memory::VectorMemory::Creator(
+    Compucolor::Common::IPluginManager* manager
+)
 {
-    printf("herehehhe\n");
-
     return std::shared_ptr<Compucolor::Memory::IMemory>(
         new Compucolor::Impl::Memory::VectorMemory()
     );

@@ -49,9 +49,10 @@ memoryImplTests = executable(
 test('Compucolor.Impl.Tests.Memory', memoryImplTests)
 
 intel8080ImplLib = declare_dependency(
-    link_with: static_library(
+    link_with: shared_library(
         'Compucolor.Impl.Intel8080',
         [
+            'src/Compucolor.Impl.Intel8080/PluginFactory.cpp',
             'src/Compucolor.Impl.Intel8080/Intel8080.cpp',
             'src/Compucolor.Impl.Intel8080/Intel8080Emulator.cpp',
             'src/Compucolor.Impl.Intel8080/Intel8080EmulatorContext.cpp'
@@ -185,7 +186,7 @@ schedulerImplLib = declare_dependency(
 )
 
 loggerImplLib = declare_dependency(
-    link_with: static_library(
+    link_with: shared_library(
         'Compucolor.Impl.Logger',
         [
             'src/Compucolor.Impl.Logger/Logger.cpp'
@@ -225,7 +226,6 @@ executable(
         dependency('threads'),
         dependency('boost', modules : ['filesystem']),
 
-        intel8080ImplLib,
         smc5027ImplLib,
         tms5501ImplLib,
         crtImplLib,

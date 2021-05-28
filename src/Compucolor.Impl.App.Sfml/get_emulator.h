@@ -12,9 +12,6 @@
 #include <Compucolor/Floppy/IFloppyEmulator.h>
 #include <Compucolor.Impl.Floppy/FloppyEmulator.h>
 
-#include <Compucolor/Intel8080/IIntel8080Emulator.h>
-#include <Compucolor.Impl.Intel8080/Intel8080Emulator.h>
-
 #include <Compucolor/Smc5027/ISmc5027Emulator.h>
 #include <Compucolor.Impl.Smc5027/Smc5027Emulator.h>
 
@@ -36,7 +33,7 @@
 #include <Compucolor/ICompucolorEmulator.h>
 #include <Compucolor.Impl.Compucolor/CompucolorEmulator.h>
 
-#include <Compucolor/Common/PluginLoader.h>
+#include <Compucolor/Common/IPluginManager.h>
 
 #include <Compucolor/CompucolorEmulatorProcessor.h>
 
@@ -45,6 +42,6 @@ namespace Compucolor::Impl::App::Sfml
     std::unique_ptr<CompucolorEmulatorProcessor> get_emulator(
         std::shared_ptr<Compucolor::Logger::ILoggerProvider> loggerProvider,
         std::shared_ptr<Compucolor::Common::IDisplay> display,
-        std::shared_ptr<Compucolor::Common::PluginLoader<Compucolor::Memory::IMemory>> loader
+        std::shared_ptr<Compucolor::Common::IPluginManager> manager
     );
 }

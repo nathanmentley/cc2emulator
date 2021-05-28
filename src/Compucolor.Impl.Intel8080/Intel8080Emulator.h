@@ -5,6 +5,7 @@
 #include <memory>
 #include <thread>
 
+#include <Compucolor/Common/IPluginManager.h>
 #include <Compucolor/Memory/IMemory.h>
 #include <Compucolor/Intel8080/IIntel8080Emulator.h>
 
@@ -30,6 +31,10 @@ namespace Compucolor::Impl::Intel8080
             virtual void RegisterInterrupt(uint8_t opcode) override;
 
             virtual void Step() override;
+
+            static std::shared_ptr<Compucolor::Intel8080::IIntel8080Emulator> Creator(
+                Common::IPluginManager* manager
+            );
 
         private:
             std::unique_ptr<Compucolor::Impl::Intel8080::Intel8080EmulatorContext> _context;

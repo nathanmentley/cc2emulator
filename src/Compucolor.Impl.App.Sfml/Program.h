@@ -2,6 +2,7 @@
 
 #include <SFML/Graphics.hpp>
 
+#include <Compucolor/Common/PluginManager.h>
 #include <Compucolor/Logger/ConsoleLoggerProvider.h>
 
 #include "Display.h"
@@ -18,7 +19,7 @@ namespace Compucolor::Impl::App::Sfml
 
         private:
             std::shared_ptr<sf::RenderWindow> _window;
-            std::shared_ptr<Compucolor::Common::PluginLoader<Compucolor::Memory::IMemory>> _loader;
+            std::shared_ptr<Compucolor::Common::IPluginManager> _manager;
             std::unique_ptr<CompucolorEmulatorProcessor> _emulator;
             std::unique_ptr<KeyboardTranslator> _keyboardTranslator;
 
