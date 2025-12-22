@@ -163,3 +163,18 @@ bool Compucolor::Impl::Crt::CrtEmulator::IsBitSet(int bit, uint8_t data)
 {
     return ((data >> bit) & 0x1) == 1;
 }
+
+std::shared_ptr<Compucolor::Crt::ICrtEmulator> Compucolor::Impl::Crt::CrtEmulator::Creator(
+    Compucolor::Common::IPluginManager* manager
+)
+{
+    return std::shared_ptr<Compucolor::Crt::ICrtEmulator>(
+        new Compucolor::Impl::Crt::CrtEmulator(
+            manager->GetLogger(),
+            manager->GetDisplay(),
+            manager->GetScheduler(),
+            manager->GetMemory(),
+            manager->GetSmc5027()
+        )
+    );
+}

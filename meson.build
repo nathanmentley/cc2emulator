@@ -1,7 +1,7 @@
 project(
     'compucolor2 emulator',
     'cpp',
-    version: '0.0.1',
+    version: '0.0.2',
     default_options : ['c_std=c2a', 'cpp_std=c++2a']
 )
 
@@ -67,9 +67,10 @@ intel8080ImplLib = declare_dependency(
 )
 
 smc5027ImplLib = declare_dependency(
-    link_with: static_library(
+    link_with: shared_library(
         'Compucolor.Impl.Smc5027',
         [
+            'src/Compucolor.Impl.Smc5027/PluginFactory.cpp',
             'src/Compucolor.Impl.Smc5027/Smc5027Emulator.cpp'
         ],
         dependencies: [
@@ -97,9 +98,10 @@ smc5027ImplTests = executable(
 test('Compucolor.Impl.Tests.Smc5027', smc5027ImplTests)
 
 tms5501ImplLib = declare_dependency(
-    link_with: static_library(
+    link_with: shared_library(
         'Compucolor.Impl.Tms5501',
         [
+            'src/Compucolor.Impl.Tms5501/PluginFactory.cpp',
             'src/Compucolor.Impl.Tms5501/Tms5501Emulator.cpp',
             'src/Compucolor.Impl.Tms5501/Tms5501EmulatorContext.cpp'
         ],
@@ -110,9 +112,10 @@ tms5501ImplLib = declare_dependency(
 )
 
 crtImplLib = declare_dependency(
-    link_with: static_library(
+    link_with: shared_library(
         'Compucolor.Impl.Crt',
         [
+            'src/Compucolor.Impl.Crt/PluginFactory.cpp',
             'src/Compucolor.Impl.Crt/FontRom.cpp',
             'src/Compucolor.Impl.Crt/CrtEmulator.cpp'
         ],
@@ -141,9 +144,10 @@ crtImplTests = executable(
 test('Compucolor.Impl.Tests.Crt', crtImplTests)
 
 floppyImplLib = declare_dependency(
-    link_with: static_library(
+    link_with: shared_library(
         'Compucolor.Impl.Floppy',
         [
+            'src/Compucolor.Impl.Floppy/PluginFactory.cpp',
             'src/Compucolor.Impl.Floppy/FloppyEmulator.cpp'
         ],
         dependencies: [
@@ -153,9 +157,10 @@ floppyImplLib = declare_dependency(
 )
 
 keyboardImplLib = declare_dependency(
-    link_with: static_library(
+    link_with: shared_library(
         'Compucolor.Impl.Keyboard',
         [
+            'src/Compucolor.Impl.Keyboard/PluginFactory.cpp',
             'src/Compucolor.Impl.Keyboard/KeyboardEmulator.cpp'
         ],
         dependencies: [
@@ -164,22 +169,11 @@ keyboardImplLib = declare_dependency(
     )
 )
 
-configurationImplLib = declare_dependency(
-    link_with: static_library(
-        'Compucolor.Impl.Configuration',
-        [
-            'src/Compucolor.Impl.Configuration/Configuration.cpp'
-        ],
-        dependencies: [
-            publicHeaderLib
-        ]
-    )
-)
-
 schedulerImplLib = declare_dependency(
-    link_with: static_library(
+    link_with: shared_library(
         'Compucolor.Impl.Scheduler',
         [
+            'src/Compucolor.Impl.Scheduler/PluginFactory.cpp',
             'src/Compucolor.Impl.Scheduler/Scheduler.cpp'
         ],
         dependencies: [
@@ -192,6 +186,7 @@ loggerImplLib = declare_dependency(
     link_with: shared_library(
         'Compucolor.Impl.Logger',
         [
+            'src/Compucolor.Impl.Logger/PluginFactory.cpp',
             'src/Compucolor.Impl.Logger/Logger.cpp'
         ],
         dependencies: [
@@ -201,9 +196,10 @@ loggerImplLib = declare_dependency(
 )
 
 compucolorImplLib = declare_dependency(
-    link_with: static_library(
+    link_with: shared_library(
         'Compucolor.Impl.Compucolor',
         [
+            'src/Compucolor.Impl.Compucolor/PluginFactory.cpp',
             'src/Compucolor.Impl.Compucolor/CompucolorEmulator.cpp',
             'src/Compucolor.Impl.Compucolor/CompucolorIntel8080Bus.cpp',
             'src/Compucolor.Impl.Compucolor/Roms.cpp'
@@ -217,6 +213,7 @@ compucolorImplLib = declare_dependency(
 executable(
     'Compucolor.Impl.App.Sfml',
     [
+        'src/Compucolor.Impl.App.Sfml/Configuration.cpp',
         'src/Compucolor.Impl.App.Sfml/Display.cpp',
         'src/Compucolor.Impl.App.Sfml/ErrorHandler.cpp',
         'src/Compucolor.Impl.App.Sfml/get_emulator.cpp',
@@ -227,17 +224,6 @@ executable(
     dependencies: [
         dependency('sfml-graphics'),
         dependency('threads'),
-        dependency('boost', modules : ['filesystem']),
-
-        smc5027ImplLib,
-        tms5501ImplLib,
-        crtImplLib,
-        floppyImplLib,
-        keyboardImplLib,
-        configurationImplLib,
-        schedulerImplLib,
-        loggerImplLib,
-        compucolorImplLib,
 
         publicHeaderLib,
         internalHeaderLib

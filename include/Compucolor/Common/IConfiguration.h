@@ -5,14 +5,12 @@
 
 #include <Compucolor/Common/IPlugin.h>
 
-namespace Compucolor::Configuration
+namespace Compucolor::Common
 {
     class IConfiguration: public Common::IPlugin {
         public:
             virtual ~IConfiguration() {}
-    
-            virtual void LoadFile(std::string filename) = 0;
-    
+
             virtual std::optional<std::string> GetSetting(std::string key) = 0;
     };
 }

@@ -2,8 +2,8 @@
 
 #include <vector>
 
+#include <Compucolor/Common/IPluginManager.h>
 #include <Compucolor/Logger/ILogger.h>
-
 #include <Compucolor/Smc5027/ISmc5027Emulator.h>
 
 namespace Compucolor::Impl::Smc5027 {
@@ -80,6 +80,8 @@ namespace Compucolor::Impl::Smc5027 {
              * @retval 
              */
             virtual uint8_t FirstDisplayRow() override;
+
+            static std::shared_ptr<Compucolor::Smc5027::ISmc5027Emulator> Creator(Common::IPluginManager* manager);
         private:
             static const uint8_t REGISTER_COUNT = 16;
     

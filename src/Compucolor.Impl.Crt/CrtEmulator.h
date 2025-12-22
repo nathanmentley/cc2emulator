@@ -8,6 +8,7 @@
 #include <thread>
 
 #include <Compucolor/Common/IDisplay.h>
+#include <Compucolor/Common/IPluginManager.h>
 
 #include <Compucolor/Logger/ILogger.h>
 #include <Compucolor/Scheduler/IScheduler.h>
@@ -54,6 +55,8 @@ namespace Compucolor::Impl::Crt
              * @retval None
              */
             virtual void Stop() override;
+
+            static std::shared_ptr<Compucolor::Crt::ICrtEmulator> Creator(Common::IPluginManager* manager);
 
         private:
             static int const Columns = 64;

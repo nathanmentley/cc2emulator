@@ -1,42 +1,38 @@
 #include "Program.h"
 
+#include <memory>
+
 Compucolor::Impl::App::Sfml::Program::Program():
     _window(
-        std::shared_ptr<sf::RenderWindow>(
-            new sf::RenderWindow(sf::VideoMode(sf::Vector2u(384, 256)), "Compucolor II Emulator")
+        std::make_shared<sf::RenderWindow>(
+            sf::VideoMode(sf::Vector2u(384, 256)), "Compucolor II Emulator"
         )
     ),
+    _loggerProvider(std::make_shared<Compucolor::Logger::ConsoleLoggerProvider>(Compucolor::Logger::LogLevel::Debug)),
+    _configuration(std::make_shared<Configuration>()),
+    _display(std::make_shared<Display>(_window)),
     _manager(
-        std::shared_ptr<Compucolor::Common::PluginManager>(
-            new Compucolor::Common::PluginManager(
-                "libCompucolor.Impl.Intel8080",
-                "libCompucolor.Impl.Memory"
-            )
+        std::make_shared<Common::PluginManager>(
+            _loggerProvider,
+            _display,
+            _configuration->GetSetting("logger_impl").value(),
+            _configuration->GetSetting("intel8080_impl").value(),
+            _configuration->GetSetting("memory_impl").value(),
+            _configuration->GetSetting("scheduler_impl").value(),
+            _configuration->GetSetting("keyboard_impl").value(),
+            _configuration->GetSetting("floppy_impl").value(),
+            _configuration->GetSetting("smc5027_impl").value(),
+            _configuration->GetSetting("crt_impl").value(),
+            _configuration->GetSetting("tms5501_impl").value(),
+            _configuration->GetSetting("compucolor_impl").value()
         )
     ),
-    _emulator(
-        get_emulator(
-            std::shared_ptr<Compucolor::Logger::ILoggerProvider>(
-                new Compucolor::Logger::ConsoleLoggerProvider(
-                    Compucolor::Logger::LogLevel::Debug
-                )
-            ),
-            std::shared_ptr<Display>(
-                new Display(_window)
-            ),
-            _manager
-        )
-    ),
-    _keyboardTranslator(
-        std::unique_ptr<KeyboardTranslator>(
-            new KeyboardTranslator()
-        )
-    )
+    _emulator(get_emulator(_manager)),
+    _keyboardTranslator(std::make_unique<KeyboardTranslator>())
 {
 }
 
-int Compucolor::Impl::App::Sfml::Program::Run()
-{
+int Compucolor::Impl::App::Sfml::Program::Run() const {
     _emulator->Start();
 
     while (_window->isOpen())
@@ -52,7 +48,7 @@ int Compucolor::Impl::App::Sfml::Program::Run()
     return EXIT_SUCCESS;
 }
 
-void Compucolor::Impl::App::Sfml::Program::ProcessEvent(sf::Event event)
+void Compucolor::Impl::App::Sfml::Program::ProcessEvent(const sf::Event &event) const
 {
     if (event.is<sf::Event::Closed>())
     {
@@ -63,7 +59,7 @@ void Compucolor::Impl::App::Sfml::Program::ProcessEvent(sf::Event event)
 
     if (event.is<sf::Event::KeyPressed>())
     {
-        std::optional<Compucolor::Keyboard::CompucolorIIKey> key =
+        const std::optional<Compucolor::Keyboard::CompucolorIIKey> key =
             _keyboardTranslator->ConvertKey(event.getIf<sf::Event::KeyPressed>()->code);
 
         if (key.has_value())
@@ -74,7 +70,7 @@ void Compucolor::Impl::App::Sfml::Program::ProcessEvent(sf::Event event)
 
     if (event.is<sf::Event::KeyReleased>())
     {
-        std::optional<Compucolor::Keyboard::CompucolorIIKey> key =
+        const std::optional<Compucolor::Keyboard::CompucolorIIKey> key =
             _keyboardTranslator->ConvertKey(event.getIf<sf::Event::KeyReleased>()->code);
 
         if (key.has_value())

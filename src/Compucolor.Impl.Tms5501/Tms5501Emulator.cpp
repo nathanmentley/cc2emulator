@@ -375,3 +375,18 @@ bool Compucolor::Impl::Tms5501::Tms5501Emulator::IsFloppy2Selected()
 {
     return ((_context->outport >> 4) & 3) == 2;
 }
+
+std::shared_ptr<Compucolor::Tms5501::ITms5501Emulator> Compucolor::Impl::Tms5501::Tms5501Emulator::Creator(
+    Compucolor::Common::IPluginManager* manager
+)
+{
+    return std::shared_ptr<Compucolor::Tms5501::ITms5501Emulator>(
+        new Compucolor::Impl::Tms5501::Tms5501Emulator(
+            manager->GetLogger(),
+            manager->GetIntel8080(),
+            manager->GetKeyboard(),
+            manager->GetFloppy(),
+            manager->GetFloppy()
+        )
+    );
+}

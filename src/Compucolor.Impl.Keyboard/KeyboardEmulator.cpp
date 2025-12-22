@@ -183,3 +183,12 @@ std::optional<int> Compucolor::Impl::Keyboard::KeyboardEmulator::GetRow(Compucol
         default: return {};
     }
 }
+
+std::shared_ptr<Compucolor::Keyboard::IKeyboardEmulator> Compucolor::Impl::Keyboard::KeyboardEmulator::Creator(
+    Compucolor::Common::IPluginManager* manager
+)
+{
+    return std::shared_ptr<Compucolor::Keyboard::IKeyboardEmulator>(
+        new Compucolor::Impl::Keyboard::KeyboardEmulator(manager->GetLogger())
+    );
+}

@@ -5,6 +5,7 @@
 #include <memory>
 #include <thread>
 
+#include <Compucolor/Common/IPluginManager.h>
 #include <Compucolor/Floppy/IFloppyEmulator.h>
 #include <Compucolor/Intel8080/IIntel8080Emulator.h>
 #include <Compucolor/Keyboard/IKeyboardEmulator.h>
@@ -32,6 +33,8 @@ namespace Compucolor::Impl::Tms5501 {
             virtual void Write(uint8_t port, uint8_t data) override;
 
             virtual void Reset() override;
+
+            static std::shared_ptr<Compucolor::Tms5501::ITms5501Emulator> Creator(Common::IPluginManager* manager);
         private:
             std::shared_ptr<Compucolor::Logger::ILogger> _logger;
             std::unique_ptr<Compucolor::Impl::Tms5501::Tms5501EmulatorContext> _context;

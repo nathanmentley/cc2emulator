@@ -4,6 +4,7 @@
 #include <optional>
 #include <thread>
 
+#include <Compucolor/Common/IPluginManager.h>
 #include <Compucolor/Memory/IMemory.h>
 #include <Compucolor/Crt/ICrtEmulator.h>
 #include <Compucolor/Intel8080/IIntel8080Emulator.h>
@@ -39,6 +40,8 @@ namespace Compucolor::Impl::CompucolorII
             virtual void OnKeyUp(Compucolor::Keyboard::CompucolorIIKey key) override;
 
             virtual void OnKeyDown(Compucolor::Keyboard::CompucolorIIKey key) override;
+
+            static std::shared_ptr<ICompucolorEmulator> Creator(Common::IPluginManager* manager);
 
         private:
             std::shared_ptr<Compucolor::Crt::ICrtEmulator> _crt;

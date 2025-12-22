@@ -1,7 +1,7 @@
 #pragma once
 
+#include <Compucolor/Common/IPluginManager.h>
 #include <Compucolor/Logger/ILogger.h>
-
 #include <Compucolor/Scheduler/IScheduler.h>
 
 namespace Compucolor::Impl::Scheduler
@@ -16,6 +16,7 @@ namespace Compucolor::Impl::Scheduler
 
             virtual std::thread SetupReoccuringTask(uint64_t everyNanoseconds, std::function<int()> logic) override;
 
+            static std::shared_ptr<Compucolor::Scheduler::IScheduler> Creator(Common::IPluginManager* manager);
         private:
             std::shared_ptr<Compucolor::Logger::ILogger> _logger;
 

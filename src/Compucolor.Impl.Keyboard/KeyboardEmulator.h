@@ -1,11 +1,11 @@
 
 #pragma once
 
-#include <iostream>
 #include <memory>
 #include <optional>
 #include <vector>
 
+#include <Compucolor/Common/IPluginManager.h>
 #include <Compucolor/Keyboard/IKeyboardEmulator.h>
 #include <Compucolor/Logger/ILogger.h>
 
@@ -72,6 +72,8 @@ namespace Compucolor::Impl::Keyboard
              * @retval None
              */
             virtual void OnKeyDown(Compucolor::Keyboard::CompucolorIIKey key) override;
+
+            static std::shared_ptr<Compucolor::Keyboard::IKeyboardEmulator> Creator(Common::IPluginManager* manager);
 
         private:
             std::shared_ptr<Logger::ILogger> _logger;

@@ -2,6 +2,7 @@
 
 #include <vector>
 
+#include <Compucolor/Common/IPluginManager.h>
 #include <Compucolor/Logger/ILogger.h>
 #include <Compucolor/Logger/ILoggerProvider.h>
 
@@ -19,7 +20,8 @@ namespace Compucolor::Impl::Logger
             virtual void LogWarning(std::string message, ...) override;
             virtual void LogError(std::string message, ...) override;
     
-        private:
+            static std::shared_ptr<Compucolor::Logger::ILogger> Creator(Common::IPluginManager* manager);
+    private:
             std::shared_ptr<Compucolor::Logger::ILoggerProvider> _provider;
     
             void Log(Compucolor::Logger::LogLevel level, std::string message, va_list args);

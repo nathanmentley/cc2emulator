@@ -117,3 +117,12 @@ uint8_t Compucolor::Impl::Smc5027::Smc5027Emulator::ConvertPort(uint8_t port)
 {
     return port & 0x0F;
 }
+
+std::shared_ptr<Compucolor::Smc5027::ISmc5027Emulator> Compucolor::Impl::Smc5027::Smc5027Emulator::Creator(
+    Compucolor::Common::IPluginManager* manager
+)
+{
+    return std::shared_ptr<Compucolor::Smc5027::ISmc5027Emulator>(
+        new Compucolor::Impl::Smc5027::Smc5027Emulator(manager->GetLogger())
+    );
+}

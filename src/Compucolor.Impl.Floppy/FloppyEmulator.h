@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include <Compucolor/Common/IPluginManager.h>
 #include <Compucolor/Floppy/IFloppyEmulator.h>
 
 namespace Compucolor::Impl::Floppy
@@ -68,6 +69,7 @@ namespace Compucolor::Impl::Floppy
              */
             virtual void Select(bool selected, bool write, uint8_t stepper) override;
 
+            static std::shared_ptr<Compucolor::Floppy::IFloppyEmulator> Creator(Common::IPluginManager* manager);
         private:
             /**
              * @brief  

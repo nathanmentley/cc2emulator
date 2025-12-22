@@ -55,3 +55,12 @@ int64_t Compucolor::Impl::Scheduler::Scheduler::GetCurrentTimeInNanoseconds()
         )
             .count();
 }
+
+std::shared_ptr<Compucolor::Scheduler::IScheduler> Compucolor::Impl::Scheduler::Scheduler::Creator(
+    Compucolor::Common::IPluginManager* manager
+)
+{
+    return std::shared_ptr<Compucolor::Scheduler::IScheduler>(
+        new Compucolor::Impl::Scheduler::Scheduler(manager->GetLogger())
+    );
+}

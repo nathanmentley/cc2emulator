@@ -83,3 +83,12 @@ void Compucolor::Impl::Logger::Logger::Log(Compucolor::Logger::LogLevel level, s
         _provider->Write(level, message, loggerArgs);
     }
 }
+
+std::shared_ptr<Compucolor::Logger::ILogger> Compucolor::Impl::Logger::Logger::Creator(
+    Compucolor::Common::IPluginManager* manager
+)
+{
+    return std::shared_ptr<Compucolor::Logger::ILogger>(
+        new Compucolor::Impl::Logger::Logger(manager->GetLoggerProvider())
+    );
+}

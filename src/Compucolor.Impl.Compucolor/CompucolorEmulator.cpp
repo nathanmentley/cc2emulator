@@ -74,3 +74,20 @@ void Compucolor::Impl::CompucolorII::CompucolorEmulator::OnKeyDown(Compucolor::K
 {
     _keyboard->OnKeyDown(key);
 }
+
+std::shared_ptr<Compucolor::ICompucolorEmulator> Compucolor::Impl::CompucolorII::CompucolorEmulator::Creator(
+    Compucolor::Common::IPluginManager* manager
+)
+{
+    return std::shared_ptr<Compucolor::ICompucolorEmulator>(
+        new Compucolor::Impl::CompucolorII::CompucolorEmulator(
+            manager->GetCrt(),
+            manager->GetIntel8080(),
+            manager->GetKeyboard(),
+            manager->GetMemory(),
+            manager->GetScheduler(),
+            manager->GetSmc5027(),
+            manager->GetTms5501()
+        )
+    );
+}
