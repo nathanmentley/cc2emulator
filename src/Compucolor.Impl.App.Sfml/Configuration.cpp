@@ -1,4 +1,4 @@
-#include <Compucolor.Impl.App.Sfml/Configuration.h>
+#include "Configuration.h"
 
 Compucolor::Impl::App::Sfml::Configuration::Configuration():
     _data(std::map<std::string, std::string>())

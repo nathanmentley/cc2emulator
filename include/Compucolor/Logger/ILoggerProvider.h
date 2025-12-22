@@ -1,6 +1,5 @@
 #pragma once
 
-#include <stdarg.h>
 #include <string>
 
 #include <Compucolor/Logger/LogLevel.h>
@@ -9,7 +8,7 @@ namespace Compucolor::Logger
 {
     class ILoggerProvider {
         public:
-            virtual ~ILoggerProvider() {}
+            virtual ~ILoggerProvider() = default;
     
             virtual void Write(LogLevel logLevel, std::string message, va_list args) = 0;
     

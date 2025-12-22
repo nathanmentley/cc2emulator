@@ -4,6 +4,6 @@ namespace Compucolor::Common
 {
     class ICpu {
         public:
-            virtual ~ICpu() {}
+            virtual ~ICpu() = default;
     };
 }

@@ -2,7 +2,5 @@
 
 namespace Compucolor::Common
 {
-    class IPlugin {
-        public:
-    };
+    class IPlugin {};
 }

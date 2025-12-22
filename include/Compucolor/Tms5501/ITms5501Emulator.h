@@ -10,6 +10,6 @@ namespace Compucolor::Tms5501
 {
     class ITms5501Emulator: public Common::IPlugin, public Common::IEmulatable, public Common::IInputDevice, public Common::IOutputDevice, public Common::IResetable {
         public:
-            virtual ~ITms5501Emulator() {}
+            ~ITms5501Emulator() override = default;
     };
 }

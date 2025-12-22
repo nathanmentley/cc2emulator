@@ -1,18 +1,16 @@
 #pragma once
 
-#include <memory>
 #include <string>
 
 #include <Compucolor/Common/IPlugin.h>
 
-#include <Compucolor/Logger/ILoggerProvider.h>
 #include <Compucolor/Logger/LogLevel.h>
 
 namespace Compucolor::Logger
 {
     class ILogger: public Common::IPlugin {
         public:
-            virtual ~ILogger() {}
+            virtual ~ILogger() = default;
     
             virtual void Log(LogLevel level, std::string message, ...) = 0;
     

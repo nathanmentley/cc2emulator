@@ -7,8 +7,7 @@
 #include <boost/dll/import.hpp>
 #include <boost/function.hpp>
 
-#include "IPlugin.h"
-#include "IPluginManager.h"
+#include <Compucolor/Common/IPluginManager.h>
 
 namespace Compucolor::Common
 {

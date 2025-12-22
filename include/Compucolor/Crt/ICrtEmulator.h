@@ -8,6 +8,6 @@ namespace Compucolor::Crt
 {
     class ICrtEmulator: public Common::IPlugin, public Common::IEmulatable {
         public:
-            virtual ~ICrtEmulator() {}
+            ~ICrtEmulator() override = default;
     };
 }

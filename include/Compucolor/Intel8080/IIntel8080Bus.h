@@ -1,8 +1,6 @@
 
 #pragma once
 
-#include <memory>
-
 #include <Compucolor/Common/IInputDevice.h>
 #include <Compucolor/Common/IOutputDevice.h>
 

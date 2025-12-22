@@ -4,7 +4,7 @@ namespace Compucolor::Common
 {
     class IResetable {
         public:
-            virtual ~IResetable() {}
+            virtual ~IResetable() = default;
     
             virtual void Reset() = 0;
     };

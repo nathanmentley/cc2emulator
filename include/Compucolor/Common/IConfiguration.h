@@ -9,7 +9,7 @@ namespace Compucolor::Common
 {
     class IConfiguration: public Common::IPlugin {
         public:
-            virtual ~IConfiguration() {}
+            virtual ~IConfiguration() = default;
 
             virtual std::optional<std::string> GetSetting(std::string key) = 0;
     };

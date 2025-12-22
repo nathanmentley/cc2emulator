@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Color.h"
+#include <Compucolor/Common/Color.h>
 
 namespace Compucolor::Common
 {
@@ -9,6 +9,6 @@ namespace Compucolor::Common
             virtual void DrawPixel(Compucolor::Common::Color color, int x, int y) = 0;
             virtual void Repaint() = 0;
 
-            virtual ~IDisplay() {}
+            virtual ~IDisplay() = default;
     };
 }

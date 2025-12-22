@@ -20,7 +20,7 @@ namespace Compucolor::Smc5027
              * @note   
              * @retval None
              */
-            virtual ~ISmc5027Emulator() {}
+            ~ISmc5027Emulator() override = default;
 
             /**
              * @brief  

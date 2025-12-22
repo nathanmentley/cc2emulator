@@ -1,11 +1,11 @@
 #pragma once
 
-#include "IEmulatable.h"
+#include <Compucolor/Common/IEmulatable.h>
 
 namespace Compucolor::Common
 {
     class ISystem: public IEmulatable {
         public:
-            virtual ~ISystem() {}
+            virtual ~ISystem() = default;
     };
 }

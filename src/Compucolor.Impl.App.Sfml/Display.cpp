@@ -1,4 +1,4 @@
-#include <Compucolor.Impl.App.Sfml/Display.h>
+#include "Display.h"
 
 Compucolor::Impl::App::Sfml::Display::Display(
     std::shared_ptr<sf::RenderWindow> window

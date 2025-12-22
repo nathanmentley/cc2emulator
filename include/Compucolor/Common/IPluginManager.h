@@ -2,24 +2,24 @@
 
 #include <memory>
 
-#include "./IDisplay.h"
-#include "../ICompucolorEmulator.h"
-#include "../Intel8080/IIntel8080Emulator.h"
-#include "../Logger/ILoggerProvider.h"
-#include "../Logger/ILogger.h"
-#include "../Crt/ICrtEmulator.h"
-#include "../Memory/IMemory.h"
-#include "../Scheduler/IScheduler.h"
-#include "../Keyboard/IKeyboardEmulator.h"
-#include "../Floppy/IFloppyEmulator.h"
-#include "../Smc5027/ISmc5027Emulator.h"
-#include "../Tms5501/ITms5501Emulator.h"
+#include <Compucolor/Common/IDisplay.h>
+#include <Compucolor/ICompucolorEmulator.h>
+#include <Compucolor/Intel8080/IIntel8080Emulator.h>
+#include <Compucolor/Logger/ILoggerProvider.h>
+#include <Compucolor/Logger/ILogger.h>
+#include <Compucolor/Crt/ICrtEmulator.h>
+#include <Compucolor/Memory/IMemory.h>
+#include <Compucolor/Scheduler/IScheduler.h>
+#include <Compucolor/Keyboard/IKeyboardEmulator.h>
+#include <Compucolor/Floppy/IFloppyEmulator.h>
+#include <Compucolor/Smc5027/ISmc5027Emulator.h>
+#include <Compucolor/Tms5501/ITms5501Emulator.h>
 
 namespace Compucolor::Common
 {
     class IPluginManager {
         public:
-            virtual ~IPluginManager() {}
+            virtual ~IPluginManager() = default;
 
             virtual std::shared_ptr<Logger::ILoggerProvider> GetLoggerProvider() = 0;
             virtual std::shared_ptr<IDisplay> GetDisplay() = 0;

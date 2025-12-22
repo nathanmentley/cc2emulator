@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <Compucolor.Impl.Smc5027/Smc5027Emulator.h>
+#include "Smc5027Emulator.h"
 
 #include <Compucolor.Tests.Core/NoopLogger.h>
 

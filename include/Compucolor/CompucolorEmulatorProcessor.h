@@ -3,6 +3,7 @@
 #include <memory>
 #include <optional>
 #include <thread>
+#include <utility>
 
 #include <Compucolor/ICompucolorEmulator.h>
 
@@ -13,7 +14,7 @@ namespace Compucolor
             CompucolorEmulatorProcessor(
                 std::shared_ptr<ICompucolorEmulator> emulator
             ):
-                _emulator(emulator),
+                _emulator(std::move(emulator)),
                 _thread({})
             {
             };

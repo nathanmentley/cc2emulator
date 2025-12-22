@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <Compucolor.Impl.Crt/CrtEmulator.h>
+#include "CrtEmulator.h"
 
 #include <Compucolor.Tests.Core/MockMemory.h>
 //#include <Compucolor.Tests.Core/MockScheduler.h>

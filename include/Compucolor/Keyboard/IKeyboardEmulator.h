@@ -11,7 +11,7 @@ namespace Compucolor::Keyboard
 {
     class IKeyboardEmulator: public Common::IPlugin, public Common::IEmulatable, public Common::IInputDevice, public Common::IResetable {
         public:
-            virtual ~IKeyboardEmulator() {}
+            ~IKeyboardEmulator() override = default;
 
             virtual void OnKeyUp(CompucolorIIKey key) = 0;
 

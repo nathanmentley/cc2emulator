@@ -3,7 +3,7 @@
 #include <chrono>
 #include <optional>
 
-#include "ILoggerProvider.h"
+#include <Compucolor/Logger/ILoggerProvider.h>
 
 namespace Compucolor::Logger
 {
@@ -14,7 +14,7 @@ namespace Compucolor::Logger
             {
             };
 
-            virtual void Write(Logger::LogLevel logLevel, std::string message, va_list args) override {
+            void Write(Logger::LogLevel logLevel, std::string message, va_list args) override {
                 Logger::LogLevel currentLevel = _logLevel
                     .value_or(Logger::LogLevel::Error);
 
@@ -42,12 +42,12 @@ namespace Compucolor::Logger
                 printf("%s\n", ConsoleLoggerProvider::Reset.c_str());
             };
 
-            virtual void SetLogLevel(Logger::LogLevel level) override
+            void SetLogLevel(Logger::LogLevel level) override
             {
                 _logLevel = level;
             };
 
-            virtual Logger::LogLevel GetLogLevel() override
+            Logger::LogLevel GetLogLevel() override
             {
                 return _logLevel.value_or(Logger::LogLevel::Error);
             };
@@ -55,7 +55,7 @@ namespace Compucolor::Logger
         private:
             std::optional<Logger::LogLevel> _logLevel;
 
-            std::string GetLogLevel(Logger::LogLevel logLevel)
+            static std::string GetLogLevel(Logger::LogLevel logLevel)
             {
                 switch(logLevel)
                 {

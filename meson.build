@@ -12,10 +12,6 @@ publicHeaderLib = declare_dependency(
     ]
 )
 
-internalHeaderLib = declare_dependency(
-    include_directories: include_directories('src')
-)
-
 testHeaderLib = declare_dependency(
     include_directories: include_directories('test')
 )
@@ -29,7 +25,8 @@ memoryImplLib = declare_dependency(
         ],
         dependencies: [
             publicHeaderLib
-        ]
+        ],
+        include_directories: 'src/Compucolor.Impl.Memory/'
     )
 )
 memoryImplTests = executable(
@@ -43,11 +40,11 @@ memoryImplTests = executable(
         dependency('gmock'),
 
         publicHeaderLib,
-        internalHeaderLib,
         testHeaderLib,
 
         memoryImplLib
-    ]
+    ],
+    include_directories: 'src/Compucolor.Impl.Memory/'
 )
 test('Compucolor.Impl.Tests.Memory', memoryImplTests)
 
@@ -89,11 +86,11 @@ smc5027ImplTests = executable(
         dependency('gmock'),
 
         publicHeaderLib,
-        internalHeaderLib,
         testHeaderLib,
 
         smc5027ImplLib
-    ]
+    ],
+    include_directories: 'src/Compucolor.Impl.Smc5027/'
 )
 test('Compucolor.Impl.Tests.Smc5027', smc5027ImplTests)
 
@@ -135,11 +132,11 @@ crtImplTests = executable(
         dependency('gmock'),
 
         publicHeaderLib,
-        internalHeaderLib,
         testHeaderLib,
 
         crtImplLib
-    ]
+    ],
+    include_directories: 'src/Compucolor.Impl.Crt/'
 )
 test('Compucolor.Impl.Tests.Crt', crtImplTests)
 
@@ -225,8 +222,7 @@ executable(
         dependency('sfml-graphics'),
         dependency('threads'),
 
-        publicHeaderLib,
-        internalHeaderLib
+        publicHeaderLib
     ],
     install: true
 )
@@ -235,4 +231,18 @@ configure_file(
     input : 'data/app.config',
     output : 'app.config',
     copy : true
+)
+
+python = find_program('python3')
+checker = meson.project_source_root() / 'scripts' / 'check_imports.py'
+
+custom_target(
+    'check_parent_includes',
+    output: 'check_parent_includes.stamp',
+    command: [
+        python,
+        checker,
+        meson.current_source_dir()
+    ],
+    build_by_default: true
 )

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Compucolor/Common/ISystem.h>
-#include <Compucolor/Common/IPlugin.h>
 
 #include <Compucolor/Keyboard/CompucolorIIKey.h>
 
@@ -9,9 +8,9 @@ namespace Compucolor
 {
     class ICompucolorEmulator: public Common::ISystem {
         public:
-            ICompucolorEmulator() {}
+            ICompucolorEmulator() = default;
 
-            virtual ~ICompucolorEmulator() {}
+            ~ICompucolorEmulator() override = default;
 
             virtual void OnKeyUp(Keyboard::CompucolorIIKey key) = 0;
 

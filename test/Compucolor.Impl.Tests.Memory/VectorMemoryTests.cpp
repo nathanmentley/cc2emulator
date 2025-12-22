@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <Compucolor.Impl.Memory/VectorMemory.h>
+#include "VectorMemory.h"
 
 TEST(VectorMemory, SetBytePersistsData) {
     //Arrange

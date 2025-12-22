@@ -7,13 +7,13 @@
 #include <Compucolor/Common/IResetable.h>
 #include <Compucolor/Common/IPlugin.h>
 
-#include "IIntel8080Bus.h"
+#include <Compucolor/Intel8080/IIntel8080Bus.h>
 
 namespace Compucolor::Intel8080
 {
     class IIntel8080Emulator: public Common::IPlugin, public Common::IEmulatable, public Common::IResetable {
         public:
-            virtual ~IIntel8080Emulator() {}
+            ~IIntel8080Emulator() override = default;
 
             virtual void SetBus(std::shared_ptr<IIntel8080Bus> intel8080Bus) = 0;
 

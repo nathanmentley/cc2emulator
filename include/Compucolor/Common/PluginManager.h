@@ -4,8 +4,8 @@
 #include <string>
 #include <utility>
 
-#include "IPluginManager.h"
-#include "PluginLoader.h"
+#include <Compucolor/Common/IPluginManager.h>
+#include <Compucolor/Common/PluginLoader.h>
 
 namespace Compucolor::Common
 {
