@@ -3,7 +3,7 @@
 Compucolor::Impl::App::Sfml::Program::Program():
     _window(
         std::shared_ptr<sf::RenderWindow>(
-            new sf::RenderWindow(sf::VideoMode(384, 256), "Compucolor II Emulator")
+            new sf::RenderWindow(sf::VideoMode(sf::Vector2u(384, 256)), "Compucolor II Emulator")
         )
     ),
     _manager(
@@ -41,10 +41,11 @@ int Compucolor::Impl::App::Sfml::Program::Run()
 
     while (_window->isOpen())
     {  
-        sf::Event event;
-        while (_window->pollEvent(event))
+        while (std::optional<sf::Event> event = _window->pollEvent())
         {
-            ProcessEvent(event);
+            if (!event.has_value()) {
+                ProcessEvent(event.value());
+            }
         }
     }
 
@@ -53,17 +54,17 @@ int Compucolor::Impl::App::Sfml::Program::Run()
 
 void Compucolor::Impl::App::Sfml::Program::ProcessEvent(sf::Event event)
 {
-    if (event.type == sf::Event::Closed)
+    if (event.is<sf::Event::Closed>())
     {
         _emulator->Stop();
 
         _window->close();
     }
 
-    if (event.type == sf::Event::KeyPressed)
+    if (event.is<sf::Event::KeyPressed>())
     {
         std::optional<Compucolor::Keyboard::CompucolorIIKey> key =
-            _keyboardTranslator->ConvertKey(event.key.code);
+            _keyboardTranslator->ConvertKey(event.getIf<sf::Event::KeyPressed>()->code);
 
         if (key.has_value())
         {
@@ -71,10 +72,10 @@ void Compucolor::Impl::App::Sfml::Program::ProcessEvent(sf::Event event)
         }
     }
 
-    if (event.type == sf::Event::KeyReleased)
+    if (event.is<sf::Event::KeyReleased>())
     {
         std::optional<Compucolor::Keyboard::CompucolorIIKey> key =
-            _keyboardTranslator->ConvertKey(event.key.code);
+            _keyboardTranslator->ConvertKey(event.getIf<sf::Event::KeyReleased>()->code);
 
         if (key.has_value())
         {

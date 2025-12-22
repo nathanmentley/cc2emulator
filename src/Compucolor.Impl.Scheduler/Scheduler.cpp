@@ -31,7 +31,7 @@ std::thread Compucolor::Impl::Scheduler::Scheduler::SetupReoccuringTask(uint64_t
     );
 
     std::packaged_task<void()> task(
-        [=] {
+        [=, this] {
             while (true)
             {
                 int64_t lastRunTime = GetCurrentTimeInNanoseconds();

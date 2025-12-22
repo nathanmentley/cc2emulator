@@ -6,7 +6,10 @@ project(
 )
 
 publicHeaderLib = declare_dependency(
-    include_directories: include_directories('include')
+    include_directories: include_directories('include'),
+    dependencies: [
+        dependency('boost', modules : ['filesystem'])
+    ]
 )
 
 internalHeaderLib = declare_dependency(
@@ -245,5 +248,5 @@ executable(
 configure_file(
     input : 'data/app.config',
     output : 'app.config',
-    copy : configuration_data()
+    copy : true
 )

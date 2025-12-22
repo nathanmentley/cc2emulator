@@ -164,10 +164,10 @@ std::optional<Compucolor::Keyboard::CompucolorIIKey> Compucolor::Impl::App::Sfml
         case sf::Keyboard::Key::Semicolon:
         case sf::Keyboard::Key::Comma:
         case sf::Keyboard::Key::Period:
-        case sf::Keyboard::Key::Quote:
+        //case sf::Keyboard::Key::Quote:
         case sf::Keyboard::Key::Slash:
         case sf::Keyboard::Key::Backslash:
-        case sf::Keyboard::Key::Tilde:
+        //case sf::Keyboard::Key::Tilde:
         case sf::Keyboard::Key::Equal:
         case sf::Keyboard::Key::Hyphen:
         case sf::Keyboard::Key::Tab:
