@@ -11,7 +11,7 @@ namespace Compucolor::Impl::App::Sfml
         public:
             Configuration();
 
-            virtual std::optional<std::string> GetSetting(std::string key) override;
+            std::optional<std::string> GetSetting(std::string key) override;
 
         private:
             void LoadFile(std::string filename);

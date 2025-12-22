@@ -5,6 +5,10 @@ project(
     default_options : ['c_std=c2a', 'cpp_std=c++2a']
 )
 
+project_root = meson.source_root()  # absolute path to project root
+
+install_prefix = join_paths(project_root, 'dist')  # install inside project dir
+
 publicHeaderLib = declare_dependency(
     include_directories: include_directories('include'),
     dependencies: [
@@ -26,7 +30,8 @@ memoryImplLib = declare_dependency(
         dependencies: [
             publicHeaderLib
         ],
-        include_directories: 'src/Compucolor.Impl.Memory/'
+        install: true,
+        install_dir: install_prefix + '/plugins'
     )
 )
 memoryImplTests = executable(
@@ -59,7 +64,9 @@ intel8080ImplLib = declare_dependency(
         ],
         dependencies: [
             publicHeaderLib
-        ]
+        ],
+        install: true,
+        install_dir: install_prefix + '/plugins'
     )
 )
 
@@ -72,7 +79,9 @@ smc5027ImplLib = declare_dependency(
         ],
         dependencies: [
             publicHeaderLib
-        ]
+        ],
+        install: true,
+        install_dir: install_prefix + '/plugins'
     )
 )
 smc5027ImplTests = executable(
@@ -104,7 +113,9 @@ tms5501ImplLib = declare_dependency(
         ],
         dependencies: [
             publicHeaderLib
-        ]
+        ],
+        install: true,
+        install_dir: install_prefix + '/plugins'
     )
 )
 
@@ -118,7 +129,9 @@ crtImplLib = declare_dependency(
         ],
         dependencies: [
             publicHeaderLib
-        ]
+        ],
+        install: true,
+        install_dir: install_prefix + '/plugins'
     )
 )
 crtImplTests = executable(
@@ -149,7 +162,9 @@ floppyImplLib = declare_dependency(
         ],
         dependencies: [
             publicHeaderLib
-        ]
+        ],
+        install: true,
+        install_dir: install_prefix + '/plugins'
     )
 )
 
@@ -162,7 +177,9 @@ keyboardImplLib = declare_dependency(
         ],
         dependencies: [
             publicHeaderLib
-        ]
+        ],
+        install: true,
+        install_dir: install_prefix + '/plugins'
     )
 )
 
@@ -175,7 +192,9 @@ schedulerImplLib = declare_dependency(
         ],
         dependencies: [
             publicHeaderLib
-        ]
+        ],
+        install: true,
+        install_dir: install_prefix + '/plugins'
     )
 )
 
@@ -188,7 +207,9 @@ loggerImplLib = declare_dependency(
         ],
         dependencies: [
             publicHeaderLib
-        ]
+        ],
+        install: true,
+        install_dir: install_prefix + '/plugins'
     )
 )
 
@@ -203,7 +224,9 @@ compucolorImplLib = declare_dependency(
         ],
         dependencies: [
             publicHeaderLib
-        ]
+        ],
+        install: true,
+        install_dir: install_prefix + '/plugins'
     )
 )
 
@@ -224,7 +247,8 @@ executable(
 
         publicHeaderLib
     ],
-    install: true
+    install: true,
+    install_dir: install_prefix + '/bin'
 )
 
 configure_file(
@@ -232,6 +256,18 @@ configure_file(
     output : 'app.config',
     copy : true
 )
+
+configure_file(
+    input : 'data/cc2_emu.sh',
+    output : 'cc2_emu.sh',
+    copy : true
+)
+
+install_data('data/app.config', install_dir: install_prefix)
+install_data('data/cc2_emu.sh', install_dir: install_prefix, install_mode: 'rwxr--r--')
+
+install_subdir('data/roms', install_dir: install_prefix)
+install_subdir('data/disks', install_dir: install_prefix)
 
 python = find_program('python3')
 checker = meson.project_source_root() / 'scripts' / 'check_imports.py'
