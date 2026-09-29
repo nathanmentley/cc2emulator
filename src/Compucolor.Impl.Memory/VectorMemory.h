@@ -1,6 +1,7 @@
 #pragma once
 
-#include <vector>
+#include <array>
+#include <atomic>
 
 #include <Compucolor/Common/IPluginManager.h>
 
@@ -18,6 +19,6 @@ namespace Compucolor::Impl::Memory
             static std::shared_ptr<IMemory> Creator(Common::IPluginManager* manager);
 
         private:
-            std::vector<uint8_t> _data;
+            std::array<std::atomic<uint8_t>, 64 * 1024> _data{};
     };
 }

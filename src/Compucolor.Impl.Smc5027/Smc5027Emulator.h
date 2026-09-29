@@ -1,6 +1,7 @@
 #pragma once
 
-#include <vector>
+#include <array>
+#include <atomic>
 
 #include <Compucolor/Common/IPluginManager.h>
 #include <Compucolor/Logger/ILogger.h>
@@ -87,7 +88,7 @@ namespace Compucolor::Impl::Smc5027 {
             static constexpr uint8_t ROW_COUNT = 32;
     
             std::shared_ptr<Logger::ILogger> _logger;
-            std::vector<uint8_t> _registers;
+            std::array<std::atomic<uint8_t>, REGISTER_COUNT> _registers{};
     
             /**
              * @brief  

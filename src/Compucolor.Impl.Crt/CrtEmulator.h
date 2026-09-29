@@ -91,7 +91,7 @@ namespace Compucolor::Impl::Crt
              * @note   
              * @retval None
              */
-            void DrawCursor() const;
+            void DrawCursor(uint8_t firstRow) const;
 
             /**
              * @brief  

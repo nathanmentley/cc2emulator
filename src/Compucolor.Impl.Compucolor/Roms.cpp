@@ -2129,3 +2129,8 @@ uint16_t Compucolor::Impl::CompucolorII::get_system_rom_8_79_length()
 {
     return sizeof(system_rom_8_79) / sizeof(system_rom_8_79[0]);
 }
+
+uint8_t* Compucolor::Impl::CompucolorII::get_crt_timing_rom()
+{
+    return crt_timing_rom;
+}

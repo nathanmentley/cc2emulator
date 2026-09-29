@@ -64,10 +64,6 @@ void Compucolor::Impl::Crt::CrtEmulator::RefreshDisplay() const
 
     for (uint16_t i = 0x7000; i < 0x8000; i += 2)
     {
-        if (!(_memory->GetByte(i + 1) & 0x40)) {
-            continue;
-        }
-
         // Update video memory
         const uint16_t baseAddress = i - 0x7000;   // 0x6... range to avoid wait for hblank
         // two bytes per char, 64 char/row
@@ -93,16 +89,15 @@ void Compucolor::Impl::Crt::CrtEmulator::RefreshDisplay() const
         );
     }
 
-    DrawCursor();
+    DrawCursor(firstRow);
 
     _display->Repaint();
 }
 
-void Compucolor::Impl::Crt::CrtEmulator::DrawCursor() const
+void Compucolor::Impl::Crt::CrtEmulator::DrawCursor(const uint8_t firstRow) const
 {
     if (IsBlinkOn())
     {
-        const uint8_t firstRow = _smc5027emulator->FirstDisplayRow();
         const uint8_t x = _smc5027emulator->GetCursorX();
         uint8_t y = _smc5027emulator->GetCursorY();
         y = (y - firstRow + 32) % 32;  // scroll adjustment

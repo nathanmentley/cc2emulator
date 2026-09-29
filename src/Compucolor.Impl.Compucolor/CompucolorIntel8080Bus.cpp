@@ -1,4 +1,5 @@
 #include "CompucolorIntel8080Bus.h"
+#include "Roms.h"
 
 #include <utility>
 
@@ -13,6 +14,11 @@ Compucolor::Impl::CompucolorII::CompucolorIntel8080Bus::CompucolorIntel8080Bus(
 
 uint8_t Compucolor::Impl::CompucolorII::CompucolorIntel8080Bus::Read(const uint8_t port)
 {
+    // CRT timing PROM
+    if (port >= 0x80 && port <= 0x9F) {
+        return get_crt_timing_rom()[port & 0x1F];
+    }
+
     // TMS5501 I/O chip
     if (port <= 0x1F) {
         return _tms5501->Read(port & 0x0F);

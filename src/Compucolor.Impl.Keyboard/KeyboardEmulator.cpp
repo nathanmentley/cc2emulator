@@ -5,8 +5,7 @@
 Compucolor::Impl::Keyboard::KeyboardEmulator::KeyboardEmulator(
     std::shared_ptr<Logger::ILogger> logger
 ):
-    _logger(std::move(logger)),
-    _kbMatrix(std::vector<uint8_t>(17))
+    _logger(std::move(logger))
 {
 }
 
@@ -40,7 +39,7 @@ uint8_t Compucolor::Impl::Keyboard::KeyboardEmulator::Read(uint8_t port)
     );
     */
 
-    return _kbMatrix[port];
+    return _kbMatrix[port].load(std::memory_order_relaxed);
 }
 
 void Compucolor::Impl::Keyboard::KeyboardEmulator::Reset()
@@ -52,7 +51,7 @@ void Compucolor::Impl::Keyboard::KeyboardEmulator::Reset()
 
     for(uint8_t i = 0; i < 17; i++)
     {
-        _kbMatrix[i] = 0xFF;
+        _kbMatrix[i].store(0xFF, std::memory_order_relaxed);
     }
 }
 
@@ -71,7 +70,7 @@ void Compucolor::Impl::Keyboard::KeyboardEmulator::OnKeyUp(Compucolor::Keyboard:
 
     if(row.has_value() && bit.has_value())
     {
-        _kbMatrix[row.value()] = 0xFF;
+        _kbMatrix[row.value()].store(0xFF, std::memory_order_relaxed);
     }
 }
 
@@ -98,7 +97,10 @@ void Compucolor::Impl::Keyboard::KeyboardEmulator::OnKeyDown(Compucolor::Keyboar
 
     if(row.has_value() && bit.has_value())
     {
-        _kbMatrix[row.value()]  &= (~(1 << bit.value()) & 0xFF);
+        _kbMatrix[row.value()].fetch_and(
+            static_cast<uint8_t>(~(1 << bit.value()) & 0xFF),
+            std::memory_order_relaxed
+        );
     }
 }
 

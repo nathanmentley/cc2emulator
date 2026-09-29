@@ -230,6 +230,20 @@ compucolorImplLib = declare_dependency(
         install_dir: install_prefix + '/plugins'
     )
 )
+compucolorImplTests = executable(
+    'Compucolor.Impl.Tests.Compucolor',
+    [
+        'test/Compucolor.Impl.Tests.Compucolor/main.cpp',
+        'test/Compucolor.Impl.Tests.Compucolor/CompucolorIntel8080BusTests.cpp'
+    ],
+    dependencies: [
+        dependency('gtest'),
+        publicHeaderLib,
+        compucolorImplLib
+    ],
+    include_directories: 'src/Compucolor.Impl.Compucolor/'
+)
+test('Compucolor.Impl.Tests.Compucolor', compucolorImplTests)
 
 executable(
     'Compucolor.Impl.App.Sfml',

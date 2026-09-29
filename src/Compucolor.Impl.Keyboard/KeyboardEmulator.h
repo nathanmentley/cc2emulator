@@ -1,9 +1,10 @@
 
 #pragma once
 
+#include <array>
+#include <atomic>
 #include <memory>
 #include <optional>
-#include <vector>
 
 #include <Compucolor/Common/IPluginManager.h>
 #include <Compucolor/Keyboard/IKeyboardEmulator.h>
@@ -77,7 +78,7 @@ namespace Compucolor::Impl::Keyboard
 
         private:
             std::shared_ptr<Logger::ILogger> _logger;
-            std::vector<uint8_t> _kbMatrix;
+            std::array<std::atomic<uint8_t>, 17> _kbMatrix{};
 
             static std::optional<int> GetRow(Compucolor::Keyboard::CompucolorIIKey key);
 

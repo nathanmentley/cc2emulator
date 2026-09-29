@@ -4,7 +4,6 @@
 
 using std::make_shared;
 using std::shared_ptr;
-using std::vector;
 
 using Compucolor::Common::IPluginManager;
 
@@ -14,8 +13,7 @@ using Compucolor::Smc5027::ISmc5027Emulator;
 using Compucolor::Impl::Smc5027::Smc5027Emulator;
 
 Smc5027Emulator::Smc5027Emulator(shared_ptr<ILogger> logger):
-    _logger(std::move(logger)),
-    _registers(vector<uint8_t>(REGISTER_COUNT))
+    _logger(std::move(logger))
 {
     Smc5027Emulator::Reset();
 }
@@ -41,11 +39,11 @@ uint8_t Smc5027Emulator::Read(uint8_t port)
     switch (ConvertPort(port))
     {
         case 0x08:
-            data = _registers[0x08];
+            data = _registers[0x08].load(std::memory_order_relaxed);
             break;
 
         case 0x09:
-            data = _registers[0x09];
+            data = _registers[0x09].load(std::memory_order_relaxed);
             break;
 
         default:
@@ -70,19 +68,22 @@ void Smc5027Emulator::Write(uint8_t port, uint8_t data)
     switch (ConvertPort(port))
     {
         case 0x06:
-            _registers[0x06] = data;
+            _registers[0x06].store(data, std::memory_order_relaxed);
             break;
 
         case 0x0B:
-            _registers[0x06] = (_registers[0x06] + 1) % ROW_COUNT;
+            _registers[0x06].store(
+                (_registers[0x06].load(std::memory_order_relaxed) + 1) % ROW_COUNT,
+                std::memory_order_relaxed
+            );
             break;
 
         case 0x0C:
-            _registers[0x09] = data;
+            _registers[0x09].store(data, std::memory_order_relaxed);
             break;
 
         case 0x0D:
-            _registers[0x08] = data & 0x3F;
+            _registers[0x08].store(data & 0x3F, std::memory_order_relaxed);
             break;
 
         default:
@@ -101,7 +102,7 @@ void Smc5027Emulator::Reset()
         registerIndex++
     )
     {
-        _registers[registerIndex] = 0x00;
+        _registers[registerIndex].store(0x00, std::memory_order_relaxed);
     }
 }
 
@@ -118,7 +119,7 @@ uint8_t Smc5027Emulator::GetCursorY()
 uint8_t Smc5027Emulator::FirstDisplayRow() {
     constexpr uint8_t rows = ROW_COUNT - 1;
 
-    const uint8_t curEnd = _registers[0x06];
+    const uint8_t curEnd = _registers[0x06].load(std::memory_order_relaxed) & 0x1F;
 
     return (curEnd + 1) % (rows + 1);
 }
