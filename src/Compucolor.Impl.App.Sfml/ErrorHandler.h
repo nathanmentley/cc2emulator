@@ -1,9 +1,9 @@
 #pragma once
 
-#include <stdio.h>
+#include <cstdio>
 #include <execinfo.h>
-#include <signal.h>
-#include <stdlib.h>
+#include <csignal>
+#include <cstdlib>
 #include <unistd.h>
 
 namespace Compucolor::Impl::App::Sfml

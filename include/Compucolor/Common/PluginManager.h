@@ -19,7 +19,8 @@ namespace Compucolor::Common
                 const std::string &memoryLibrary,
                 const std::string &schedulerLibrary,
                 const std::string &keyboardLibrary,
-                const std::string &floppyLibrary,
+                const std::string &floppyALibrary,
+                const std::string &floppyBLibrary,
                 const std::string &smc5027Library,
                 const std::string &crtLibrary,
                 const std::string &tms5501Library,
@@ -52,13 +53,18 @@ namespace Compucolor::Common
                         keyboardLibrary
                     )
                 ),
-                _floppyPluginLoader(
+                _floppyAPluginLoader(
                     std::make_shared<PluginLoader<Floppy::IFloppyEmulator>>(
-                        floppyLibrary
+                        floppyALibrary
+                    )
+                ),
+                _floppyBPluginLoader(
+                    std::make_shared<PluginLoader<Floppy::IFloppyEmulator>>(
+                        floppyBLibrary
                     )
                 ),
                 _smc5027PluginLoader(
-                    std::make_shared<PluginLoader<Smc5027::ISmc5027Emulator>>(
+                        std::make_shared<PluginLoader<Smc5027::ISmc5027Emulator>>(
                         smc5027Library
                     )
                 ),
@@ -108,8 +114,12 @@ namespace Compucolor::Common
                 return _keyboardPluginLoader->Create(this);
             }
 
-            std::shared_ptr<Floppy::IFloppyEmulator> GetFloppy() override {
-                return _floppyPluginLoader->Create(this);
+            std::shared_ptr<Floppy::IFloppyEmulator> GetFloppyA() override {
+                return _floppyAPluginLoader->Create(this);
+            }
+
+            std::shared_ptr<Floppy::IFloppyEmulator> GetFloppyB() override {
+                return _floppyBPluginLoader->Create(this);
             }
 
             std::shared_ptr<Smc5027::ISmc5027Emulator> GetSmc5027() override {
@@ -135,7 +145,8 @@ namespace Compucolor::Common
             std::shared_ptr<PluginLoader<Memory::IMemory>> _memoryPluginLoader;
             std::shared_ptr<PluginLoader<Scheduler::IScheduler>> _schedulerPluginLoader;
             std::shared_ptr<PluginLoader<Keyboard::IKeyboardEmulator>> _keyboardPluginLoader;
-            std::shared_ptr<PluginLoader<Floppy::IFloppyEmulator>> _floppyPluginLoader;
+            std::shared_ptr<PluginLoader<Floppy::IFloppyEmulator>> _floppyAPluginLoader;
+            std::shared_ptr<PluginLoader<Floppy::IFloppyEmulator>> _floppyBPluginLoader;
             std::shared_ptr<PluginLoader<Smc5027::ISmc5027Emulator>> _smc5027PluginLoader;
             std::shared_ptr<PluginLoader<Crt::ICrtEmulator>> _crtPluginLoader;
             std::shared_ptr<PluginLoader<Tms5501::ITms5501Emulator>> _tms5501PluginLoader;

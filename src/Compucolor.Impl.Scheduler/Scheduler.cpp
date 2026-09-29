@@ -1,11 +1,17 @@
 #include "Scheduler.h"
+#include "ScheduledTask.h"
+
+#include <utility>
 
 Compucolor::Impl::Scheduler::Scheduler::Scheduler(
     std::shared_ptr<Logger::ILogger> logger
 ):
-    _logger(logger) {}
+    _logger(std::move(logger)) {}
 
-std::future<int> Compucolor::Impl::Scheduler::Scheduler::RunOnce(uint64_t afterNanoseconds, std::function<int()> logic)
+std::future<int> Compucolor::Impl::Scheduler::Scheduler::RunOnce(
+    const uint64_t afterNanoseconds,
+    const std::function<int()> logic
+)
 {
     return std::async(std::launch::async, [=, this] {
         std::this_thread::sleep_for(std::chrono::nanoseconds{afterNanoseconds});
@@ -22,7 +28,10 @@ std::future<int> Compucolor::Impl::Scheduler::Scheduler::RunOnce(uint64_t afterN
     });
 }
 
-std::thread Compucolor::Impl::Scheduler::Scheduler::SetupReoccuringTask(uint64_t everyNanoseconds, std::function<int()> logic)
+std::shared_ptr<Compucolor::Scheduler::IScheduledTask> Compucolor::Impl::Scheduler::Scheduler::SetupRecurringTask(
+    const uint64_t everyNanoseconds,
+    const std::function<int()> logic
+)
 {
     _logger->LogTrace(
         "%s running logic every %d nanoseconds",
@@ -30,21 +39,11 @@ std::thread Compucolor::Impl::Scheduler::Scheduler::SetupReoccuringTask(uint64_t
         everyNanoseconds
     );
 
-    std::packaged_task<void()> task(
-        [=, this] {
-            while (true)
-            {
-                int64_t lastRunTime = GetCurrentTimeInNanoseconds();
-                int64_t nextRunTime = lastRunTime + everyNanoseconds;
-                logic();
+    const std::shared_ptr<ScheduledTask> task = std::make_shared<ScheduledTask>();
 
+    task->Start(everyNanoseconds, logic);
 
-                while(nextRunTime > GetCurrentTimeInNanoseconds());
-            }
-        }
-    );
-
-    return std::thread(std::move(task));
+    return task;
 }
 
 int64_t Compucolor::Impl::Scheduler::Scheduler::GetCurrentTimeInNanoseconds()
@@ -57,10 +56,8 @@ int64_t Compucolor::Impl::Scheduler::Scheduler::GetCurrentTimeInNanoseconds()
 }
 
 std::shared_ptr<Compucolor::Scheduler::IScheduler> Compucolor::Impl::Scheduler::Scheduler::Creator(
-    Compucolor::Common::IPluginManager* manager
+    Common::IPluginManager* manager
 )
 {
-    return std::shared_ptr<Compucolor::Scheduler::IScheduler>(
-        new Compucolor::Impl::Scheduler::Scheduler(manager->GetLogger())
-    );
+    return std::make_shared<Scheduler>(manager->GetLogger());
 }

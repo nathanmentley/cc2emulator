@@ -188,7 +188,8 @@ schedulerImplLib = declare_dependency(
         'Compucolor.Impl.Scheduler',
         [
             'src/Compucolor.Impl.Scheduler/PluginFactory.cpp',
-            'src/Compucolor.Impl.Scheduler/Scheduler.cpp'
+            'src/Compucolor.Impl.Scheduler/Scheduler.cpp',
+            'src/Compucolor.Impl.Scheduler/ScheduledTask.cpp'
         ],
         dependencies: [
             publicHeaderLib
@@ -236,7 +237,6 @@ executable(
         'src/Compucolor.Impl.App.Sfml/Configuration.cpp',
         'src/Compucolor.Impl.App.Sfml/Display.cpp',
         'src/Compucolor.Impl.App.Sfml/ErrorHandler.cpp',
-        'src/Compucolor.Impl.App.Sfml/get_emulator.cpp',
         'src/Compucolor.Impl.App.Sfml/KeyboardTranslator.cpp',
         'src/Compucolor.Impl.App.Sfml/main.cpp',
         'src/Compucolor.Impl.App.Sfml/Program.cpp'

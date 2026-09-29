@@ -28,7 +28,8 @@ namespace Compucolor::Common
             virtual std::shared_ptr<Intel8080::IIntel8080Emulator> GetIntel8080() = 0;
             virtual std::shared_ptr<Memory::IMemory> GetMemory() = 0;
             virtual std::shared_ptr<Keyboard::IKeyboardEmulator> GetKeyboard() = 0;
-            virtual std::shared_ptr<Floppy::IFloppyEmulator> GetFloppy() = 0;
+            virtual std::shared_ptr<Floppy::IFloppyEmulator> GetFloppyA() = 0;
+            virtual std::shared_ptr<Floppy::IFloppyEmulator> GetFloppyB() = 0;
             virtual std::shared_ptr<Smc5027::ISmc5027Emulator> GetSmc5027() = 0;
             virtual std::shared_ptr<Crt::ICrtEmulator> GetCrt() = 0;
             virtual std::shared_ptr<Tms5501::ITms5501Emulator> GetTms5501() = 0;

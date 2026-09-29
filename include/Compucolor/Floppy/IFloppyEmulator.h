@@ -14,5 +14,9 @@ namespace Compucolor::Floppy
             ~IFloppyEmulator() override = default;
 
             virtual void Select(bool selected, bool write, uint8_t stepper) = 0;
+
+            virtual void ReadFile(std::string filename) = 0;
+
+            virtual void SaveFile(std::string filename) = 0;
     };
 }

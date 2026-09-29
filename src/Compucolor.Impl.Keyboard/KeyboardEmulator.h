@@ -21,7 +21,7 @@ namespace Compucolor::Impl::Keyboard
             /**
              * @brief  
              * @note   
-             * @param  memory: 
+             * @param  logger:
              * @retval 
              */
             KeyboardEmulator(
@@ -33,14 +33,14 @@ namespace Compucolor::Impl::Keyboard
              * @note   
              * @retval None
              */
-            virtual void Start() override;
+            void Start() override;
 
             /**
              * @brief  
              * @note   
              * @retval None
              */
-            virtual void Stop() override;
+            void Stop() override;
 
             /**
              * @brief  
@@ -48,22 +48,14 @@ namespace Compucolor::Impl::Keyboard
              * @param  port: 
              * @retval 
              */
-            virtual uint8_t Read(uint8_t port) override;
+            uint8_t Read(uint8_t port) override;
 
             /**
              * @brief  
              * @note   
              * @retval None
              */
-            virtual void Reset() override;
-
-            /**
-             * @brief  
-             * @note   
-             * @param  key: 
-             * @retval None
-             */
-            virtual void OnKeyUp(Compucolor::Keyboard::CompucolorIIKey key) override;
+            void Reset() override;
 
             /**
              * @brief  
@@ -71,7 +63,15 @@ namespace Compucolor::Impl::Keyboard
              * @param  key: 
              * @retval None
              */
-            virtual void OnKeyDown(Compucolor::Keyboard::CompucolorIIKey key) override;
+            void OnKeyUp(Compucolor::Keyboard::CompucolorIIKey key) override;
+
+            /**
+             * @brief  
+             * @note   
+             * @param  key: 
+             * @retval None
+             */
+            void OnKeyDown(Compucolor::Keyboard::CompucolorIIKey key) override;
 
             static std::shared_ptr<Compucolor::Keyboard::IKeyboardEmulator> Creator(Common::IPluginManager* manager);
 

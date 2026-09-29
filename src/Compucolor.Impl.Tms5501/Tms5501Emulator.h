@@ -18,45 +18,46 @@ namespace Compucolor::Impl::Tms5501 {
     class Tms5501Emulator: public Compucolor::Tms5501::ITms5501Emulator {
         public:
             Tms5501Emulator(
-                std::shared_ptr<Compucolor::Logger::ILogger> logger,
-                std::shared_ptr<Compucolor::Intel8080::IIntel8080Emulator> intel8080,
-                std::shared_ptr<Compucolor::Keyboard::IKeyboardEmulator> keyboard,
-                std::shared_ptr<Compucolor::Floppy::IFloppyEmulator> floppy1,
-                std::shared_ptr<Compucolor::Floppy::IFloppyEmulator> floppy2
+                std::shared_ptr<Logger::ILogger> logger,
+                std::shared_ptr<Intel8080::IIntel8080Emulator> intel8080,
+                std::shared_ptr<Keyboard::IKeyboardEmulator> keyboard,
+                std::shared_ptr<Floppy::IFloppyEmulator> floppy1,
+                std::shared_ptr<Floppy::IFloppyEmulator> floppy2
             );
 
-            virtual void Start() override;
-            virtual void Stop() override;
+            void Start() override;
+            void Stop() override;
+            void Reset() override;
 
-            virtual uint8_t Read(uint8_t port) override;
+            void Step() override;
+            void TriggerExternalSensor() override;
 
-            virtual void Write(uint8_t port, uint8_t data) override;
+            uint8_t Read(uint8_t port) override;
 
-            virtual void Reset() override;
+            void Write(uint8_t port, uint8_t data) override;
 
-            static std::shared_ptr<Compucolor::Tms5501::ITms5501Emulator> Creator(Common::IPluginManager* manager);
+            void OnInterruptConsumed(uint8_t opcode) override;
+
+            static std::shared_ptr<ITms5501Emulator> Creator(Common::IPluginManager* manager);
         private:
-            std::shared_ptr<Compucolor::Logger::ILogger> _logger;
-            std::unique_ptr<Compucolor::Impl::Tms5501::Tms5501EmulatorContext> _context;
-            std::shared_ptr<Compucolor::Intel8080::IIntel8080Emulator> _intel8080;
-            std::atomic<bool> _isRunning;
-            std::shared_ptr<Compucolor::Keyboard::IKeyboardEmulator> _keyboard;
-            std::shared_ptr<Compucolor::Floppy::IFloppyEmulator> _floppy1;
-            std::shared_ptr<Compucolor::Floppy::IFloppyEmulator> _floppy2;
+            std::shared_ptr<Logger::ILogger> _logger;
+            std::unique_ptr<Tms5501EmulatorContext> _context;
+            std::shared_ptr<Intel8080::IIntel8080Emulator> _intel8080;
+            std::shared_ptr<Keyboard::IKeyboardEmulator> _keyboard;
+            std::shared_ptr<Floppy::IFloppyEmulator> _floppy1;
+            std::shared_ptr<Floppy::IFloppyEmulator> _floppy2;
             uint8_t _outport;
-            std::thread _thread;
-            std::thread _keyboardThread;
-
-            uint8_t ConvertPort(uint8_t port);
 
             void SetOutport(uint8_t value);
-
-            bool IsSerialSelected();
-            bool IsFloppy1Selected();
-            bool IsFloppy2Selected();
-            uint8_t GetIntAddr();
             void ClearIntAddr(uint8_t op);
-            bool IsBitSet(uint8_t data, uint8_t pos);
             void CheckInterruptStatus();
+
+            [[nodiscard]] bool IsSerialSelected() const;
+            [[nodiscard]] bool IsFloppy1Selected() const;
+            [[nodiscard]] bool IsFloppy2Selected() const;
+            [[nodiscard]] uint8_t GetIntAddr() const;
+
+            static uint8_t ConvertPort(uint8_t port);
+            static bool IsBitSet(uint8_t data, uint8_t pos);
     };
 }

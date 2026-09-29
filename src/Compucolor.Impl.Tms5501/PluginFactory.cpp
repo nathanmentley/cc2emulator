@@ -2,4 +2,6 @@
 
 #include "Tms5501Emulator.h"
 
-BOOST_DLL_ALIAS(Compucolor::Impl::Tms5501::Tms5501Emulator::Creator, create);
+using Compucolor::Impl::Tms5501::Tms5501Emulator;
+
+BOOST_DLL_ALIAS(Tms5501Emulator::Creator, create);

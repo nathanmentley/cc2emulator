@@ -1,9 +1,11 @@
 #include "ErrorHandler.h"
 #include "Program.h"
 
-int main(int argc, char** argv) {
-    signal(SIGSEGV, Compucolor::Impl::App::Sfml::ErrorHandler);
+using Compucolor::Impl::App::Sfml::ErrorHandler;
+using Compucolor::Impl::App::Sfml::Program;
 
-    return Compucolor::Impl::App::Sfml::Program()
-        .Run();
+int main([[maybe_unused]] const int argc, [[maybe_unused]] const char** argv) {
+    signal(SIGSEGV, ErrorHandler);
+
+    return Program().Run();
 }

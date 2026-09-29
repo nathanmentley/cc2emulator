@@ -20,4 +20,8 @@ meson compile
 
 meson test
 
-./Compucolor.Impl.App.Sfml
+meson install
+
+cd ../dist
+
+./cc2_emu.sh

@@ -5,21 +5,19 @@ Compucolor::Impl::Memory::VectorMemory::VectorMemory():
 {
 }
 
-uint8_t Compucolor::Impl::Memory::VectorMemory::GetByte(uint16_t address)
+uint8_t Compucolor::Impl::Memory::VectorMemory::GetByte(const uint16_t address)
 {
     return _data[address];
 }
 
-void Compucolor::Impl::Memory::VectorMemory::SetByte(uint16_t address, uint8_t data)
+void Compucolor::Impl::Memory::VectorMemory::SetByte(const uint16_t address, const uint8_t data)
 {
     _data[address] = data;
 }
 
 std::shared_ptr<Compucolor::Memory::IMemory> Compucolor::Impl::Memory::VectorMemory::Creator(
-    Compucolor::Common::IPluginManager* manager
+    Common::IPluginManager* manager
 )
 {
-    return std::shared_ptr<Compucolor::Memory::IMemory>(
-        new Compucolor::Impl::Memory::VectorMemory()
-    );
+    return std::make_shared<VectorMemory>();
 }

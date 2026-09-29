@@ -16,31 +16,30 @@ namespace Compucolor::Impl::Floppy
             /**
              * @brief  
              * @note   
-             * @param  memory: 
-             * @retval 
+             * @retval
              */
-            FloppyEmulator();
+            FloppyEmulator(std::shared_ptr<Logger::ILogger> logger);
 
             /**
              * @brief  
              * @note   
              * @retval None
              */
-            virtual void Start() override;
+            void Start() override;
 
             /**
              * @brief  
              * @note   
              * @retval None
              */
-            virtual void Stop() override;
+            void Stop() override;
 
             /**
              * @brief  
              * @note   
              * @retval None
              */
-            virtual void Reset() override;
+            void Reset() override;
 
             /**
              * @brief  
@@ -48,7 +47,7 @@ namespace Compucolor::Impl::Floppy
              * @param  port: 
              * @retval None
              */
-            virtual uint8_t Read(uint8_t port) override;
+            uint8_t Read(uint8_t port) override;
 
             /**
              * @brief  
@@ -57,7 +56,7 @@ namespace Compucolor::Impl::Floppy
              * @param  data: 
              * @retval None
              */
-            virtual void Write(uint8_t port, uint8_t data) override;
+            void Write(uint8_t port, uint8_t data) override;
 
             /**
              * @brief  
@@ -67,14 +66,22 @@ namespace Compucolor::Impl::Floppy
              * @param  stepper: 
              * @retval None
              */
-            virtual void Select(bool selected, bool write, uint8_t stepper) override;
+            void Select(bool selected, bool write, uint8_t stepper) override;
 
-            static std::shared_ptr<Compucolor::Floppy::IFloppyEmulator> Creator(Common::IPluginManager* manager);
+            void ReadFile(std::string filename) override;
+
+            void SaveFile(std::string filename) override;
+
+            static std::shared_ptr<IFloppyEmulator> Creator(Common::IPluginManager* manager);
         private:
-            /**
-             * @brief  
-             * @note   
-             */
-            static const int StepperPhases = 3;//4;
+            std::shared_ptr<Logger::ILogger> _logger;
+            bool _selected = false;
+            bool _writeEnable = false;
+            uint8_t _stepperPhase = 0;
+            int _track = 0;
+            size_t _bytePos = 0;
+            std::vector<uint8_t> _disk;
+
+            void StepHead(uint8_t newPhase);
     };
 }

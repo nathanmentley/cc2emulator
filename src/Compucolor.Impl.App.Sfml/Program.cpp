@@ -1,18 +1,31 @@
 #include "Program.h"
 
-#include <memory>
+using std::optional;
+using std::shared_ptr;
+using std::make_shared;
+using std::make_unique;
 
-Compucolor::Impl::App::Sfml::Program::Program():
-    _window(
-        std::make_shared<sf::RenderWindow>(
-            sf::VideoMode(sf::Vector2u(384, 256)), "Compucolor II Emulator"
-        )
-    ),
-    _loggerProvider(std::make_shared<Compucolor::Logger::ConsoleLoggerProvider>(Compucolor::Logger::LogLevel::Debug)),
-    _configuration(std::make_shared<Configuration>()),
-    _display(std::make_shared<Display>(_window)),
+using sf::Event;
+using sf::RenderWindow;
+using sf::Vector2u;
+using sf::VideoMode;
+
+using Compucolor::Common::PluginManager;
+
+using Compucolor::Logger::LogLevel;
+using Compucolor::Logger::ConsoleLoggerProvider;
+
+using Compucolor::Keyboard::CompucolorIIKey;
+
+using Compucolor::Impl::App::Sfml::Program;
+
+Program::Program():
+    _window(make_shared<RenderWindow>(VideoMode(Vector2u(384, 256)), "Compucolor II Emulator")),
+    _loggerProvider(make_shared<ConsoleLoggerProvider>(LogLevel::Debug)),
+    _configuration(make_shared<Configuration>()),
+    _display(make_shared<Display>(_window)),
     _manager(
-        std::make_shared<Common::PluginManager>(
+        make_shared<PluginManager>(
             _loggerProvider,
             _display,
             _configuration->GetSetting("logger_impl").value(),
@@ -20,47 +33,50 @@ Compucolor::Impl::App::Sfml::Program::Program():
             _configuration->GetSetting("memory_impl").value(),
             _configuration->GetSetting("scheduler_impl").value(),
             _configuration->GetSetting("keyboard_impl").value(),
-            _configuration->GetSetting("floppy_impl").value(),
+            _configuration->GetSetting("floppyA_impl").value(),
+            _configuration->GetSetting("floppyB_impl").value(),
             _configuration->GetSetting("smc5027_impl").value(),
             _configuration->GetSetting("crt_impl").value(),
             _configuration->GetSetting("tms5501_impl").value(),
             _configuration->GetSetting("compucolor_impl").value()
         )
     ),
-    _emulator(get_emulator(_manager)),
-    _keyboardTranslator(std::make_unique<KeyboardTranslator>())
+    _emulator(make_unique<CompucolorEmulatorProcessor>(_manager->GetCompucolor())),
+    _keyboardTranslator(make_unique<KeyboardTranslator>())
 {
 }
 
-int Compucolor::Impl::App::Sfml::Program::Run() const {
+int Program::Run() const {
     _emulator->Start();
 
     while (_window->isOpen())
-    {  
-        while (std::optional<sf::Event> event = _window->pollEvent())
+    {
+        while (optional<Event> event = _window->pollEvent())
         {
-            if (!event.has_value()) {
+            if (event.has_value()) {
                 ProcessEvent(event.value());
             }
         }
+
+        _display->Render();
     }
+
+    _emulator->Stop();
+    _display->Close();
 
     return EXIT_SUCCESS;
 }
 
-void Compucolor::Impl::App::Sfml::Program::ProcessEvent(const sf::Event &event) const
+void Program::ProcessEvent(const Event &event) const
 {
-    if (event.is<sf::Event::Closed>())
+    if (event.is<Event::Closed>())
     {
-        _emulator->Stop();
-
         _window->close();
     }
 
-    if (event.is<sf::Event::KeyPressed>())
+    if (event.is<Event::KeyPressed>())
     {
-        const std::optional<Compucolor::Keyboard::CompucolorIIKey> key =
-            _keyboardTranslator->ConvertKey(event.getIf<sf::Event::KeyPressed>()->code);
+        const optional<CompucolorIIKey> key = KeyboardTranslator::ConvertKey(event.getIf<Event::KeyPressed>()->code);
 
         if (key.has_value())
         {
@@ -68,10 +84,9 @@ void Compucolor::Impl::App::Sfml::Program::ProcessEvent(const sf::Event &event) 
         }
     }
 
-    if (event.is<sf::Event::KeyReleased>())
+    if (event.is<Event::KeyReleased>())
     {
-        const std::optional<Compucolor::Keyboard::CompucolorIIKey> key =
-            _keyboardTranslator->ConvertKey(event.getIf<sf::Event::KeyReleased>()->code);
+        const optional<CompucolorIIKey> key = KeyboardTranslator::ConvertKey(event.getIf<Event::KeyReleased>()->code);
 
         if (key.has_value())
         {

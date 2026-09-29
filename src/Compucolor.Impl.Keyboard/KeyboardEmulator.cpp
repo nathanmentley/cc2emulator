@@ -1,9 +1,11 @@
 #include "KeyboardEmulator.h"
 
+#include <utility>
+
 Compucolor::Impl::Keyboard::KeyboardEmulator::KeyboardEmulator(
     std::shared_ptr<Logger::ILogger> logger
 ):
-    _logger(logger),
+    _logger(std::move(logger)),
     _kbMatrix(std::vector<uint8_t>(17))
 {
 }
@@ -75,8 +77,8 @@ void Compucolor::Impl::Keyboard::KeyboardEmulator::OnKeyUp(Compucolor::Keyboard:
 
 void Compucolor::Impl::Keyboard::KeyboardEmulator::OnKeyDown(Compucolor::Keyboard::CompucolorIIKey key)
 {
-    std::optional<int> row = GetRow(key);
-    std::optional<int> bit = GetBit(key);
+    const std::optional<int> row = GetRow(key);
+    const std::optional<int> bit = GetBit(key);
 
     _logger->LogTrace(
         "OnKeyDown for %d (%d, %d) in %s",
@@ -85,6 +87,14 @@ void Compucolor::Impl::Keyboard::KeyboardEmulator::OnKeyDown(Compucolor::Keyboar
         bit,
         "KeyboardEmulator"
     );
+
+    if (!row.has_value()) {
+        //throw std::invalid_argument("received invalid value: " + std::to_string(static_cast<int>(key)));
+    }
+
+    if (!bit.has_value()) {
+        //throw std::invalid_argument("received invalid value: " + std::to_string(static_cast<int>(key)));
+    }
 
     if(row.has_value() && bit.has_value())
     {
@@ -132,8 +142,13 @@ std::optional<int> Compucolor::Impl::Keyboard::KeyboardEmulator::GetRow(Compucol
         case Compucolor::Keyboard::CompucolorIIKey::X: return 7;
         case Compucolor::Keyboard::CompucolorIIKey::Y: return 6;
         case Compucolor::Keyboard::CompucolorIIKey::Z: return 5;
+        case Compucolor::Keyboard::CompucolorIIKey::Esc: return 4;
         case Compucolor::Keyboard::CompucolorIIKey::Shift: return 16;
         case Compucolor::Keyboard::CompucolorIIKey::Break: return 15;
+        case Compucolor::Keyboard::CompucolorIIKey::Bksp: return 5;
+        case Compucolor::Keyboard::CompucolorIIKey::Curlft: return 5;
+        case Compucolor::Keyboard::CompucolorIIKey::Cr: return 2;
+        case Compucolor::Keyboard::CompucolorIIKey::Space: return 15;
         default: return {};
     }
 }
@@ -178,17 +193,20 @@ std::optional<int> Compucolor::Impl::Keyboard::KeyboardEmulator::GetRow(Compucol
         case Compucolor::Keyboard::CompucolorIIKey::X: return 2;
         case Compucolor::Keyboard::CompucolorIIKey::Y: return 2;
         case Compucolor::Keyboard::CompucolorIIKey::Z: return 2;
-        case Compucolor::Keyboard::CompucolorIIKey::Shift: return 5;
         case Compucolor::Keyboard::CompucolorIIKey::Break: return 4;
+        case Compucolor::Keyboard::CompucolorIIKey::Shift: return 5;
+        case Compucolor::Keyboard::CompucolorIIKey::Esc: return 5;
+        case Compucolor::Keyboard::CompucolorIIKey::Bksp: return 5;
+        case Compucolor::Keyboard::CompucolorIIKey::Curlft: return 5;
+        case Compucolor::Keyboard::CompucolorIIKey::Cr: return 4;
+        case Compucolor::Keyboard::CompucolorIIKey::Space: return 6;
         default: return {};
     }
 }
 
 std::shared_ptr<Compucolor::Keyboard::IKeyboardEmulator> Compucolor::Impl::Keyboard::KeyboardEmulator::Creator(
-    Compucolor::Common::IPluginManager* manager
+    Common::IPluginManager* manager
 )
 {
-    return std::shared_ptr<Compucolor::Keyboard::IKeyboardEmulator>(
-        new Compucolor::Impl::Keyboard::KeyboardEmulator(manager->GetLogger())
-    );
+    return std::make_shared<KeyboardEmulator>(manager->GetLogger());
 }

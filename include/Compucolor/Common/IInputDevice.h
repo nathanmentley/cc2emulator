@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 namespace Compucolor::Common
 {
     class IInputDevice {

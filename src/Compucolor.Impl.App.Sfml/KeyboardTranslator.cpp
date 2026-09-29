@@ -1,10 +1,10 @@
 #include "KeyboardTranslator.h"
 
-Compucolor::Impl::App::Sfml::KeyboardTranslator::KeyboardTranslator()
-{
-}
+Compucolor::Impl::App::Sfml::KeyboardTranslator::KeyboardTranslator() = default;
 
-std::optional<Compucolor::Keyboard::CompucolorIIKey> Compucolor::Impl::App::Sfml::KeyboardTranslator::ConvertKey(sf::Keyboard::Key key)
+std::optional<Compucolor::Keyboard::CompucolorIIKey> Compucolor::Impl::App::Sfml::KeyboardTranslator::ConvertKey(
+    const sf::Keyboard::Key key
+)
 {
     switch (key)
     {
@@ -153,7 +153,7 @@ std::optional<Compucolor::Keyboard::CompucolorIIKey> Compucolor::Impl::App::Sfml
         case sf::Keyboard::Key::Backspace:
             return Compucolor::Keyboard::CompucolorIIKey::Bksp;
         case sf::Keyboard::Key::Enter:
-            return Compucolor::Keyboard::CompucolorIIKey::Break;
+            return Compucolor::Keyboard::CompucolorIIKey::Cr;
         case sf::Keyboard::Key::Left:
         case sf::Keyboard::Key::Right:
         case sf::Keyboard::Key::Up:
@@ -182,6 +182,6 @@ std::optional<Compucolor::Keyboard::CompucolorIIKey> Compucolor::Impl::App::Sfml
         case sf::Keyboard::Key::Multiply:
         case sf::Keyboard::Key::Divide:
         default:
-            return {};//Compucolor::Keyboard::CompucolorIIKey::C;
+            return {};
     }
 }

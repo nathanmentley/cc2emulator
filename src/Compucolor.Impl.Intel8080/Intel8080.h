@@ -33,6 +33,7 @@ namespace Compucolor::Impl::Intel8080
   void i8080_init(i8080* const c);
   void i8080_step(i8080* const c);
   void i8080_interrupt(i8080* const c, uint8_t opcode);
+  bool i8080_is_interrupt_pending(i8080* const c);
   void i8080_debug_output(i8080* const c, bool print_disassembly);
 }
 

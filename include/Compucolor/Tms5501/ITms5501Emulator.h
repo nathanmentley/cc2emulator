@@ -11,5 +11,11 @@ namespace Compucolor::Tms5501
     class ITms5501Emulator: public Common::IPlugin, public Common::IEmulatable, public Common::IInputDevice, public Common::IOutputDevice, public Common::IResetable {
         public:
             ~ITms5501Emulator() override = default;
+
+            virtual void Step() = 0;
+
+            virtual void TriggerExternalSensor() = 0;
+
+            virtual void OnInterruptConsumed(uint8_t opcode) = 0;
     };
 }

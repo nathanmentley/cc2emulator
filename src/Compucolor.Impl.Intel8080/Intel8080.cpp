@@ -756,6 +756,10 @@ void Compucolor::Impl::Intel8080::i8080_interrupt(Compucolor::Impl::Intel8080::i
   c->interrupt_vector = opcode;
 }
 
+bool Compucolor::Impl::Intel8080::i8080_is_interrupt_pending(Compucolor::Impl::Intel8080::i8080* const c) {
+  return c->interrupt_pending;
+}
+
 // outputs a debug trace of the emulator state to the standard output,
 // including registers and flags
 void Compucolor::Impl::Intel8080::i8080_debug_output(Compucolor::Impl::Intel8080::i8080* const c, bool print_disassembly) {

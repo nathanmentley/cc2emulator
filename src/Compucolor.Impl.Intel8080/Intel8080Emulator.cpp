@@ -60,6 +60,14 @@ void Compucolor::Impl::Intel8080::Intel8080Emulator::RegisterInterrupt(uint8_t o
     Compucolor::Impl::Intel8080::i8080_interrupt(_cpu.get(), opcode);
 }
 
+bool Compucolor::Impl::Intel8080::Intel8080Emulator::IsInterruptPending() {
+    return i8080_is_interrupt_pending(_cpu.get());
+}
+
+uint8_t Compucolor::Impl::Intel8080::Intel8080Emulator::GetPendingInterrupt() {
+    return _cpu->interrupt_vector;
+}
+
 std::shared_ptr<Compucolor::Intel8080::IIntel8080Emulator> Compucolor::Impl::Intel8080::Intel8080Emulator::Creator(
     Compucolor::Common::IPluginManager* manager
 )

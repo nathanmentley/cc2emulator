@@ -2,4 +2,6 @@
 
 #include "FloppyEmulator.h"
 
-BOOST_DLL_ALIAS(Compucolor::Impl::Floppy::FloppyEmulator::Creator, create);
+using Compucolor::Impl::Floppy::FloppyEmulator;
+
+BOOST_DLL_ALIAS(FloppyEmulator::Creator, create);

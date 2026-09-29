@@ -1,0 +1,44 @@
+{
+    "name": "CC2 Emulator",
+
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": ".."
+    },
+
+    "remoteUser": "vscode",
+
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "mesonbuild.mesonbuild",
+                "ms-vscode.cpptools"
+            ]
+        }
+    },
+
+    "runArgs": [
+        "--security-opt=label=disable",
+        "--userns=keep-id",
+        "--device=/dev/dri",
+
+        "-e", "DISPLAY=${env:DISPLAY}",
+        "-e", "XAUTHORITY=/tmp/.Xauthority",
+
+        "-e", "XDG_RUNTIME_DIR=/tmp",
+        "-e", "WAYLAND_DISPLAY=${env:WAYLAND_DISPLAY}",
+
+        "-v", "/tmp/.X11-unix:/tmp/.X11-unix:rw",
+        "-v", "${env:XAUTHORITY}:/tmp/.Xauthority:ro",
+
+        "-v", "${env:XDG_RUNTIME_DIR}/${env:WAYLAND_DISPLAY}:/tmp/${env:WAYLAND_DISPLAY}"
+    ],
+
+    "containerEnv": {
+        "XDG_RUNTIME_DIR": "/tmp",
+        "WAYLAND_DISPLAY": "${env:WAYLAND_DISPLAY}",
+        "XAUTHORITY": "/tmp/.Xauthority"
+    },
+
+    "postCreateCommand": "meson setup build"
+}

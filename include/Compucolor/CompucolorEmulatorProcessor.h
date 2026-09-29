@@ -19,6 +19,11 @@ namespace Compucolor
             {
             };
 
+            ~CompucolorEmulatorProcessor()
+            {
+                Stop();
+            }
+
             void Start()
             {
                 if (!_thread.has_value())
@@ -35,9 +40,9 @@ namespace Compucolor
             {
                 if (_thread.has_value())
                 {
-                    _emulator->Stop();
-
                     _thread->join();
+
+                    _emulator->Stop();
 
                     _thread.reset();
                 }

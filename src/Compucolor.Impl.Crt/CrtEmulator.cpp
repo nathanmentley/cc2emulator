@@ -1,17 +1,22 @@
 #include "CrtEmulator.h"
+#include "FontRom.h"
+
+#include <utility>
 
 Compucolor::Impl::Crt::CrtEmulator::CrtEmulator(
-    std::shared_ptr<Compucolor::Logger::ILogger> logger,
-    std::shared_ptr<Compucolor::Common::IDisplay> display,
-    std::shared_ptr<Compucolor::Scheduler::IScheduler> scheduler,
-    std::shared_ptr<Compucolor::Memory::IMemory> memory,
-    std::shared_ptr<Compucolor::Smc5027::ISmc5027Emulator> smc5027emulator
+    std::shared_ptr<Logger::ILogger> logger,
+    std::shared_ptr<Common::IDisplay> display,
+    std::shared_ptr<Scheduler::IScheduler> scheduler,
+    std::shared_ptr<Memory::IMemory> memory,
+    std::shared_ptr<Smc5027::ISmc5027Emulator> smc5027emulator,
+    std::shared_ptr<Tms5501::ITms5501Emulator> tms5501Emulator
 ):
-    _logger(logger),
-    _display(display),
-    _scheduler(scheduler),
-    _memory(memory),
-    _smc5027emulator(smc5027emulator),
+    _logger(std::move(logger)),
+    _display(std::move(display)),
+    _scheduler(std::move(scheduler)),
+    _memory(std::move(memory)),
+    _smc5027emulator(std::move(smc5027emulator)),
+    _tms5501Emulator(std::move(tms5501Emulator)),
     _phase(0)
 {
 }
@@ -20,7 +25,7 @@ void Compucolor::Impl::Crt::CrtEmulator::Start()
 {
     _logger->LogTrace("Starting CrtEmulator");
 
-    _loop = _scheduler->SetupReoccuringTask(
+    _loop = _scheduler->SetupRecurringTask(
         10000000,
         [=, this] {
             RefreshDisplay();
@@ -30,6 +35,8 @@ void Compucolor::Impl::Crt::CrtEmulator::Start()
             if (_phase >= 16)
             {
                 _phase = 0;
+
+                _tms5501Emulator->TriggerExternalSensor();
             }
 
             return 0;
@@ -39,28 +46,42 @@ void Compucolor::Impl::Crt::CrtEmulator::Start()
 
 void Compucolor::Impl::Crt::CrtEmulator::Stop()
 {
+    if (_loop)
+    {
+        _loop->Stop();
+        _loop->Join();
+        _loop.reset();
+    }
 }
 
-void Compucolor::Impl::Crt::CrtEmulator::RefreshDisplay()
+void Compucolor::Impl::Crt::CrtEmulator::RefreshDisplay() const
 {
     _logger->LogTrace(
-        "Refereshing Display in CrtEmulator"
+        "Refreshing Display in CrtEmulator"
     );
+
+    const uint8_t firstRow = _smc5027emulator->FirstDisplayRow();
 
     for (uint16_t i = 0x7000; i < 0x8000; i += 2)
     {
+        if (!(_memory->GetByte(i + 1) & 0x40)) {
+            continue;
+        }
+
         // Update video memory
-        uint16_t baseAddress = i - 0x7000;   // 0x6... range to avoid wait for hblank
+        const uint16_t baseAddress = i - 0x7000;   // 0x6... range to avoid wait for hblank
         // two bytes per char, 64 char/row
-        uint16_t x = (baseAddress >> 1) & 0x3F;
+        const uint16_t x = (baseAddress >> 1) & 0x3F;
         // 128 bytes per row, 32 rows
-        uint16_t y = (baseAddress >> 7) & 0x1F;
+        const uint16_t y = (baseAddress >> 7) & 0x1F;
 
-        uint16_t pair = (i & 0xFFFE);
-        uint8_t ch = _memory->GetByte(pair);
-        uint8_t attrib = _memory->GetByte((pair + 1));  // attribute byte
+        const uint16_t displayY = (y - firstRow + 32) % 32;
 
-        bool blink = IsBitSet(7, attrib);//((attrib & 0x40) != 0);
+        const uint16_t pair = (i & 0xFFFE);
+        const uint8_t ch = _memory->GetByte(pair);
+        const uint8_t attrib = _memory->GetByte((pair + 1));  // attribute byte
+
+        const bool blink = IsBitSet(7, attrib);//((attrib & 0x40) != 0);
 
         DrawGlyph(
             GetForegroundColor(attrib),
@@ -68,7 +89,7 @@ void Compucolor::Impl::Crt::CrtEmulator::RefreshDisplay()
             ch,
             blink,
             x,
-            y
+            displayY
         );
     }
 
@@ -77,20 +98,20 @@ void Compucolor::Impl::Crt::CrtEmulator::RefreshDisplay()
     _display->Repaint();
 }
 
-void Compucolor::Impl::Crt::CrtEmulator::DrawCursor()
+void Compucolor::Impl::Crt::CrtEmulator::DrawCursor() const
 {
     if (IsBlinkOn())
     {
-        uint8_t firstRow = _smc5027emulator->FirstDisplayRow();
-        uint8_t x = _smc5027emulator->GetCursorX();
+        const uint8_t firstRow = _smc5027emulator->FirstDisplayRow();
+        const uint8_t x = _smc5027emulator->GetCursorX();
         uint8_t y = _smc5027emulator->GetCursorY();
         y = (y - firstRow + 32) % 32;  // scroll adjustment
 
-        if (x <= CrtEmulator::Columns && y <= CrtEmulator::Rows)
+        if (x <= Columns && y <= Rows)
         {
             DrawGlyph( //TODO: Setup cursor glyph.
-                Compucolor::Common::Color::White,
-                Compucolor::Common::Color::White,
+                Common::Color::White,
+                Common::Color::White,
                 0x20,
                 false,
                 x,
@@ -109,14 +130,21 @@ void Compucolor::Impl::Crt::CrtEmulator::DrawCursor()
     }
 }
 
-void Compucolor::Impl::Crt::CrtEmulator::DrawGlyph(Compucolor::Common::Color foreground, Compucolor::Common::Color background, uint8_t glyphData, bool blink, int x, int y)
+void Compucolor::Impl::Crt::CrtEmulator::DrawGlyph(
+    const Common::Color foreground,
+    const Common::Color background,
+    const uint8_t glyphData,
+    const bool blink,
+    const int x,
+    const int y
+) const
 {
     const uint16_t xPos = x * CharacterWidth;
     const uint16_t yPos = y * CharacterHeight;
 
     for(uint16_t row = 0; row < CharacterHeight; row++)
     {
-        const uint8_t* uf6_rom = Compucolor::Impl::Crt::get_uf6_rom();
+        const uint8_t* uf6_rom = get_uf6_rom();
 
         const bool isTall = IsBitSet(7, glyphData);
         const uint8_t ch = glyphData & 0x7F;
@@ -130,7 +158,7 @@ void Compucolor::Impl::Crt::CrtEmulator::DrawGlyph(Compucolor::Common::Color for
 
             _display->DrawPixel(
                 IsBitSet(7 - column, romData) ?
-                    (blink && IsBlinkOn() ? Compucolor::Common::Color::Black: foreground):
+                    (blink && IsBlinkOn() ? Common::Color::Black : foreground):
                     background,
                 targetX,
                 targetY
@@ -139,7 +167,7 @@ void Compucolor::Impl::Crt::CrtEmulator::DrawGlyph(Compucolor::Common::Color for
     }
 }
 
-bool Compucolor::Impl::Crt::CrtEmulator::IsBlinkOn()
+bool Compucolor::Impl::Crt::CrtEmulator::IsBlinkOn() const
 {
     return _phase % 2 == 0;
 }
@@ -156,25 +184,24 @@ Compucolor::Common::Color Compucolor::Impl::Crt::CrtEmulator::GetBackgroundColor
 
 Compucolor::Common::Color Compucolor::Impl::Crt::CrtEmulator::GetColor(uint8_t data)
 {
-    return (Compucolor::Common::Color)data;
+    return static_cast<Common::Color>(data);
 }
 
-bool Compucolor::Impl::Crt::CrtEmulator::IsBitSet(int bit, uint8_t data)
+bool Compucolor::Impl::Crt::CrtEmulator::IsBitSet(const int bit, const uint8_t data)
 {
     return ((data >> bit) & 0x1) == 1;
 }
 
 std::shared_ptr<Compucolor::Crt::ICrtEmulator> Compucolor::Impl::Crt::CrtEmulator::Creator(
-    Compucolor::Common::IPluginManager* manager
+    Common::IPluginManager* manager
 )
 {
-    return std::shared_ptr<Compucolor::Crt::ICrtEmulator>(
-        new Compucolor::Impl::Crt::CrtEmulator(
-            manager->GetLogger(),
-            manager->GetDisplay(),
-            manager->GetScheduler(),
-            manager->GetMemory(),
-            manager->GetSmc5027()
-        )
+    return std::make_shared<CrtEmulator>(
+        manager->GetLogger(),
+        manager->GetDisplay(),
+        manager->GetScheduler(),
+        manager->GetMemory(),
+        manager->GetSmc5027(),
+        manager->GetTms5501()
     );
 }

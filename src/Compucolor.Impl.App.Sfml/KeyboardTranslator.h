@@ -12,6 +12,6 @@ namespace Compucolor::Impl::App::Sfml
         public:
             KeyboardTranslator();
 
-            std::optional<Compucolor::Keyboard::CompucolorIIKey> ConvertKey(sf::Keyboard::Key key);
+            static std::optional<Compucolor::Keyboard::CompucolorIIKey> ConvertKey(sf::Keyboard::Key key);
     };
 }

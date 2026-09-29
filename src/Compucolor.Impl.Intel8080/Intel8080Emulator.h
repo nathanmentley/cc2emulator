@@ -20,17 +20,21 @@ namespace Compucolor::Impl::Intel8080
                 std::shared_ptr<Compucolor::Memory::IMemory> memory
             );
 
-            virtual void Start() override;
+            void Start() override;
 
-            virtual void Stop() override;
+            void Stop() override;
 
-            virtual void Reset() override;
+            void Reset() override;
 
-            virtual void SetBus(std::shared_ptr<Compucolor::Intel8080::IIntel8080Bus> intel8080Bus) override;
+            void SetBus(std::shared_ptr<Compucolor::Intel8080::IIntel8080Bus> intel8080Bus) override;
 
-            virtual void RegisterInterrupt(uint8_t opcode) override;
+            void RegisterInterrupt(uint8_t opcode) override;
 
-            virtual void Step() override;
+            bool IsInterruptPending() override;
+
+            uint8_t GetPendingInterrupt() override;
+
+            void Step() override;
 
             static std::shared_ptr<Compucolor::Intel8080::IIntel8080Emulator> Creator(
                 Common::IPluginManager* manager

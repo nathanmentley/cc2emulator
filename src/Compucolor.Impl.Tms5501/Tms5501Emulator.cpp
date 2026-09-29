@@ -1,74 +1,76 @@
 #include "Tms5501Emulator.h"
 
-Compucolor::Impl::Tms5501::Tms5501Emulator::Tms5501Emulator(
-    std::shared_ptr<Compucolor::Logger::ILogger> logger,
-    std::shared_ptr<Compucolor::Intel8080::IIntel8080Emulator> intel8080,
-    std::shared_ptr<Compucolor::Keyboard::IKeyboardEmulator> keyboard,
-    std::shared_ptr<Compucolor::Floppy::IFloppyEmulator> floppy1,
-    std::shared_ptr<Compucolor::Floppy::IFloppyEmulator> floppy2
+#include <memory>
+#include <utility>
+
+using std::shared_ptr;
+using std::unique_ptr;
+using std::chrono::milliseconds;
+using std::this_thread::sleep_for;
+
+using Compucolor::Common::IPluginManager;
+
+using Compucolor::Logger::ILogger;
+using Compucolor::Intel8080::IIntel8080Emulator;
+using Compucolor::Keyboard::IKeyboardEmulator;
+using Compucolor::Floppy::IFloppyEmulator;
+using Compucolor::Tms5501::ITms5501Emulator;
+
+using Compucolor::Impl::Tms5501::Tms5501Emulator;
+
+Tms5501Emulator::Tms5501Emulator(
+    shared_ptr<ILogger> logger,
+    shared_ptr<IIntel8080Emulator> intel8080,
+    shared_ptr<IKeyboardEmulator> keyboard,
+    shared_ptr<IFloppyEmulator> floppy1,
+    shared_ptr<IFloppyEmulator> floppy2
 ):
-    _logger(logger),
-    _context(std::unique_ptr<Compucolor::Impl::Tms5501::Tms5501EmulatorContext>(
-        new Compucolor::Impl::Tms5501::Tms5501EmulatorContext())
-    ),
-    _intel8080(intel8080),
-    _isRunning(false),
-    _keyboard(keyboard),
-    _floppy1(floppy1),
-    _floppy2(floppy2)
+    _logger(std::move(logger)),
+    _context(std::make_unique<Tms5501EmulatorContext>()),
+    _intel8080(std::move(intel8080)),
+    _keyboard(std::move(keyboard)),
+    _floppy1(std::move(floppy1)),
+    _floppy2(std::move(floppy2)),
+    _outport(0)
 {
 }
 
-void Compucolor::Impl::Tms5501::Tms5501Emulator::Start()
+void Tms5501Emulator::Step()
+{
+    for (int i = 0; i < 5; i++) {
+        if (_context->count[i] > 0) {
+            _context->count[i]--;
+            if (_context->count[i] == 0) {
+                _context->intStatus |= (i == 0) ? 0x01 :
+                             (i == 1) ? 0x02 :
+                             (i == 2) ? 0x08 :
+                             (i == 3) ? 0x40 :
+                                        0x80;
+            }
+        }
+    }
+
+    CheckInterruptStatus();
+}
+
+
+void Tms5501Emulator::TriggerExternalSensor()
+{
+    _context->intStatus |= 0x04;
+
+    CheckInterruptStatus();
+}
+
+void Tms5501Emulator::Start()
 {
     Reset();
-
-    _isRunning = true;
-    _thread = std::thread(
-        [this]() {
-            while(_isRunning) {
-                std::this_thread::sleep_for (std::chrono::milliseconds(20));
-
-                for (uint8_t i = 0; i < 5; ++i) {
-                    if (_context->count[i] > 0x00) {
-                        _context->count[i] -= 1;
-                        if (_context->count[i] == 0x00) {
-                            _context->intStatus |= (i == 0) ? 0x01 :
-                                         (i == 1) ? 0x02 :
-                                         (i == 2) ? 0x08 :
-                                         (i == 3) ? 0x40 :
-                                                     0x80;
-                        }
-                    }
-                }
-
-                // interrupt the CPU if any timers expired
-                CheckInterruptStatus();
-            }
-        }
-    );
-    _keyboardThread = std::thread(
-        [this]() {
-            std::this_thread::sleep_for (std::chrono::milliseconds(1000));
-
-            while(_isRunning) {
-                std::this_thread::sleep_for (std::chrono::milliseconds(17));
-
-                _context->intStatus |= 0x04;
-                CheckInterruptStatus();
-            }
-        }
-    );
 }
 
-void Compucolor::Impl::Tms5501::Tms5501Emulator::Stop()
+void Tms5501Emulator::Stop()
 {
-    _isRunning = false;
-    _thread.join();
-    _keyboardThread.join();
 }
 
-uint8_t Compucolor::Impl::Tms5501::Tms5501Emulator::Read(uint8_t port)
+uint8_t Tms5501Emulator::Read(uint8_t port)
 {
     uint8_t convertedPort = ConvertPort(port);
 
@@ -96,6 +98,7 @@ uint8_t Compucolor::Impl::Tms5501::Tms5501Emulator::Read(uint8_t port)
             return keyboardRet;
         }
         case 0x2: {
+            /*
             uint8_t retval = GetIntAddr();
             if (retval) {
                 ClearIntAddr(retval);
@@ -103,6 +106,8 @@ uint8_t Compucolor::Impl::Tms5501::Tms5501Emulator::Read(uint8_t port)
                 retval = 0x00;
             }
             return retval;
+            */
+            return GetIntAddr();
         }
         case 0x3: {
             uint8_t retval = 0;
@@ -136,7 +141,7 @@ uint8_t Compucolor::Impl::Tms5501::Tms5501Emulator::Read(uint8_t port)
     return 0x00;
 }
 
-void Compucolor::Impl::Tms5501::Tms5501Emulator::Write(uint8_t port, uint8_t data)
+void Tms5501Emulator::Write(uint8_t port, uint8_t data)
 {
     uint8_t convertedPort = ConvertPort(port);
     switch (convertedPort)
@@ -275,46 +280,32 @@ void Compucolor::Impl::Tms5501::Tms5501Emulator::Write(uint8_t port, uint8_t dat
     }
 }
 
-void Compucolor::Impl::Tms5501::Tms5501Emulator::Reset()
+void Tms5501Emulator::Reset()
 {
+    _context->rxdata = 0;
+    _context->txdata = 0;
+    _context->txdata2 = 0;
+    _context->txdataCount = 0;
+
+    _context->sstatus = 0x14;   // TX empty, RX empty
+    _context->rate = 0;
+    _context->intMask = 0x00;
+    _context->intStatus = 0x20; // TX empty interrupt only
+    _context->dscCmd = 0;
+
+    for (auto &c : _context->count)
+        c = 0;
+
     SetOutport(0x00);
 }
 
-uint8_t Compucolor::Impl::Tms5501::Tms5501Emulator::ConvertPort(uint8_t port)
-{
-    return port & 0x0F;
-}
-
-void Compucolor::Impl::Tms5501::Tms5501Emulator::SetOutport(uint8_t value)
+void Tms5501Emulator::SetOutport(const uint8_t value)
 {
     _outport = value;
 }
 
-uint8_t Compucolor::Impl::Tms5501::Tms5501Emulator::GetIntAddr() {
-    uint8_t masked = _context->intStatus & _context->intMask;
-
-    if (IsBitSet(masked, 1))
-        return 0xC7;
-    if (IsBitSet(masked, 2))
-        return 0xCF;
-    if (IsBitSet(masked, 3))
-        return 0xD7;
-    if (IsBitSet(masked, 4))
-        return 0xDF;
-    if (IsBitSet(masked, 5))
-        return 0xE7;
-    if (IsBitSet(masked, 6))
-        return 0xEF;
-    if (IsBitSet(masked, 7))
-        return 0xF7;
-    if (IsBitSet(masked, 8))
-        return 0xFF;
-
-    return 0x0;
-}
-
 // clear an interrupt bit on interrupt ack, or when polled
-void Compucolor::Impl::Tms5501::Tms5501Emulator::ClearIntAddr(uint8_t op) {
+void Tms5501Emulator::ClearIntAddr(uint8_t op) {
     uint8_t mask = 0xFF;
     if (op == 0xC7) mask = (uint8_t)~0x01;
     if (op == 0xCF) mask = (uint8_t)~0x02;
@@ -334,59 +325,85 @@ void Compucolor::Impl::Tms5501::Tms5501Emulator::ClearIntAddr(uint8_t op) {
     if (_context->txdataCount < 1) {
         _context->intStatus = _context->intStatus | 0x20;
     }
-
-    // clearing a bit might affect int requeset
-    CheckInterruptStatus();
 }
 
-void Compucolor::Impl::Tms5501::Tms5501Emulator::CheckInterruptStatus()
+void Tms5501Emulator::CheckInterruptStatus()
 {
-    if((_context->intStatus & _context->intMask) != 0)
-    {
-        uint8_t op = GetIntAddr();
+    // CPU already has an interrupt pending → do nothing
+    if (_intel8080->IsInterruptPending())   // you may need to expose this
+        return;
 
-        if (op > 0)
-        {
-            _context->intStatus = 0;
+    uint8_t masked = _context->intStatus & _context->intMask;
 
-            _intel8080->RegisterInterrupt(op);
+    if (!masked)
+        return;
 
-            ClearIntAddr(op);
-        }
-    }
+    uint8_t op = GetIntAddr();
+
+    if (!op)
+        return;
+
+    // Register interrupt ONLY
+    _intel8080->RegisterInterrupt(op);
 }
 
-bool Compucolor::Impl::Tms5501::Tms5501Emulator::IsBitSet(uint8_t data, uint8_t pos)
+void Tms5501Emulator::OnInterruptConsumed(uint8_t opcode)
+{
+    ClearIntAddr(opcode);
+}
+
+uint8_t Tms5501Emulator::GetIntAddr() const {
+    uint8_t masked = _context->intStatus & _context->intMask;
+
+    if (IsBitSet(masked, 0))
+        return 0xC7;
+    if (IsBitSet(masked, 1))
+        return 0xCF;
+    if (IsBitSet(masked, 2))
+        return 0xD7;
+    if (IsBitSet(masked, 3))
+        return 0xDF;
+    if (IsBitSet(masked, 4))
+        return 0xE7;
+    if (IsBitSet(masked, 5))
+        return 0xEF;
+    if (IsBitSet(masked, 6))
+        return 0xF7;
+    if (IsBitSet(masked, 7))
+        return 0xFF;
+
+    return 0x0;
+}
+
+bool Tms5501Emulator::IsSerialSelected() const {
+    return ((_context->outport >> 4) & 3) == 0;
+}
+
+bool Tms5501Emulator::IsFloppy1Selected() const {
+    return ((_context->outport >> 4) & 3) == 1;
+}
+
+bool Tms5501Emulator::IsFloppy2Selected() const {
+    return ((_context->outport >> 4) & 3) == 2;
+}
+
+uint8_t Tms5501Emulator::ConvertPort(const uint8_t port)
+{
+    return port & 0x0F;
+}
+
+bool Tms5501Emulator::IsBitSet(const uint8_t data, const uint8_t pos)
 {
     return (data & (1 << pos)) != 0;
 }
 
-bool Compucolor::Impl::Tms5501::Tms5501Emulator::IsSerialSelected()
+shared_ptr<ITms5501Emulator> Tms5501Emulator::Creator(IPluginManager* manager)
 {
-    return ((_context->outport >> 4) & 3) == 0;
-}
-
-bool Compucolor::Impl::Tms5501::Tms5501Emulator::IsFloppy1Selected()
-{
-    return ((_context->outport >> 4) & 3) == 1;
-}
-
-bool Compucolor::Impl::Tms5501::Tms5501Emulator::IsFloppy2Selected()
-{
-    return ((_context->outport >> 4) & 3) == 2;
-}
-
-std::shared_ptr<Compucolor::Tms5501::ITms5501Emulator> Compucolor::Impl::Tms5501::Tms5501Emulator::Creator(
-    Compucolor::Common::IPluginManager* manager
-)
-{
-    return std::shared_ptr<Compucolor::Tms5501::ITms5501Emulator>(
-        new Compucolor::Impl::Tms5501::Tms5501Emulator(
-            manager->GetLogger(),
-            manager->GetIntel8080(),
-            manager->GetKeyboard(),
-            manager->GetFloppy(),
-            manager->GetFloppy()
-        )
+    return std::make_shared<Tms5501Emulator>(
+        manager->GetLogger(),
+        manager->GetIntel8080(),
+        manager->GetKeyboard(),
+        manager->GetFloppyA(),
+        manager->GetFloppyB()
     );
 }

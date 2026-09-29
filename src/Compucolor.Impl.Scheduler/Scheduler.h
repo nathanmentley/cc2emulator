@@ -9,17 +9,20 @@ namespace Compucolor::Impl::Scheduler
     class Scheduler: public Compucolor::Scheduler::IScheduler {
         public:
             Scheduler(
-                std::shared_ptr<Compucolor::Logger::ILogger> logger
+                std::shared_ptr<Logger::ILogger> logger
             );
 
-            virtual std::future<int> RunOnce(uint64_t afterNanoseconds, std::function<int()> logic) override;
+            std::future<int> RunOnce(uint64_t afterNanoseconds, std::function<int()> logic) override;
 
-            virtual std::thread SetupReoccuringTask(uint64_t everyNanoseconds, std::function<int()> logic) override;
+            std::shared_ptr<Compucolor::Scheduler::IScheduledTask> SetupRecurringTask(
+                uint64_t everyNanoseconds,
+                std::function<int()> logic
+            ) override;
 
-            static std::shared_ptr<Compucolor::Scheduler::IScheduler> Creator(Common::IPluginManager* manager);
+            static std::shared_ptr<IScheduler> Creator(Common::IPluginManager* manager);
         private:
-            std::shared_ptr<Compucolor::Logger::ILogger> _logger;
+            std::shared_ptr<Logger::ILogger> _logger;
 
-            int64_t GetCurrentTimeInNanoseconds();
+            static int64_t GetCurrentTimeInNanoseconds();
     };
 }

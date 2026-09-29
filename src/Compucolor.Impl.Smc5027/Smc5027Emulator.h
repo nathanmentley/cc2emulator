@@ -83,7 +83,8 @@ namespace Compucolor::Impl::Smc5027 {
 
             static std::shared_ptr<Compucolor::Smc5027::ISmc5027Emulator> Creator(Common::IPluginManager* manager);
         private:
-            static const uint8_t REGISTER_COUNT = 16;
+            static constexpr uint8_t REGISTER_COUNT = 16;
+            static constexpr uint8_t ROW_COUNT = 32;
     
             std::shared_ptr<Logger::ILogger> _logger;
             std::vector<uint8_t> _registers;
@@ -94,6 +95,6 @@ namespace Compucolor::Impl::Smc5027 {
              * @param  port: 
              * @retval 
              */
-            uint8_t ConvertPort(uint8_t port);
+            static uint8_t ConvertPort(uint8_t port);
     };
 }

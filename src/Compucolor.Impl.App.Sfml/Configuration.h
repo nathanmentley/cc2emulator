@@ -14,7 +14,7 @@ namespace Compucolor::Impl::App::Sfml
             std::optional<std::string> GetSetting(std::string key) override;
 
         private:
-            void LoadFile(std::string filename);
+            void LoadFile(const std::string& filename);
 
             std::map<std::string, std::string> _data;
     };

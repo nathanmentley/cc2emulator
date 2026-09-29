@@ -19,6 +19,10 @@ namespace Compucolor::Intel8080
 
             virtual void RegisterInterrupt(uint8_t opcode) = 0;
 
+            virtual bool IsInterruptPending() = 0;
+
+            virtual uint8_t GetPendingInterrupt() = 0;
+
             virtual void Step() = 0;
     };
 }

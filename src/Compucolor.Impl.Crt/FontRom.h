@@ -5,6 +5,8 @@
 * for the most part, characters occuply 5x7 of that 6x8 cell.
 */
 
+#include <cstdint>
+
 #include <memory>
 
 namespace Compucolor::Impl::Crt

@@ -1,6 +1,7 @@
 #pragma once
 
-#include <memory>
+#include <cstdint>
+
 #include <vector>
 
 namespace Compucolor::Impl::Tms5501 {

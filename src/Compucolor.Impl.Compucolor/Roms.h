@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include <memory>
 
 namespace Compucolor::Impl::CompucolorII
