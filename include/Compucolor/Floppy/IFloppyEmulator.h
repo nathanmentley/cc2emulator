@@ -15,6 +15,12 @@ namespace Compucolor::Floppy
 
             virtual void Select(bool selected, bool write, uint8_t stepper) = 0;
 
+            virtual void Step(uint64_t elapsedNanoseconds) = 0;
+
+            [[nodiscard]] virtual bool HasData() const = 0;
+
+            [[nodiscard]] virtual bool HasFramingError() const = 0;
+
             virtual void ReadFile(std::string filename) = 0;
 
             virtual void SaveFile(std::string filename) = 0;

@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <memory>
 
 #include <Compucolor/Common/IEmulatable.h>
@@ -23,6 +24,6 @@ namespace Compucolor::Intel8080
 
             virtual uint8_t GetPendingInterrupt() = 0;
 
-            virtual void Step() = 0;
+            virtual uint64_t Step() = 0;
     };
 }

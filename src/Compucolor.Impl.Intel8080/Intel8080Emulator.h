@@ -34,7 +34,7 @@ namespace Compucolor::Impl::Intel8080
 
             uint8_t GetPendingInterrupt() override;
 
-            void Step() override;
+            uint64_t Step() override;
 
             static std::shared_ptr<Compucolor::Intel8080::IIntel8080Emulator> Creator(
                 Common::IPluginManager* manager

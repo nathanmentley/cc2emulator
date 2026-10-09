@@ -1,87 +1,71 @@
 #pragma once
 
+#include <cstdint>
 #include <memory>
+#include <optional>
+#include <string>
+#include <vector>
 
 #include <Compucolor/Common/IPluginManager.h>
 #include <Compucolor/Floppy/IFloppyEmulator.h>
+#include <Compucolor/Logger/ILogger.h>
 
 namespace Compucolor::Impl::Floppy
 {
-    /**
-     * @brief  
-     * @note   
-     */
-    class FloppyEmulator: public Compucolor::Floppy::IFloppyEmulator {
-        public:
-            /**
-             * @brief  
-             * @note   
-             * @retval
-             */
-            FloppyEmulator(std::shared_ptr<Logger::ILogger> logger);
+    class FloppyEmulator : public Compucolor::Floppy::IFloppyEmulator
+    {
+    public:
+        FloppyEmulator(std::shared_ptr<Logger::ILogger> logger);
 
-            /**
-             * @brief  
-             * @note   
-             * @retval None
-             */
-            void Start() override;
+        void Start() override;
+        void Stop() override;
+        void Reset() override;
 
-            /**
-             * @brief  
-             * @note   
-             * @retval None
-             */
-            void Stop() override;
+        uint8_t Read(uint8_t port) override;
+        void Write(uint8_t port, uint8_t data) override;
 
-            /**
-             * @brief  
-             * @note   
-             * @retval None
-             */
-            void Reset() override;
+        void Select(bool selected, bool write, uint8_t stepper) override;
+        void Step(uint64_t elapsedNanoseconds) override;
+        [[nodiscard]] bool HasData() const override;
+        [[nodiscard]] bool HasFramingError() const override;
 
-            /**
-             * @brief  
-             * @note   
-             * @param  port: 
-             * @retval None
-             */
-            uint8_t Read(uint8_t port) override;
+        void ReadFile(std::string filename) override;
+        void SaveFile(std::string filename) override;
 
-            /**
-             * @brief  
-             * @note   
-             * @param  port: 
-             * @param  data: 
-             * @retval None
-             */
-            void Write(uint8_t port, uint8_t data) override;
+        static std::shared_ptr<Compucolor::Floppy::IFloppyEmulator>
+        Creator(Common::IPluginManager* manager);
 
-            /**
-             * @brief  
-             * @note   
-             * @param  selected: 
-             * @param  write: 
-             * @param  stepper: 
-             * @retval None
-             */
-            void Select(bool selected, bool write, uint8_t stepper) override;
+    private:
+        static constexpr int TRACKS = 41;
+        static constexpr int SECTORS = 10;
+        static constexpr int SECTOR_SIZE = 192;
+        static constexpr int TRACK_SIZE = SECTORS * SECTOR_SIZE;
+        static constexpr int DISK_SIZE = TRACKS * TRACK_SIZE;
 
-            void ReadFile(std::string filename) override;
+        std::shared_ptr<Logger::ILogger> _logger;
 
-            void SaveFile(std::string filename) override;
+        std::vector<uint8_t> _disk =
+            std::vector<uint8_t>(DISK_SIZE, 0x00);
 
-            static std::shared_ptr<IFloppyEmulator> Creator(Common::IPluginManager* manager);
-        private:
-            std::shared_ptr<Logger::ILogger> _logger;
-            bool _selected = false;
-            bool _writeEnable = false;
-            uint8_t _stepperPhase = 0;
-            int _track = 0;
-            size_t _bytePos = 0;
-            std::vector<uint8_t> _disk;
+        bool _selected = false;
+        bool _writeEnable = false;
 
-            void StepHead(uint8_t newPhase);
+        int _track = 0;
+        int _stepTrack = 0;
+        uint8_t _stepperPhase = 0;
+        std::size_t _bitPos = 0;
+        uint64_t _bitClockRemainder = 0;
+        uint64_t _motorCoastNanoseconds = 0;
+        std::optional<std::size_t> _scheduledStartBit;
+        std::size_t _bitsUntilRead = 0;
+        std::optional<uint8_t> _readData;
+        bool _readFramingError = false;
+
+        [[nodiscard]] bool PeekBit(std::size_t position) const;
+        [[nodiscard]] std::optional<std::size_t> FindStartBit() const;
+        void ScheduleReadByte();
+        [[nodiscard]] uint8_t DecodeByte(std::size_t startBit) const;
+        void WriteBit(bool bit);
+        void StepHead(uint8_t newPhase);
     };
 }

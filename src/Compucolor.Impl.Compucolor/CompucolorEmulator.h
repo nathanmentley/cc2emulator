@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <thread>
@@ -53,5 +54,6 @@ namespace Compucolor::Impl::CompucolorII
             std::shared_ptr<Tms5501::ITms5501Emulator> _tms5501;
             std::shared_ptr<Scheduler::IScheduledTask> _loop;
             int _loopInterval = 0;
+            uint64_t _floppyCycleRemainder = 0;
     };
 }

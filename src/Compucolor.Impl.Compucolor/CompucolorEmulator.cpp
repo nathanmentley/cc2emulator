@@ -38,6 +38,8 @@ Compucolor::Impl::CompucolorII::CompucolorEmulator::CompucolorEmulator(
 
 void Compucolor::Impl::CompucolorII::CompucolorEmulator::Start()
 {
+    _loopInterval = 0;
+    _floppyCycleRemainder = 0;
     LoadRom(_memory.get(), get_system_rom_8_79(), 0, get_system_rom_8_79_length());
 
     _crt->Start();
@@ -52,16 +54,24 @@ void Compucolor::Impl::CompucolorII::CompucolorEmulator::Start()
             const bool wasInterruptPending = _intel8080->IsInterruptPending();
             const uint8_t pendingInterrupt = _intel8080->GetPendingInterrupt();
 
-            _intel8080->Step();
+            const uint64_t elapsedCycles = _intel8080->Step();
+            _floppyCycleRemainder += elapsedCycles;
 
             if (wasInterruptPending && !_intel8080->IsInterruptPending()) {
                 _tms5501->OnInterruptConsumed(pendingInterrupt);
             }
 
             _loopInterval++;
+            if (_loopInterval % 8 == 0) {
+                constexpr uint64_t CPU_CYCLE_NANOSECONDS = 502;
+                _tms5501->StepFloppy(
+                    _floppyCycleRemainder * CPU_CYCLE_NANOSECONDS
+                );
+                _floppyCycleRemainder = 0;
+            }
+
             if (_loopInterval % 128 == 0) {
                 _loopInterval = 0;
-
                 _tms5501->Step();
             }
 

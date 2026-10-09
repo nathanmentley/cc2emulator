@@ -25,3 +25,10 @@ meson install
 cd ../dist
 
 ./cc2_emu.sh
+
+
+## dev container
+
+devpod up . --recreate
+
+ssh cc2emulator.devpod

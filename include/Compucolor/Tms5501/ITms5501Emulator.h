@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include <Compucolor/Common/IEmulatable.h>
 #include <Compucolor/Common/IInputDevice.h>
 #include <Compucolor/Common/IOutputDevice.h>
@@ -13,6 +15,8 @@ namespace Compucolor::Tms5501
             ~ITms5501Emulator() override = default;
 
             virtual void Step() = 0;
+
+            virtual void StepFloppy(uint64_t elapsedNanoseconds) = 0;
 
             virtual void TriggerExternalSensor() = 0;
 

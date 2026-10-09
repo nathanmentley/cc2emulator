@@ -1,5 +1,6 @@
 #include "Intel8080Emulator.h"
 
+
 Compucolor::Impl::Intel8080::Intel8080Emulator::Intel8080Emulator(
     std::shared_ptr<Compucolor::Memory::IMemory> memory
 ):
@@ -31,9 +32,12 @@ void Compucolor::Impl::Intel8080::Intel8080Emulator::Start()
     _cpu->userdata = _context.get();
 }
 
-void Compucolor::Impl::Intel8080::Intel8080Emulator::Step()
+uint64_t Compucolor::Impl::Intel8080::Intel8080Emulator::Step()
 {
+    const unsigned long previousCycles = _cpu->cyc;
     Compucolor::Impl::Intel8080::i8080_step(_cpu.get());
+    const unsigned long elapsedCycles = _cpu->cyc - previousCycles;
+    return elapsedCycles ? elapsedCycles : 4;
 }
 
 void Compucolor::Impl::Intel8080::Intel8080Emulator::Stop()

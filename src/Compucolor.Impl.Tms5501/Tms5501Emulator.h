@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <chrono>
+#include <cstdint>
 #include <memory>
 #include <thread>
 
@@ -30,6 +31,7 @@ namespace Compucolor::Impl::Tms5501 {
             void Reset() override;
 
             void Step() override;
+            void StepFloppy(uint64_t elapsedNanoseconds) override;
             void TriggerExternalSensor() override;
 
             uint8_t Read(uint8_t port) override;
@@ -47,8 +49,10 @@ namespace Compucolor::Impl::Tms5501 {
             std::shared_ptr<Floppy::IFloppyEmulator> _floppy1;
             std::shared_ptr<Floppy::IFloppyEmulator> _floppy2;
             uint8_t _outport;
+            uint64_t _floppyTransmitNanosecondsRemaining = 0;
 
             void SetOutport(uint8_t value);
+            void CompleteFloppyTransmit();
             void ClearIntAddr(uint8_t op);
             void CheckInterruptStatus();
 

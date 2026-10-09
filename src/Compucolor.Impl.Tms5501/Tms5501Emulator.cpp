@@ -53,6 +53,50 @@ void Tms5501Emulator::Step()
     CheckInterruptStatus();
 }
 
+void Tms5501Emulator::StepFloppy(uint64_t elapsedNanoseconds)
+{
+    _floppy1->Step(elapsedNanoseconds);
+    _floppy2->Step(elapsedNanoseconds);
+
+    bool overrun = false;
+    bool framingError = false;
+    if (IsFloppy1Selected() && _floppy1->HasData())
+    {
+        overrun = (_context->sstatus & 0x08) != 0;
+        framingError = _floppy1->HasFramingError();
+        _context->rxdata = _floppy1->Read(0);
+        _context->sstatus = (_context->sstatus & 0x3E) |
+                            (framingError ? 0x01 : 0x00) |
+                            (overrun ? 0x02 : 0x00) | 0x08;
+        _context->intStatus |= 0x10;
+    }
+    else if (IsFloppy2Selected() && _floppy2->HasData())
+    {
+        overrun = (_context->sstatus & 0x08) != 0;
+        framingError = _floppy2->HasFramingError();
+        _context->rxdata = _floppy2->Read(0);
+        _context->sstatus = (_context->sstatus & 0x3E) |
+                    (framingError ? 0x01 : 0x00) |
+                    (overrun ? 0x02 : 0x00) | 0x08;
+        _context->intStatus |= 0x10;
+    }
+
+    if (_floppyTransmitNanosecondsRemaining > 0)
+    {
+        if (_floppyTransmitNanosecondsRemaining <= elapsedNanoseconds)
+        {
+            _floppyTransmitNanosecondsRemaining = 0;
+            CompleteFloppyTransmit();
+        }
+        else
+        {
+            _floppyTransmitNanosecondsRemaining -= elapsedNanoseconds;
+        }
+    }
+
+    CheckInterruptStatus();
+}
+
 
 void Tms5501Emulator::TriggerExternalSensor()
 {
@@ -64,6 +108,8 @@ void Tms5501Emulator::TriggerExternalSensor()
 void Tms5501Emulator::Start()
 {
     Reset();
+    _floppy1->ReadFile("disks/life.ccvf");
+    _floppy2->ReadFile("disks/life.ccvf");
 }
 
 void Tms5501Emulator::Stop()
@@ -98,16 +144,10 @@ uint8_t Tms5501Emulator::Read(uint8_t port)
             return keyboardRet;
         }
         case 0x2: {
-            /*
-            uint8_t retval = GetIntAddr();
-            if (retval) {
-                ClearIntAddr(retval);
-            } else {
-                retval = 0x00;
-            }
-            return retval;
-            */
-            return GetIntAddr();
+            const uint8_t interrupt = GetIntAddr();
+            if (interrupt)
+                ClearIntAddr(interrupt);
+            return interrupt;
         }
         case 0x3: {
             uint8_t retval = 0;
@@ -160,6 +200,7 @@ void Tms5501Emulator::Write(uint8_t port, uint8_t data)
                 //    txCallbackTimer = undefined;
                 //}
                 _context->txdataCount = 0;
+                _floppyTransmitNanosecondsRemaining = 0;
                 _context->intStatus = 0x20;  // tx buffer empty interrupt
             }
             // because the serial port isn't modeled, the break bit is
@@ -217,8 +258,6 @@ void Tms5501Emulator::Write(uint8_t port, uint8_t data)
                 _context->intStatus &= ~0x20;     // !serial character sent
             }
             if (_context->txdataCount == 1) {
-                // send it immediately to the shift register
-                //if (0 && floppy_dbg) {
                 //    console.log('5501 wr() is sending txdata at T=' + ccemu.getTickCount());
                 //}
                 _context->txdata2 = _context->txdata;
@@ -234,6 +273,10 @@ void Tms5501Emulator::Write(uint8_t port, uint8_t data)
                 //    // send it to the soundware emulation too just in case
                 //    audio.txData(txdata2);
                 }
+                if (IsFloppy1Selected() || IsFloppy2Selected())
+                    _floppyTransmitNanosecondsRemaining = 10'000'000'000ULL / 76'800;
+                else
+                    _context->txdataCount = 0;
                 // it should already be set, but just in case ...
                 _context->sstatus |= 0x10;       // xmit buffer empty
                 // TBD: is the interrupt generated after the byte is sent, or
@@ -286,6 +329,7 @@ void Tms5501Emulator::Reset()
     _context->txdata = 0;
     _context->txdata2 = 0;
     _context->txdataCount = 0;
+    _floppyTransmitNanosecondsRemaining = 0;
 
     _context->sstatus = 0x14;   // TX empty, RX empty
     _context->rate = 0;
@@ -299,9 +343,46 @@ void Tms5501Emulator::Reset()
     SetOutport(0x00);
 }
 
+void Tms5501Emulator::CompleteFloppyTransmit()
+{
+    if (_context->txdataCount == 0)
+        return;
+
+    _context->txdataCount--;
+    if (_context->txdataCount == 1)
+    {
+        _context->txdata2 = _context->txdata;
+        if (IsFloppy1Selected())
+        {
+            _floppy1->Write(0, _context->txdata2);
+            _floppyTransmitNanosecondsRemaining = 10'000'000'000ULL / 76'800;
+        }
+        else if (IsFloppy2Selected())
+        {
+            _floppy2->Write(0, _context->txdata2);
+            _floppyTransmitNanosecondsRemaining = 10'000'000'000ULL / 76'800;
+        }
+        else
+        {
+            _context->txdataCount = 0;
+        }
+    }
+
+    _context->sstatus |= 0x10;
+    _context->intStatus |= 0x20;
+    CheckInterruptStatus();
+}
+
 void Tms5501Emulator::SetOutport(const uint8_t value)
 {
     _outport = value;
+    _context->outport = value;
+
+    const bool writeEnabled = (value & 0x08) != 0;
+    const uint8_t stepper = value & 0x07;
+
+    _floppy1->Select(IsFloppy1Selected(), writeEnabled, stepper);
+    _floppy2->Select(IsFloppy2Selected(), writeEnabled, stepper);
 }
 
 // clear an interrupt bit on interrupt ack, or when polled
