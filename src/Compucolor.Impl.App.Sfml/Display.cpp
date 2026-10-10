@@ -42,7 +42,7 @@ void Display::Repaint()
     _backBuffer.swap(_publishedFrame);
 }
 
-void Display::Render()
+void Display::Render(const std::function<void()>& overlay)
 {
     if (!_isRunning.load(std::memory_order_relaxed) || !_window->isOpen()) {
         return;
@@ -54,8 +54,60 @@ void Display::Render()
     }
 
     _window->clear(sf::Color::Black);
+    _window->setView(GetLetterboxView(_window->getSize()));
     _window->draw(sf::Sprite(_texture));
+
+    if (overlay)
+    {
+        _window->setView(_window->getDefaultView());
+        overlay();
+    }
+
     _window->display();
+}
+
+void Display::SetSmooth(const bool smooth)
+{
+    _texture.setSmooth(smooth);
+}
+
+bool Display::SaveScreenshot(const std::string& path)
+{
+    std::lock_guard lock(_frameMutex);
+
+    const sf::Image image(sf::Vector2u{Width, Height}, _publishedFrame.data());
+
+    return image.saveToFile(path);
+}
+
+sf::View Display::GetLetterboxView(const sf::Vector2u windowSize)
+{
+    sf::View view(sf::FloatRect({0.f, 0.f}, {static_cast<float>(Width), static_cast<float>(Height)}));
+
+    if (windowSize.x == 0 || windowSize.y == 0)
+    {
+        return view;
+    }
+
+    const float targetAspect = static_cast<float>(Width) / static_cast<float>(Height);
+    const float windowAspect = static_cast<float>(windowSize.x) / static_cast<float>(windowSize.y);
+
+    sf::FloatRect viewport({0.f, 0.f}, {1.f, 1.f});
+
+    if (windowAspect > targetAspect)
+    {
+        viewport.size.x = targetAspect / windowAspect;
+        viewport.position.x = (1.f - viewport.size.x) / 2.f;
+    }
+    else
+    {
+        viewport.size.y = windowAspect / targetAspect;
+        viewport.position.y = (1.f - viewport.size.y) / 2.f;
+    }
+
+    view.setViewport(viewport);
+
+    return view;
 }
 
 void Display::Close()

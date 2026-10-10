@@ -9,5 +9,7 @@ namespace Compucolor::Crt
     class ICrtEmulator: public Common::IPlugin, public Common::IEmulatable {
         public:
             ~ICrtEmulator() override = default;
+
+            virtual void SetLowercaseCharset(bool lowercase) = 0;
     };
 }

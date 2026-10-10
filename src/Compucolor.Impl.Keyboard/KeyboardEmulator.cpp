@@ -70,7 +70,10 @@ void Compucolor::Impl::Keyboard::KeyboardEmulator::OnKeyUp(Compucolor::Keyboard:
 
     if(row.has_value() && bit.has_value())
     {
-        _kbMatrix[row.value()].store(0xFF, std::memory_order_relaxed);
+        _kbMatrix[row.value()].fetch_or(
+            static_cast<uint8_t>(1 << bit.value()),
+            std::memory_order_relaxed
+        );
     }
 }
 
@@ -104,110 +107,115 @@ void Compucolor::Impl::Keyboard::KeyboardEmulator::OnKeyDown(Compucolor::Keyboar
     }
 }
 
-std::optional<int> Compucolor::Impl::Keyboard::KeyboardEmulator::GetRow(Compucolor::Keyboard::CompucolorIIKey key)
+namespace
 {
-    switch (key)
+    using Compucolor::Keyboard::CompucolorIIKey;
+
+    struct MatrixPosition
     {
-        case Compucolor::Keyboard::CompucolorIIKey::Zero: return 15;
-        case Compucolor::Keyboard::CompucolorIIKey::One: return 14;
-        case Compucolor::Keyboard::CompucolorIIKey::Two: return 13;
-        case Compucolor::Keyboard::CompucolorIIKey::Three: return 12;
-        case Compucolor::Keyboard::CompucolorIIKey::Four: return 11;
-        case Compucolor::Keyboard::CompucolorIIKey::Five: return 10;
-        case Compucolor::Keyboard::CompucolorIIKey::Six: return 9;
-        case Compucolor::Keyboard::CompucolorIIKey::Seven: return 8;
-        case Compucolor::Keyboard::CompucolorIIKey::Eight: return 7;
-        case Compucolor::Keyboard::CompucolorIIKey::Nine: return 6;
-        case Compucolor::Keyboard::CompucolorIIKey::A: return 14;
-        case Compucolor::Keyboard::CompucolorIIKey::B: return 13;
-        case Compucolor::Keyboard::CompucolorIIKey::C: return 12;
-        case Compucolor::Keyboard::CompucolorIIKey::D: return 11;
-        case Compucolor::Keyboard::CompucolorIIKey::E: return 10;
-        case Compucolor::Keyboard::CompucolorIIKey::F: return 9;
-        case Compucolor::Keyboard::CompucolorIIKey::G: return 8;
-        case Compucolor::Keyboard::CompucolorIIKey::H: return 7;
-        case Compucolor::Keyboard::CompucolorIIKey::I: return 6;
-        case Compucolor::Keyboard::CompucolorIIKey::J: return 5;
-        case Compucolor::Keyboard::CompucolorIIKey::K: return 4;
-        case Compucolor::Keyboard::CompucolorIIKey::L: return 3;
-        case Compucolor::Keyboard::CompucolorIIKey::M: return 2;
-        case Compucolor::Keyboard::CompucolorIIKey::N: return 1;
-        case Compucolor::Keyboard::CompucolorIIKey::O: return 0;
-        case Compucolor::Keyboard::CompucolorIIKey::P: return 15;
-        case Compucolor::Keyboard::CompucolorIIKey::Q: return 14;
-        case Compucolor::Keyboard::CompucolorIIKey::R: return 13;
-        case Compucolor::Keyboard::CompucolorIIKey::S: return 12;
-        case Compucolor::Keyboard::CompucolorIIKey::T: return 11;
-        case Compucolor::Keyboard::CompucolorIIKey::U: return 10;
-        case Compucolor::Keyboard::CompucolorIIKey::V: return 9;
-        case Compucolor::Keyboard::CompucolorIIKey::W: return 8;
-        case Compucolor::Keyboard::CompucolorIIKey::X: return 7;
-        case Compucolor::Keyboard::CompucolorIIKey::Y: return 6;
-        case Compucolor::Keyboard::CompucolorIIKey::Z: return 5;
-        case Compucolor::Keyboard::CompucolorIIKey::Colon: return 5;
-        case Compucolor::Keyboard::CompucolorIIKey::SemiColon: return 4;
-        case Compucolor::Keyboard::CompucolorIIKey::Esc: return 4;
-        case Compucolor::Keyboard::CompucolorIIKey::Shift: return 16;
-        case Compucolor::Keyboard::CompucolorIIKey::Break: return 15;
-        case Compucolor::Keyboard::CompucolorIIKey::Bksp: return 5;
-        case Compucolor::Keyboard::CompucolorIIKey::Curlft: return 5;
-        case Compucolor::Keyboard::CompucolorIIKey::Cr: return 2;
-        case Compucolor::Keyboard::CompucolorIIKey::Space: return 15;
-        default: return {};
+        int row;
+        int bit;
+    };
+
+    // Rows and bits follow the Compucolor II keyboard matrix as documented by ccemu.
+    std::optional<MatrixPosition> FindPosition(const CompucolorIIKey key)
+    {
+        const auto index = static_cast<int>(key);
+
+        const auto offset = [index](const CompucolorIIKey first) { return index - static_cast<int>(first); };
+
+        // Digits take rows 15..6 on bit 0; the punctuation keys below them follow.
+        if (key >= CompucolorIIKey::Zero && key <= CompucolorIIKey::Nine)
+            return MatrixPosition{15 - offset(CompucolorIIKey::Zero), 0};
+
+        if (key >= CompucolorIIKey::Comma && key <= CompucolorIIKey::Slash)
+            return MatrixPosition{3 - offset(CompucolorIIKey::Comma), 0};
+
+        // AtSign..O share bit 1.
+        if (key >= CompucolorIIKey::AtSign && key <= CompucolorIIKey::O)
+            return MatrixPosition{15 - offset(CompucolorIIKey::AtSign), 1};
+
+        // P..Underscore share bit 2.
+        if (key >= CompucolorIIKey::P && key <= CompucolorIIKey::Underscore)
+            return MatrixPosition{15 - offset(CompucolorIIKey::P), 2};
+
+        if (key >= CompucolorIIKey::F0 && key <= CompucolorIIKey::F15)
+            return MatrixPosition{15 - offset(CompucolorIIKey::F0), 3};
+
+        if (key >= CompucolorIIKey::Num0 && key <= CompucolorIIKey::Num9)
+            return MatrixPosition{15 - offset(CompucolorIIKey::Num0), 0};
+
+        switch (key)
+        {
+            case CompucolorIIKey::Colon: return MatrixPosition{5, 0};
+            case CompucolorIIKey::SemiColon: return MatrixPosition{4, 0};
+
+            case CompucolorIIKey::Break: return MatrixPosition{15, 4};
+            case CompucolorIIKey::Inschar: return MatrixPosition{14, 4};
+            case CompucolorIIKey::Delline: return MatrixPosition{13, 4};
+            case CompucolorIIKey::Insline: return MatrixPosition{12, 4};
+            case CompucolorIIKey::Delchar: return MatrixPosition{11, 4};
+            case CompucolorIIKey::Auto: return MatrixPosition{10, 4};
+            case CompucolorIIKey::Home: return MatrixPosition{7, 4};
+            case CompucolorIIKey::Tab: return MatrixPosition{6, 4};
+            case CompucolorIIKey::CurDwn: return MatrixPosition{5, 4};
+            case CompucolorIIKey::ELine: return MatrixPosition{4, 4};
+            case CompucolorIIKey::EPage: return MatrixPosition{3, 4};
+            case CompucolorIIKey::Cr: return MatrixPosition{2, 4};
+            case CompucolorIIKey::A7on: return MatrixPosition{1, 4};
+            case CompucolorIIKey::Bla7off: return MatrixPosition{0, 4};
+
+            case CompucolorIIKey::Black: return MatrixPosition{15, 5};
+            case CompucolorIIKey::Red: return MatrixPosition{14, 5};
+            case CompucolorIIKey::Green: return MatrixPosition{13, 5};
+            case CompucolorIIKey::Yellow: return MatrixPosition{12, 5};
+            case CompucolorIIKey::Blue: return MatrixPosition{11, 5};
+            case CompucolorIIKey::Magenta: return MatrixPosition{10, 5};
+            case CompucolorIIKey::Cyan: return MatrixPosition{9, 5};
+            case CompucolorIIKey::White: return MatrixPosition{8, 5};
+            case CompucolorIIKey::Currgt: return MatrixPosition{6, 5};
+            case CompucolorIIKey::Curlft: return MatrixPosition{5, 5};
+            case CompucolorIIKey::Esc: return MatrixPosition{4, 5};
+            case CompucolorIIKey::CurUp: return MatrixPosition{3, 5};
+            case CompucolorIIKey::FgOn: return MatrixPosition{2, 5};
+            case CompucolorIIKey::BgOn: return MatrixPosition{1, 5};
+            case CompucolorIIKey::BlinkOn: return MatrixPosition{0, 5};
+
+            case CompucolorIIKey::Space: return MatrixPosition{15, 6};
+
+            // Row 16 holds the modifier keys.
+            case CompucolorIIKey::Capslock: return MatrixPosition{16, 7};
+            case CompucolorIIKey::Repeat: return MatrixPosition{16, 6};
+            case CompucolorIIKey::Shift: return MatrixPosition{16, 5};
+            case CompucolorIIKey::Ctrl: return MatrixPosition{16, 4};
+
+            // Aliases of keys that exist on the real keyboard.
+            case CompucolorIIKey::Bksp: return MatrixPosition{5, 5};
+            case CompucolorIIKey::Delete: return MatrixPosition{11, 4};
+            case CompucolorIIKey::Insert: return MatrixPosition{14, 4};
+            case CompucolorIIKey::NumDash: return MatrixPosition{2, 0};
+            case CompucolorIIKey::NumSlash: return MatrixPosition{0, 0};
+            case CompucolorIIKey::NumPeriod: return MatrixPosition{1, 0};
+
+            default: return std::nullopt;
+        }
     }
 }
 
- std::optional<int> Compucolor::Impl::Keyboard::KeyboardEmulator::GetBit(Compucolor::Keyboard::CompucolorIIKey key)
+std::optional<int> Compucolor::Impl::Keyboard::KeyboardEmulator::GetRow(Compucolor::Keyboard::CompucolorIIKey key)
 {
-    switch (key)
-    {
-        case Compucolor::Keyboard::CompucolorIIKey::Zero: return 0;
-        case Compucolor::Keyboard::CompucolorIIKey::One: return 0;
-        case Compucolor::Keyboard::CompucolorIIKey::Two: return 0;
-        case Compucolor::Keyboard::CompucolorIIKey::Three: return 0;
-        case Compucolor::Keyboard::CompucolorIIKey::Four: return 0;
-        case Compucolor::Keyboard::CompucolorIIKey::Five: return 0;
-        case Compucolor::Keyboard::CompucolorIIKey::Six: return 0;
-        case Compucolor::Keyboard::CompucolorIIKey::Seven: return 0;
-        case Compucolor::Keyboard::CompucolorIIKey::Eight: return 0;
-        case Compucolor::Keyboard::CompucolorIIKey::Nine: return 0;
-        case Compucolor::Keyboard::CompucolorIIKey::A: return 1;
-        case Compucolor::Keyboard::CompucolorIIKey::B: return 1;
-        case Compucolor::Keyboard::CompucolorIIKey::C: return 1;
-        case Compucolor::Keyboard::CompucolorIIKey::D: return 1;
-        case Compucolor::Keyboard::CompucolorIIKey::E: return 1;
-        case Compucolor::Keyboard::CompucolorIIKey::F: return 1;
-        case Compucolor::Keyboard::CompucolorIIKey::G: return 1;
-        case Compucolor::Keyboard::CompucolorIIKey::H: return 1;
-        case Compucolor::Keyboard::CompucolorIIKey::I: return 1;
-        case Compucolor::Keyboard::CompucolorIIKey::J: return 1;
-        case Compucolor::Keyboard::CompucolorIIKey::K: return 1;
-        case Compucolor::Keyboard::CompucolorIIKey::L: return 1;
-        case Compucolor::Keyboard::CompucolorIIKey::M: return 1;
-        case Compucolor::Keyboard::CompucolorIIKey::N: return 1;
-        case Compucolor::Keyboard::CompucolorIIKey::O: return 1;
-        case Compucolor::Keyboard::CompucolorIIKey::P: return 2;
-        case Compucolor::Keyboard::CompucolorIIKey::Q: return 2;
-        case Compucolor::Keyboard::CompucolorIIKey::R: return 2;
-        case Compucolor::Keyboard::CompucolorIIKey::S: return 2;
-        case Compucolor::Keyboard::CompucolorIIKey::T: return 2;
-        case Compucolor::Keyboard::CompucolorIIKey::U: return 2;
-        case Compucolor::Keyboard::CompucolorIIKey::V: return 2;
-        case Compucolor::Keyboard::CompucolorIIKey::W: return 2;
-        case Compucolor::Keyboard::CompucolorIIKey::X: return 2;
-        case Compucolor::Keyboard::CompucolorIIKey::Y: return 2;
-        case Compucolor::Keyboard::CompucolorIIKey::Z: return 2;
-        case Compucolor::Keyboard::CompucolorIIKey::Colon: return 0;
-        case Compucolor::Keyboard::CompucolorIIKey::SemiColon: return 0;
-        case Compucolor::Keyboard::CompucolorIIKey::Break: return 4;
-        case Compucolor::Keyboard::CompucolorIIKey::Shift: return 5;
-        case Compucolor::Keyboard::CompucolorIIKey::Esc: return 5;
-        case Compucolor::Keyboard::CompucolorIIKey::Bksp: return 5;
-        case Compucolor::Keyboard::CompucolorIIKey::Curlft: return 5;
-        case Compucolor::Keyboard::CompucolorIIKey::Cr: return 4;
-        case Compucolor::Keyboard::CompucolorIIKey::Space: return 6;
-        default: return {};
-    }
+    if (const auto position = FindPosition(key))
+        return position->row;
+
+    return {};
+}
+
+std::optional<int> Compucolor::Impl::Keyboard::KeyboardEmulator::GetBit(Compucolor::Keyboard::CompucolorIIKey key)
+{
+    if (const auto position = FindPosition(key))
+        return position->bit;
+
+    return {};
 }
 
 std::shared_ptr<Compucolor::Keyboard::IKeyboardEmulator> Compucolor::Impl::Keyboard::KeyboardEmulator::Creator(

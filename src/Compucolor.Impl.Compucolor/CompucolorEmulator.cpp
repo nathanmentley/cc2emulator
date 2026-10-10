@@ -17,6 +17,8 @@ void Compucolor::Impl::CompucolorII::LoadRom(
 
 Compucolor::Impl::CompucolorII::CompucolorEmulator::CompucolorEmulator(
     std::shared_ptr<Crt::ICrtEmulator> crt,
+    std::shared_ptr<Floppy::IFloppyEmulator> floppyA,
+    std::shared_ptr<Floppy::IFloppyEmulator> floppyB,
     std::shared_ptr<Intel8080::IIntel8080Emulator> intel8080,
     std::shared_ptr<Keyboard::IKeyboardEmulator> keyboard,
     std::shared_ptr<Memory::IMemory> memory,
@@ -25,6 +27,8 @@ Compucolor::Impl::CompucolorII::CompucolorEmulator::CompucolorEmulator(
     std::shared_ptr<Tms5501::ITms5501Emulator> tms5501
 ):
     _crt(std::move(crt)),
+    _floppyA(std::move(floppyA)),
+    _floppyB(std::move(floppyB)),
     _intel8080(std::move(intel8080)),
     _keyboard(std::move(keyboard)),
     _memory(std::move(memory)),
@@ -40,7 +44,7 @@ void Compucolor::Impl::CompucolorII::CompucolorEmulator::Start()
 {
     _loopInterval = 0;
     _floppyCycleRemainder = 0;
-    LoadRom(_memory.get(), get_system_rom_8_79(), 0, get_system_rom_8_79_length());
+    LoadSystemRom();
 
     _crt->Start();
     _keyboard->Start();
@@ -51,33 +55,137 @@ void Compucolor::Impl::CompucolorII::CompucolorEmulator::Start()
     _loop = _scheduler->SetupRecurringTask(
         502,
         [=, this] {
-            const bool wasInterruptPending = _intel8080->IsInterruptPending();
-            const uint8_t pendingInterrupt = _intel8080->GetPendingInterrupt();
-
-            const uint64_t elapsedCycles = _intel8080->Step();
-            _floppyCycleRemainder += elapsedCycles;
-
-            if (wasInterruptPending && !_intel8080->IsInterruptPending()) {
-                _tms5501->OnInterruptConsumed(pendingInterrupt);
+            // Resets run here so they never race with a CPU step.
+            if (const int request = _resetRequest.exchange(ResetNone); request != ResetNone)
+            {
+                ApplyReset(request == ResetHard);
             }
 
-            _loopInterval++;
-            if (_loopInterval % 8 == 0) {
-                constexpr uint64_t CPU_CYCLE_NANOSECONDS = 502;
-                _tms5501->StepFloppy(
-                    _floppyCycleRemainder * CPU_CYCLE_NANOSECONDS
-                );
-                _floppyCycleRemainder = 0;
+            if (_paused.load(std::memory_order_relaxed))
+            {
+                return 0;
             }
 
-            if (_loopInterval % 128 == 0) {
-                _loopInterval = 0;
-                _tms5501->Step();
+            const int steps = _speedRegulated.load(std::memory_order_relaxed) ? 1 : UnregulatedBurst;
+
+            for (int i = 0; i < steps; i++)
+            {
+                StepOnce();
             }
 
             return 0;
         }
     );
+}
+
+void Compucolor::Impl::CompucolorII::CompucolorEmulator::StepOnce()
+{
+    const bool wasInterruptPending = _intel8080->IsInterruptPending();
+    const uint8_t pendingInterrupt = _intel8080->GetPendingInterrupt();
+
+    const uint64_t elapsedCycles = _intel8080->Step();
+    _floppyCycleRemainder += elapsedCycles;
+
+    if (wasInterruptPending && !_intel8080->IsInterruptPending()) {
+        _tms5501->OnInterruptConsumed(pendingInterrupt);
+    }
+
+    _loopInterval++;
+    if (_loopInterval % 8 == 0) {
+        constexpr uint64_t CPU_CYCLE_NANOSECONDS = 502;
+        _tms5501->StepFloppy(
+            _floppyCycleRemainder * CPU_CYCLE_NANOSECONDS
+        );
+        _floppyCycleRemainder = 0;
+    }
+
+    if (_loopInterval % 128 == 0) {
+        _loopInterval = 0;
+        _tms5501->Step();
+    }
+}
+
+void Compucolor::Impl::CompucolorII::CompucolorEmulator::LoadSystemRom()
+{
+    if (_romVersion.load() == RomVersion::V6_78)
+    {
+        LoadRom(_memory.get(), get_system_rom_6_78(), 0, get_system_rom_6_78_length());
+    }
+    else
+    {
+        LoadRom(_memory.get(), get_system_rom_8_79(), 0, get_system_rom_8_79_length());
+    }
+}
+
+void Compucolor::Impl::CompucolorII::CompucolorEmulator::ApplyReset(const bool hard)
+{
+    _intel8080->Reset();
+    _tms5501->Reset();
+    _smc5027->Reset();
+    _keyboard->Reset();
+
+    _loopInterval = 0;
+    _floppyCycleRemainder = 0;
+
+    if (hard)
+    {
+        LoadSystemRom();
+        // BASIC treats 0x97 here as a warm start; clearing it forces a cold start.
+        _memory->SetByte(PowerUpFlagAddress, 0x00);
+    }
+}
+
+void Compucolor::Impl::CompucolorII::CompucolorEmulator::Reset(const bool hard)
+{
+    _resetRequest.store(hard ? ResetHard : ResetWarm);
+}
+
+void Compucolor::Impl::CompucolorII::CompucolorEmulator::Pause()
+{
+    _paused.store(true, std::memory_order_relaxed);
+}
+
+void Compucolor::Impl::CompucolorII::CompucolorEmulator::Resume()
+{
+    _paused.store(false, std::memory_order_relaxed);
+}
+
+bool Compucolor::Impl::CompucolorII::CompucolorEmulator::IsPaused() const
+{
+    return _paused.load(std::memory_order_relaxed);
+}
+
+void Compucolor::Impl::CompucolorII::CompucolorEmulator::SetSpeedRegulated(const bool regulated)
+{
+    _speedRegulated.store(regulated, std::memory_order_relaxed);
+}
+
+bool Compucolor::Impl::CompucolorII::CompucolorEmulator::IsSpeedRegulated() const
+{
+    return _speedRegulated.load(std::memory_order_relaxed);
+}
+
+void Compucolor::Impl::CompucolorII::CompucolorEmulator::SetLowercaseCharset(const bool lowercase)
+{
+    _crt->SetLowercaseCharset(lowercase);
+}
+
+void Compucolor::Impl::CompucolorII::CompucolorEmulator::SetRomVersion(const RomVersion version)
+{
+    _romVersion.store(version);
+    Reset(true);
+}
+
+std::shared_ptr<Compucolor::Floppy::IFloppyEmulator> Compucolor::Impl::CompucolorII::CompucolorEmulator::GetFloppy(
+    const int drive
+) const
+{
+    switch (drive)
+    {
+        case 0: return _floppyA;
+        case 1: return _floppyB;
+        default: return nullptr;
+    }
 }
 
 void Compucolor::Impl::CompucolorII::CompucolorEmulator::Stop()
@@ -112,6 +220,8 @@ std::shared_ptr<Compucolor::ICompucolorEmulator> Compucolor::Impl::CompucolorII:
 {
     return std::make_shared<CompucolorEmulator>(
         manager->GetCrt(),
+        manager->GetFloppyA(),
+        manager->GetFloppyB(),
         manager->GetIntel8080(),
         manager->GetKeyboard(),
         manager->GetMemory(),

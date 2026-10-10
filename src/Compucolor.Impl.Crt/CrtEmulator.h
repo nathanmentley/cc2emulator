@@ -2,6 +2,7 @@
 #pragma once
 
 #include <chrono>
+#include <atomic>
 #include <memory>
 #include <thread>
 
@@ -58,6 +59,8 @@ namespace Compucolor::Impl::Crt
              */
             void Stop() override;
 
+            void SetLowercaseCharset(bool lowercase) override;
+
             static std::shared_ptr<ICrtEmulator> Creator(Common::IPluginManager* manager);
 
         private:
@@ -78,6 +81,7 @@ namespace Compucolor::Impl::Crt
 
 
             int _phase;
+            std::atomic<bool> _lowercaseCharset{false};
 
             /**
              * @brief  

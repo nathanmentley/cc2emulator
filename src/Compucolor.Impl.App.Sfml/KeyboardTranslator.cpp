@@ -154,35 +154,67 @@ std::optional<Compucolor::Keyboard::CompucolorIIKey> Compucolor::Impl::App::Sfml
             return Compucolor::Keyboard::CompucolorIIKey::Bksp;
         case sf::Keyboard::Key::Enter:
             return Compucolor::Keyboard::CompucolorIIKey::Cr;
-        case sf::Keyboard::Key::Semicolon:
-            return Compucolor::Keyboard::CompucolorIIKey::SemiColon;
         case sf::Keyboard::Key::Left:
+            return Compucolor::Keyboard::CompucolorIIKey::Curlft;
         case sf::Keyboard::Key::Right:
+            return Compucolor::Keyboard::CompucolorIIKey::Currgt;
         case sf::Keyboard::Key::Up:
+            return Compucolor::Keyboard::CompucolorIIKey::CurUp;
         case sf::Keyboard::Key::Down:
-        case sf::Keyboard::Key::Menu:
-        case sf::Keyboard::Key::LBracket:
-        case sf::Keyboard::Key::RBracket:
-        case sf::Keyboard::Key::Comma:
-        case sf::Keyboard::Key::Period:
-        //case sf::Keyboard::Key::Quote:
-        case sf::Keyboard::Key::Slash:
-        case sf::Keyboard::Key::Backslash:
-        //case sf::Keyboard::Key::Tilde:
-        case sf::Keyboard::Key::Equal:
-        case sf::Keyboard::Key::Hyphen:
-        case sf::Keyboard::Key::Tab:
-        case sf::Keyboard::Key::PageUp:
-        case sf::Keyboard::Key::PageDown:
-        case sf::Keyboard::Key::End:
+            return Compucolor::Keyboard::CompucolorIIKey::CurDwn;
         case sf::Keyboard::Key::Home:
+            return Compucolor::Keyboard::CompucolorIIKey::Home;
+        case sf::Keyboard::Key::Tab:
+            return Compucolor::Keyboard::CompucolorIIKey::Tab;
         case sf::Keyboard::Key::Insert:
+            return Compucolor::Keyboard::CompucolorIIKey::Inschar;
         case sf::Keyboard::Key::Delete:
+            return Compucolor::Keyboard::CompucolorIIKey::Delchar;
+        case sf::Keyboard::Key::PageUp:
+            return Compucolor::Keyboard::CompucolorIIKey::EPage;
+        case sf::Keyboard::Key::PageDown:
+            return Compucolor::Keyboard::CompucolorIIKey::ELine;
+        case sf::Keyboard::Key::End:
+        case sf::Keyboard::Key::Pause:
+            return Compucolor::Keyboard::CompucolorIIKey::Break;
         case sf::Keyboard::Key::Add:
         case sf::Keyboard::Key::Subtract:
         case sf::Keyboard::Key::Multiply:
         case sf::Keyboard::Key::Divide:
         default:
             return {};
+    }
+}
+
+std::optional<char> Compucolor::Impl::App::Sfml::KeyboardTranslator::ToAscii(
+    const sf::Keyboard::Key key,
+    const bool shift
+)
+{
+    using Key = sf::Keyboard::Key;
+
+    if (key >= Key::Num0 && key <= Key::Num9)
+    {
+        // US layout: shifted digit row.
+        static constexpr char shifted[] = {')', '!', '@', '#', '$', '%', '^', '&', '*', '('};
+        const int digit = static_cast<int>(key) - static_cast<int>(Key::Num0);
+
+        return shift ? shifted[digit] : static_cast<char>('0' + digit);
+    }
+
+    switch (key)
+    {
+        case Key::Hyphen: return shift ? '_' : '-';
+        case Key::Equal: return shift ? '+' : '=';
+        case Key::LBracket: return shift ? '{' : '[';
+        case Key::RBracket: return shift ? '}' : ']';
+        case Key::Backslash: return shift ? '|' : '\\';
+        case Key::Semicolon: return shift ? ':' : ';';
+        case Key::Apostrophe: return shift ? '"' : '\'';
+        case Key::Comma: return shift ? '<' : ',';
+        case Key::Period: return shift ? '>' : '.';
+        case Key::Slash: return shift ? '?' : '/';
+        case Key::Grave: return shift ? '~' : '`';
+        default: return std::nullopt;
     }
 }

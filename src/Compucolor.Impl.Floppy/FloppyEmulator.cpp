@@ -35,6 +35,8 @@ void FloppyEmulator::Stop()
 
 void FloppyEmulator::Reset()
 {
+    std::lock_guard lock(_mutex);
+
     _selected = false;
     _writeEnable = false;
     _track = 0;
@@ -51,6 +53,8 @@ void FloppyEmulator::Reset()
 
 uint8_t FloppyEmulator::Read([[maybe_unused]] uint8_t port)
 {
+    std::lock_guard lock(_mutex);
+
     if (!_selected || _writeEnable)
         return 0x00;
 
@@ -68,6 +72,8 @@ void FloppyEmulator::Write(
     uint8_t data
 )
 {
+    std::lock_guard lock(_mutex);
+
     if (!_selected || !_writeEnable)
         return;
 
@@ -79,11 +85,15 @@ void FloppyEmulator::Write(
 
 bool FloppyEmulator::HasData() const
 {
+    std::lock_guard lock(_mutex);
+
     return _selected && !_writeEnable && _readData.has_value();
 }
 
 bool FloppyEmulator::HasFramingError() const
 {
+    std::lock_guard lock(_mutex);
+
     return _readFramingError;
 }
 
@@ -93,6 +103,8 @@ void FloppyEmulator::Select(
     uint8_t stepper
 )
 {
+    std::lock_guard lock(_mutex);
+
     if (!selected)
     {
         if (_selected)
@@ -133,6 +145,8 @@ void FloppyEmulator::Select(
 
 void FloppyEmulator::Step(uint64_t elapsedNanoseconds)
 {
+    std::lock_guard lock(_mutex);
+
     if (!_selected && _motorCoastNanoseconds == 0)
         return;
 
@@ -220,7 +234,7 @@ std::optional<std::size_t> FloppyEmulator::FindStartBit() const
 
 void FloppyEmulator::ScheduleReadByte()
 {
-    if (!_selected || _writeEnable || _scheduledStartBit)
+    if (!_selected || _writeEnable || _scheduledStartBit || !_mounted)
         return;
 
     const auto startBit = FindStartBit();
@@ -253,10 +267,18 @@ void FloppyEmulator::WriteBit(bool bit)
     const std::size_t byteOffset = trackOffset + _bitPos / 8;
     const uint8_t mask = static_cast<uint8_t>(1U << (_bitPos & 0x07));
 
-    if (bit)
-        _disk[byteOffset] |= mask;
-    else
-        _disk[byteOffset] &= static_cast<uint8_t>(~mask);
+    if (_mounted)
+    {
+        const uint8_t before = _disk[byteOffset];
+
+        if (bit)
+            _disk[byteOffset] |= mask;
+        else
+            _disk[byteOffset] &= static_cast<uint8_t>(~mask);
+
+        if (_disk[byteOffset] != before)
+            _modified = true;
+    }
 
     _bitPos = (_bitPos + 1) % (TRACK_SIZE * 8);
 }
@@ -276,8 +298,9 @@ void FloppyEmulator::ReadFile(std::string filename)
     int currentTrack = -1;
     std::size_t trackOffset = 0;
 
-    // Start with a blank disk.
-    std::fill(_disk.begin(), _disk.end(), 0x00);
+    // Parse into a scratch image so a bad file leaves the current disk untouched.
+    std::vector<uint8_t> disk(DISK_SIZE, 0x00);
+    std::vector<std::string> labels;
 
     while (std::getline(file, line))
     {
@@ -320,7 +343,12 @@ void FloppyEmulator::ReadFile(std::string filename)
 
         // Ignore metadata before the first track.
         if (currentTrack < 0)
+        {
+            if (line.rfind("Label ", 0) == 0)
+                labels.push_back(line);
+
             continue;
+        }
 
         // Each data line contains 32 bytes represented
         // as 64 hexadecimal characters.
@@ -364,12 +392,20 @@ void FloppyEmulator::ReadFile(std::string filename)
                 );
             }
 
-            _disk[diskOffset + i] =
+            disk[diskOffset + i] =
                 static_cast<uint8_t>(value);
         }
 
         trackOffset += 32;
     }
+
+    std::lock_guard lock(_mutex);
+
+    _disk = std::move(disk);
+    _labels = std::move(labels);
+    _mounted = true;
+    _modified = false;
+    _mountedPath = filename;
 
     // Put the virtual drive back at track zero.
     _track = 0;
@@ -386,6 +422,8 @@ void FloppyEmulator::ReadFile(std::string filename)
 
 void FloppyEmulator::SaveFile(std::string filename)
 {
+    std::lock_guard lock(_mutex);
+
     std::ofstream file(filename);
 
     if (!file)
@@ -397,8 +435,9 @@ void FloppyEmulator::SaveFile(std::string filename)
     }
 
     file << "Compucolor Virtual Floppy Disk Image\n";
-    file << "Label Joystick Games\n";
-    file << "Label (Life with Sound)\n";
+
+    for (const std::string& label : _labels)
+        file << label << '\n';
 
     for (int track = 0; track < TRACKS; ++track)
     {
@@ -425,6 +464,104 @@ void FloppyEmulator::SaveFile(std::string filename)
             file << '\n';
         }
     }
+
+    file.flush();
+
+    if (!file)
+    {
+        throw std::runtime_error("Failed writing floppy image: " + filename);
+    }
+
+    _mountedPath = filename;
+    _modified = false;
+}
+
+bool FloppyEmulator::Mount(const std::string& path, std::string& error)
+{
+    try
+    {
+        ReadFile(path);
+    }
+    catch (const std::exception& exception)
+    {
+        error = exception.what();
+        return false;
+    }
+
+    return true;
+}
+
+void FloppyEmulator::Eject()
+{
+    std::lock_guard lock(_mutex);
+
+    std::fill(_disk.begin(), _disk.end(), 0x00);
+    _labels.clear();
+    _mounted = false;
+    _modified = false;
+    _mountedPath.clear();
+
+    _bitPos = 0;
+    _bitClockRemainder = 0;
+    _scheduledStartBit.reset();
+    _bitsUntilRead = 0;
+    _readData.reset();
+    _readFramingError = false;
+}
+
+bool FloppyEmulator::IsMounted() const
+{
+    std::lock_guard lock(_mutex);
+
+    return _mounted;
+}
+
+std::string FloppyEmulator::GetMountedPath() const
+{
+    std::lock_guard lock(_mutex);
+
+    return _mountedPath;
+}
+
+bool FloppyEmulator::IsModified() const
+{
+    std::lock_guard lock(_mutex);
+
+    return _modified;
+}
+
+bool FloppyEmulator::Save(std::string& error)
+{
+    std::string path;
+
+    {
+        std::lock_guard lock(_mutex);
+
+        if (!_mounted || _mountedPath.empty())
+        {
+            error = "No disk is mounted";
+            return false;
+        }
+
+        path = _mountedPath;
+    }
+
+    return SaveAs(path, error);
+}
+
+bool FloppyEmulator::SaveAs(const std::string& path, std::string& error)
+{
+    try
+    {
+        SaveFile(path);
+    }
+    catch (const std::exception& exception)
+    {
+        error = exception.what();
+        return false;
+    }
+
+    return true;
 }
 
 void FloppyEmulator::StepHead(uint8_t newPhase)

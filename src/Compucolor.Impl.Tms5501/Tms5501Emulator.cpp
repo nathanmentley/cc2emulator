@@ -108,8 +108,6 @@ void Tms5501Emulator::TriggerExternalSensor()
 void Tms5501Emulator::Start()
 {
     Reset();
-    _floppy1->ReadFile("disks/life.ccvf");
-    _floppy2->ReadFile("disks/chess.ccvf");
 }
 
 void Tms5501Emulator::Stop()

@@ -40,5 +40,5 @@
         "XAUTHORITY": "/tmp/.Xauthority"
     },
 
-    "postCreateCommand": "meson setup build"
+    "postCreateCommand": "meson setup build --prefix=$PWD/dist"
 }

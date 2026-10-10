@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <vector>
@@ -32,6 +33,14 @@ namespace Compucolor::Impl::Floppy
         void ReadFile(std::string filename) override;
         void SaveFile(std::string filename) override;
 
+        bool Mount(const std::string& path, std::string& error) override;
+        void Eject() override;
+        [[nodiscard]] bool IsMounted() const override;
+        [[nodiscard]] std::string GetMountedPath() const override;
+        [[nodiscard]] bool IsModified() const override;
+        bool Save(std::string& error) override;
+        bool SaveAs(const std::string& path, std::string& error) override;
+
         static std::shared_ptr<Compucolor::Floppy::IFloppyEmulator>
         Creator(Common::IPluginManager* manager);
 
@@ -43,6 +52,13 @@ namespace Compucolor::Impl::Floppy
         static constexpr int DISK_SIZE = TRACKS * TRACK_SIZE;
 
         std::shared_ptr<Logger::ILogger> _logger;
+
+        // The UI thread mounts and ejects while the emulator thread steps the drive.
+        mutable std::recursive_mutex _mutex;
+        bool _mounted = false;
+        bool _modified = false;
+        std::string _mountedPath;
+        std::vector<std::string> _labels;
 
         std::vector<uint8_t> _disk =
             std::vector<uint8_t>(DISK_SIZE, 0x00);

@@ -168,6 +168,24 @@ floppyImplLib = declare_dependency(
     )
 )
 
+floppyImplTests = executable(
+    'Compucolor.Impl.Tests.Floppy',
+    [
+        'test/Compucolor.Impl.Tests.Floppy/main.cpp',
+        'test/Compucolor.Impl.Tests.Floppy/FloppyEmulatorTests.cpp'
+    ],
+    dependencies: [
+        dependency('gtest'),
+
+        publicHeaderLib,
+        testHeaderLib,
+
+        floppyImplLib
+    ],
+    include_directories: 'src/Compucolor.Impl.Floppy/'
+)
+test('Compucolor.Impl.Tests.Floppy', floppyImplTests)
+
 keyboardImplLib = declare_dependency(
     link_with: shared_library(
         'Compucolor.Impl.Keyboard',
@@ -182,6 +200,24 @@ keyboardImplLib = declare_dependency(
         install_dir: install_prefix + '/plugins'
     )
 )
+
+keyboardImplTests = executable(
+    'Compucolor.Impl.Tests.Keyboard',
+    [
+        'test/Compucolor.Impl.Tests.Keyboard/main.cpp',
+        'test/Compucolor.Impl.Tests.Keyboard/KeyboardEmulatorTests.cpp'
+    ],
+    dependencies: [
+        dependency('gtest'),
+
+        publicHeaderLib,
+        testHeaderLib,
+
+        keyboardImplLib
+    ],
+    include_directories: 'src/Compucolor.Impl.Keyboard/'
+)
+test('Compucolor.Impl.Tests.Keyboard', keyboardImplTests)
 
 schedulerImplLib = declare_dependency(
     link_with: shared_library(
@@ -245,18 +281,60 @@ compucolorImplTests = executable(
 )
 test('Compucolor.Impl.Tests.Compucolor', compucolorImplTests)
 
+appSettingsTests = executable(
+    'Compucolor.Impl.Tests.App',
+    [
+        'test/Compucolor.Impl.Tests.App/main.cpp',
+        'test/Compucolor.Impl.Tests.App/SettingsTests.cpp',
+        'test/Compucolor.Impl.Tests.App/AsciiKeyMapTests.cpp',
+        'src/Compucolor.Impl.App.Sfml/Settings.cpp',
+        'src/Compucolor.Impl.App.Sfml/AsciiKeyMap.cpp'
+    ],
+    dependencies: [
+        dependency('gtest'),
+
+        publicHeaderLib,
+        testHeaderLib
+    ],
+    include_directories: 'src/Compucolor.Impl.App.Sfml/'
+)
+test('Compucolor.Impl.Tests.App', appSettingsTests)
+
+sfmlGraphicsDep = dependency('sfml-graphics')
+
+# The imgui-sfml wrap looks up SFML as 'sfml'; reuse the system SFML instead of building another.
+meson.override_dependency('sfml', sfmlGraphicsDep)
+
+# imgui-sfml pulls in imgui itself, so configure imgui as a static library first;
+# otherwise it is built shared and the installed app cannot find libimgui.so.
+imguiDep = dependency(
+    'imgui',
+    fallback: ['imgui', 'imgui_dep'],
+    default_options: ['default_library=static']
+)
+
+imguiSfmlDep = dependency(
+    'imgui-sfml',
+    fallback: ['imgui-sfml', 'imgui_sfml_dep'],
+    default_options: ['default_library=static']
+)
+
 executable(
     'Compucolor.Impl.App.Sfml',
     [
         'src/Compucolor.Impl.App.Sfml/Configuration.cpp',
         'src/Compucolor.Impl.App.Sfml/Display.cpp',
         'src/Compucolor.Impl.App.Sfml/ErrorHandler.cpp',
+        'src/Compucolor.Impl.App.Sfml/Gui.cpp',
         'src/Compucolor.Impl.App.Sfml/KeyboardTranslator.cpp',
         'src/Compucolor.Impl.App.Sfml/main.cpp',
-        'src/Compucolor.Impl.App.Sfml/Program.cpp'
+        'src/Compucolor.Impl.App.Sfml/Program.cpp',
+        'src/Compucolor.Impl.App.Sfml/Settings.cpp',
+        'src/Compucolor.Impl.App.Sfml/AsciiKeyMap.cpp'
     ],
     dependencies: [
-        dependency('sfml-graphics'),
+        sfmlGraphicsDep,
+        imguiSfmlDep,
         dependency('threads'),
 
         publicHeaderLib

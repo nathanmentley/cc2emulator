@@ -3,8 +3,10 @@
 #include <array>
 #include <atomic>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <mutex>
+#include <string>
 
 #include <SFML/Graphics.hpp>
 
@@ -20,7 +22,13 @@ namespace Compucolor::Impl::App::Sfml
 
             void DrawPixel(Compucolor::Common::Color color, int x, int y) override;
             void Repaint() override;
-            void Render();
+            // The overlay draws after the emulator screen in window coordinates, before the buffer flip.
+            void Render(const std::function<void()>& overlay = {});
+
+            void SetSmooth(bool smooth);
+
+            // Writes the most recent complete frame as a PNG.
+            bool SaveScreenshot(const std::string& path);
 
             void Close() override;
 
@@ -37,5 +45,6 @@ namespace Compucolor::Impl::App::Sfml
             std::atomic<bool> _isRunning;
 
             static uint32_t GetColor(Compucolor::Common::Color color);
+            static sf::View GetLetterboxView(sf::Vector2u windowSize);
     };
 }

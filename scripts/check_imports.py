@@ -8,6 +8,9 @@ INCLUDE_REGEX = re.compile(r'^\s*#\s*include\s*[<"]([^">]+)[">]')
 
 EXTENSIONS = {'.c', '.cc', '.cpp', '.h', '.hpp'}
 
+# Third-party and generated code is not ours to police.
+IGNORED_DIRS = {'subprojects', 'build', 'dist'}
+
 def check_file(path: Path) -> int:
     errors = 0
     with path.open("r", encoding="utf-8", errors="ignore") as f:
@@ -43,7 +46,7 @@ def main() -> int:
 
     total_errors = 0
     for path in root.rglob('*'):
-        if path.suffix in EXTENSIONS:
+        if path.suffix in EXTENSIONS and not IGNORED_DIRS.intersection(path.relative_to(root).parts):
             total_errors += check_file(path)
 
     return 1 if total_errors > 0 else 0

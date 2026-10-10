@@ -54,6 +54,11 @@ void Compucolor::Impl::Crt::CrtEmulator::Stop()
     }
 }
 
+void Compucolor::Impl::Crt::CrtEmulator::SetLowercaseCharset(const bool lowercase)
+{
+    _lowercaseCharset.store(lowercase, std::memory_order_relaxed);
+}
+
 void Compucolor::Impl::Crt::CrtEmulator::RefreshDisplay() const
 {
     _logger->LogTrace(
@@ -143,7 +148,9 @@ void Compucolor::Impl::Crt::CrtEmulator::DrawGlyph(
 
     for(uint16_t row = 0; row < CharacterHeight; row++)
     {
-        const uint8_t* uf6_rom = get_uf6_rom();
+        const uint8_t* uf6_rom = _lowercaseCharset.load(std::memory_order_relaxed) ?
+            get_uf6_rom_lowercase() :
+            get_uf6_rom();
 
         const bool isTall = !plot && IsBitSet(7, glyphData);
         const uint8_t ch = glyphData & 0x7F;
