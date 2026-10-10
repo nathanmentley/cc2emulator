@@ -62,9 +62,9 @@ void Compucolor::Impl::Keyboard::KeyboardEmulator::OnKeyUp(Compucolor::Keyboard:
 
     _logger->LogTrace(
         "OnKeyUp for %d (%d, %d) in %s",
-        key,
-        row,
-        bit,
+        static_cast<int>(key),
+        row.value_or(-1),
+        bit.value_or(-1),
         "KeyboardEmulator"
     );
 
@@ -84,9 +84,9 @@ void Compucolor::Impl::Keyboard::KeyboardEmulator::OnKeyDown(Compucolor::Keyboar
 
     _logger->LogTrace(
         "OnKeyDown for %d (%d, %d) in %s",
-        key,
-        row,
-        bit,
+        static_cast<int>(key),
+        row.value_or(-1),
+        bit.value_or(-1),
         "KeyboardEmulator"
     );
 

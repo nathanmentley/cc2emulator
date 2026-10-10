@@ -47,7 +47,7 @@ uint8_t Smc5027Emulator::Read(uint8_t port)
             break;
 
         default:
-            _logger->LogWarning("Unimplemented port read from 0x%02x in %s", data, port, "Smc5027Emulator");
+            _logger->LogWarning("Unimplemented port read from 0x%02x in %s", port, "Smc5027Emulator");
             break;
     }
 

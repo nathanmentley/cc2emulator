@@ -566,28 +566,63 @@ bool FloppyEmulator::SaveAs(const std::string& path, std::string& error)
 
 void FloppyEmulator::StepHead(uint8_t newPhase)
 {
-    if (newPhase != 0 && newPhase != 1 && newPhase != 2 && newPhase != 4)
+    // A 3 phase motor has no phase 0 state, so that input leaves the head where it is.
+    const bool threePhase = _stepperPhases == 3;
+    const bool validPhase = newPhase == 1 || newPhase == 2 || newPhase == 4 || (!threePhase && newPhase == 0);
+
+    if (!validPhase)
         return;
 
-    const bool stepIn =
-        (_stepperPhase == 1 && newPhase == 2) ||
-        (_stepperPhase == 2 && newPhase == 4) ||
-        (_stepperPhase == 4 && newPhase == 0) ||
-        (_stepperPhase == 0 && newPhase == 1);
-    const bool stepOut =
-        (_stepperPhase == 1 && newPhase == 0) ||
-        (_stepperPhase == 2 && newPhase == 1) ||
-        (_stepperPhase == 4 && newPhase == 2) ||
-        (_stepperPhase == 0 && newPhase == 4);
+    const bool stepIn = threePhase
+        ? (_stepperPhase == 1 && newPhase == 2) ||
+          (_stepperPhase == 2 && newPhase == 4) ||
+          (_stepperPhase == 4 && newPhase == 1)
+        : (_stepperPhase == 1 && newPhase == 2) ||
+          (_stepperPhase == 2 && newPhase == 4) ||
+          (_stepperPhase == 4 && newPhase == 0) ||
+          (_stepperPhase == 0 && newPhase == 1);
+    const bool stepOut = threePhase
+        ? (_stepperPhase == 1 && newPhase == 4) ||
+          (_stepperPhase == 2 && newPhase == 1) ||
+          (_stepperPhase == 4 && newPhase == 2)
+        : (_stepperPhase == 1 && newPhase == 0) ||
+          (_stepperPhase == 2 && newPhase == 1) ||
+          (_stepperPhase == 4 && newPhase == 2) ||
+          (_stepperPhase == 0 && newPhase == 4);
+
+    const int maxStepTrack = threePhase ? 40 : 80;
 
     if (stepIn)
-        _stepTrack = std::min(_stepTrack + 1, 80);
+        _stepTrack = std::min(_stepTrack + 1, maxStepTrack);
     else if (stepOut)
         _stepTrack = std::max(_stepTrack - 1, 0);
 
-    _track = _stepTrack >> 1;
+    // A 3 phase motor moves one track per step; a 4 phase motor needs two.
+    _track = threePhase ? _stepTrack : _stepTrack >> 1;
 
     _stepperPhase = newPhase;
+}
+
+void FloppyEmulator::SetStepperPhases(const int phases)
+{
+    std::lock_guard lock(_mutex);
+
+    _stepperPhases = phases == 3 ? 3 : 4;
+
+    // The step count means something different now, so park the head.
+    _stepTrack = 0;
+    _track = 0;
+    _stepperPhase = 0;
+    _scheduledStartBit.reset();
+    _bitsUntilRead = 0;
+    _readData.reset();
+}
+
+int FloppyEmulator::GetTrack() const
+{
+    std::lock_guard lock(_mutex);
+
+    return _track;
 }
 
 shared_ptr<IFloppyEmulator> FloppyEmulator::Creator(

@@ -1,6 +1,7 @@
 #include "Program.h"
 
 #include <algorithm>
+#include <stdexcept>
 
 using std::optional;
 using std::shared_ptr;
@@ -32,17 +33,17 @@ Program::Program():
         make_shared<PluginManager>(
             _loggerProvider,
             _display,
-            _configuration->GetSetting("logger_impl").value(),
-            _configuration->GetSetting("intel8080_impl").value(),
-            _configuration->GetSetting("memory_impl").value(),
-            _configuration->GetSetting("scheduler_impl").value(),
-            _configuration->GetSetting("keyboard_impl").value(),
-            _configuration->GetSetting("floppyA_impl").value(),
-            _configuration->GetSetting("floppyB_impl").value(),
-            _configuration->GetSetting("smc5027_impl").value(),
-            _configuration->GetSetting("crt_impl").value(),
-            _configuration->GetSetting("tms5501_impl").value(),
-            _configuration->GetSetting("compucolor_impl").value()
+            RequireSetting("logger_impl"),
+            RequireSetting("intel8080_impl"),
+            RequireSetting("memory_impl"),
+            RequireSetting("scheduler_impl"),
+            RequireSetting("keyboard_impl"),
+            RequireSetting("floppyA_impl"),
+            RequireSetting("floppyB_impl"),
+            RequireSetting("smc5027_impl"),
+            RequireSetting("crt_impl"),
+            RequireSetting("tms5501_impl"),
+            RequireSetting("compucolor_impl")
         )
     ),
     _emulator(make_unique<CompucolorEmulatorProcessor>(_manager->GetCompucolor())),
@@ -54,6 +55,18 @@ Program::Program():
     _gui->SetQuitHandler([window = _window] { window->close(); });
     (void)_gui->Init();
     _gui->ApplyStartupSettings();
+}
+
+std::string Program::RequireSetting(const std::string& key) const
+{
+    if (const optional<std::string> value = _configuration->GetSetting(key))
+    {
+        return value.value();
+    }
+
+    throw std::runtime_error(
+        "Missing setting '" + key + "' in app.config. Run the emulator from the directory that contains app.config."
+    );
 }
 
 std::shared_ptr<Compucolor::Impl::App::Sfml::Settings> Program::LoadSettings(const std::string& path)

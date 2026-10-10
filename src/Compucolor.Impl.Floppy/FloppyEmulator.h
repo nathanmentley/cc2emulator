@@ -32,6 +32,10 @@ namespace Compucolor::Impl::Floppy
 
         void ReadFile(std::string filename) override;
         void SaveFile(std::string filename) override;
+        void SetStepperPhases(int phases) override;
+
+        // Logical track under the head.
+        [[nodiscard]] int GetTrack() const;
 
         bool Mount(const std::string& path, std::string& error) override;
         void Eject() override;
@@ -68,6 +72,7 @@ namespace Compucolor::Impl::Floppy
 
         int _track = 0;
         int _stepTrack = 0;
+        int _stepperPhases = 4;
         uint8_t _stepperPhase = 0;
         std::size_t _bitPos = 0;
         uint64_t _bitClockRemainder = 0;

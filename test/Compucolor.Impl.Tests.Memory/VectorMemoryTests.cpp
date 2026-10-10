@@ -30,3 +30,40 @@ TEST(VectorMemory, GetByteFetchesPersistedData) {
     //Assert
     EXPECT_EQ(value, result);
 }
+
+TEST(VectorMemory, FastVideoRamWritesAppearInSlowVideoRam) {
+    //Arrange
+    Compucolor::Impl::Memory::VectorMemory memory;
+
+    //Act
+    memory.SetByte(0x6123, 0x5A);
+
+    //Assert
+    EXPECT_EQ(0x5A, memory.GetByte(0x7123));
+}
+
+TEST(VectorMemory, SlowVideoRamWritesAppearInFastVideoRam) {
+    //Arrange
+    Compucolor::Impl::Memory::VectorMemory memory;
+
+    //Act
+    memory.SetByte(0x7FFF, 0xC3);
+
+    //Assert
+    EXPECT_EQ(0xC3, memory.GetByte(0x6FFF));
+}
+
+TEST(VectorMemory, AddressesOutsideTheVideoAliasAreIndependent) {
+    //Arrange
+    Compucolor::Impl::Memory::VectorMemory memory;
+
+    //Act
+    memory.SetByte(0x5FFF, 0x11);
+    memory.SetByte(0x8000, 0x22);
+
+    //Assert
+    EXPECT_EQ(0x11, memory.GetByte(0x5FFF));
+    EXPECT_EQ(0x00, memory.GetByte(0x6FFF));
+    EXPECT_EQ(0x22, memory.GetByte(0x8000));
+    EXPECT_EQ(0x00, memory.GetByte(0x7000));
+}

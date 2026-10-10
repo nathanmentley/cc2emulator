@@ -27,6 +27,9 @@ namespace Compucolor::Floppy
 
             virtual void SaveFile(std::string filename) = 0;
 
+            // 3 for the v6.78 ROM (one step per track), 4 for v8.79 (two steps per track).
+            virtual void SetStepperPhases(int phases) = 0;
+
             // Loads a .ccvf image; on failure returns false, sets error and keeps the current disk.
             virtual bool Mount(const std::string& path, std::string& error) = 0;
 

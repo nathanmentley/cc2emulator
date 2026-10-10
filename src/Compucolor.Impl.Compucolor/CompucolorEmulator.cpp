@@ -1,5 +1,7 @@
 #include "CompucolorEmulator.h"
 
+#include <algorithm>
+#include <chrono>
 #include <memory>
 #include <utility>
 
@@ -24,7 +26,8 @@ Compucolor::Impl::CompucolorII::CompucolorEmulator::CompucolorEmulator(
     std::shared_ptr<Memory::IMemory> memory,
     std::shared_ptr<Scheduler::IScheduler> scheduler,
     std::shared_ptr<Smc5027::ISmc5027Emulator> smc5027,
-    std::shared_ptr<Tms5501::ITms5501Emulator> tms5501
+    std::shared_ptr<Tms5501::ITms5501Emulator> tms5501,
+    std::function<uint64_t()> clock
 ):
     _crt(std::move(crt)),
     _floppyA(std::move(floppyA)),
@@ -35,8 +38,20 @@ Compucolor::Impl::CompucolorII::CompucolorEmulator::CompucolorEmulator(
     _scheduler(std::move(scheduler)),
     _smc5027(std::move(smc5027)),
     _tms5501(std::move(tms5501)),
-    _loop({})
+    _loop({}),
+    _clock(std::move(clock))
 {
+    if (!_clock)
+    {
+        _clock = [] {
+            return static_cast<uint64_t>(
+                std::chrono::duration_cast<std::chrono::nanoseconds>(
+                    std::chrono::steady_clock::now().time_since_epoch()
+                ).count()
+            );
+        };
+    }
+
     _intel8080->SetBus(std::make_shared<CompucolorIntel8080Bus>(_smc5027, _tms5501));
 }
 
@@ -52,8 +67,11 @@ void Compucolor::Impl::CompucolorII::CompucolorEmulator::Start()
     _tms5501->Start();
     _intel8080->Start();
 
+    _lastTickNanoseconds = _clock();
+    _budgetNanoseconds = 0;
+
     _loop = _scheduler->SetupRecurringTask(
-        502,
+        TickNanoseconds,
         [=, this] {
             // Resets run here so they never race with a CPU step.
             if (const int request = _resetRequest.exchange(ResetNone); request != ResetNone)
@@ -61,16 +79,38 @@ void Compucolor::Impl::CompucolorII::CompucolorEmulator::Start()
                 ApplyReset(request == ResetHard);
             }
 
+            const uint64_t now = _clock();
+            const uint64_t wallNanoseconds = now - _lastTickNanoseconds;
+            _lastTickNanoseconds = now;
+
+            // Time spent paused must not turn into a burst of catch-up work on resume.
             if (_paused.load(std::memory_order_relaxed))
             {
+                _budgetNanoseconds = 0;
                 return 0;
             }
 
-            const int steps = _speedRegulated.load(std::memory_order_relaxed) ? 1 : UnregulatedBurst;
-
-            for (int i = 0; i < steps; i++)
+            if (_speedRegulated.load(std::memory_order_relaxed))
             {
-                StepOnce();
+                // Run as many CPU cycles as the wall clock has allowed since the last tick.
+                _budgetNanoseconds = std::min(
+                    _budgetNanoseconds + static_cast<int64_t>(wallNanoseconds),
+                    MaxBudgetNanoseconds
+                );
+
+                while (_budgetNanoseconds > 0)
+                {
+                    _budgetNanoseconds -= static_cast<int64_t>(StepOnce() * CycleNanoseconds);
+                }
+            }
+            else
+            {
+                _budgetNanoseconds = 0;
+
+                for (int i = 0; i < UnregulatedBurst; i++)
+                {
+                    StepOnce();
+                }
             }
 
             return 0;
@@ -78,12 +118,13 @@ void Compucolor::Impl::CompucolorII::CompucolorEmulator::Start()
     );
 }
 
-void Compucolor::Impl::CompucolorII::CompucolorEmulator::StepOnce()
+uint64_t Compucolor::Impl::CompucolorII::CompucolorEmulator::StepOnce()
 {
     const bool wasInterruptPending = _intel8080->IsInterruptPending();
     const uint8_t pendingInterrupt = _intel8080->GetPendingInterrupt();
 
-    const uint64_t elapsedCycles = _intel8080->Step();
+    // A step always takes at least one cycle, which also keeps the pacing loop finite.
+    const uint64_t elapsedCycles = std::max<uint64_t>(_intel8080->Step(), 1);
     _floppyCycleRemainder += elapsedCycles;
 
     if (wasInterruptPending && !_intel8080->IsInterruptPending()) {
@@ -92,9 +133,8 @@ void Compucolor::Impl::CompucolorII::CompucolorEmulator::StepOnce()
 
     _loopInterval++;
     if (_loopInterval % 8 == 0) {
-        constexpr uint64_t CPU_CYCLE_NANOSECONDS = 502;
         _tms5501->StepFloppy(
-            _floppyCycleRemainder * CPU_CYCLE_NANOSECONDS
+            _floppyCycleRemainder * CycleNanoseconds
         );
         _floppyCycleRemainder = 0;
     }
@@ -103,10 +143,17 @@ void Compucolor::Impl::CompucolorII::CompucolorEmulator::StepOnce()
         _loopInterval = 0;
         _tms5501->Step();
     }
+
+    return elapsedCycles;
 }
 
 void Compucolor::Impl::CompucolorII::CompucolorEmulator::LoadSystemRom()
 {
+    // The drive hardware changed with the ROM: v6.78 has a 3 phase stepper, v8.79 a 4 phase one.
+    const int stepperPhases = _romVersion.load() == RomVersion::V6_78 ? 3 : 4;
+    _floppyA->SetStepperPhases(stepperPhases);
+    _floppyB->SetStepperPhases(stepperPhases);
+
     if (_romVersion.load() == RomVersion::V6_78)
     {
         LoadRom(_memory.get(), get_system_rom_6_78(), 0, get_system_rom_6_78_length());

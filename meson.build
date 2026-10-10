@@ -70,6 +70,25 @@ intel8080ImplLib = declare_dependency(
     )
 )
 
+intel8080ImplTests = executable(
+    'Compucolor.Impl.Tests.Intel8080',
+    [
+        'test/Compucolor.Impl.Tests.Intel8080/main.cpp',
+        'test/Compucolor.Impl.Tests.Intel8080/Intel8080EmulatorTests.cpp'
+    ],
+    dependencies: [
+        dependency('gtest'),
+        dependency('gmock'),
+
+        publicHeaderLib,
+        testHeaderLib,
+
+        intel8080ImplLib
+    ],
+    include_directories: 'src/Compucolor.Impl.Intel8080/'
+)
+test('Compucolor.Impl.Tests.Intel8080', intel8080ImplTests)
+
 smc5027ImplLib = declare_dependency(
     link_with: shared_library(
         'Compucolor.Impl.Smc5027',
@@ -270,11 +289,14 @@ compucolorImplTests = executable(
     'Compucolor.Impl.Tests.Compucolor',
     [
         'test/Compucolor.Impl.Tests.Compucolor/main.cpp',
-        'test/Compucolor.Impl.Tests.Compucolor/CompucolorIntel8080BusTests.cpp'
+        'test/Compucolor.Impl.Tests.Compucolor/CompucolorIntel8080BusTests.cpp',
+        'test/Compucolor.Impl.Tests.Compucolor/CompucolorEmulatorTests.cpp'
     ],
     dependencies: [
         dependency('gtest'),
+        dependency('gmock'),
         publicHeaderLib,
+        testHeaderLib,
         compucolorImplLib
     ],
     include_directories: 'src/Compucolor.Impl.Compucolor/'

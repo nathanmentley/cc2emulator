@@ -40,6 +40,8 @@ namespace Compucolor::Impl::App::Sfml
 
             void ProcessEvent(const sf::Event &event) const;
 
+            std::string RequireSetting(const std::string& key) const;
+
             static std::shared_ptr<Settings> LoadSettings(const std::string& path);
             static std::shared_ptr<sf::RenderWindow> CreateWindow(const Settings& settings);
 

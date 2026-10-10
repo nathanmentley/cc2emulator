@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <atomic>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <thread>
@@ -35,7 +36,8 @@ namespace Compucolor::Impl::CompucolorII
                 std::shared_ptr<Memory::IMemory> memory,
                 std::shared_ptr<Scheduler::IScheduler> scheduler,
                 std::shared_ptr<Smc5027::ISmc5027Emulator> smc5027,
-                std::shared_ptr<Tms5501::ITms5501Emulator> tms5501
+                std::shared_ptr<Tms5501::ITms5501Emulator> tms5501,
+                std::function<uint64_t()> clock = nullptr
             );
 
             void Start() override;
@@ -71,10 +73,18 @@ namespace Compucolor::Impl::CompucolorII
             int _loopInterval = 0;
             uint64_t _floppyCycleRemainder = 0;
 
+            std::function<uint64_t()> _clock;
+            uint64_t _lastTickNanoseconds = 0;
+            int64_t _budgetNanoseconds = 0;
+
             static constexpr int ResetNone = 0;
             static constexpr int ResetWarm = 1;
             static constexpr int ResetHard = 2;
-            static constexpr int UnregulatedBurst = 64;
+            static constexpr int UnregulatedBurst = 4096;
+            static constexpr uint64_t CycleNanoseconds = 502;
+            static constexpr uint64_t TickNanoseconds = 1'000'000;
+            // Caps catch-up after a stall so the emulator never spirals trying to make up lost time.
+            static constexpr int64_t MaxBudgetNanoseconds = 50'000'000;
             static constexpr uint16_t PowerUpFlagAddress = 0x81AF + 8;
 
             std::atomic<int> _resetRequest{ResetNone};
@@ -82,7 +92,7 @@ namespace Compucolor::Impl::CompucolorII
             std::atomic<bool> _speedRegulated{true};
             std::atomic<RomVersion> _romVersion{RomVersion::V8_79};
 
-            void StepOnce();
+            uint64_t StepOnce();
             void LoadSystemRom();
             void ApplyReset(bool hard);
     };
