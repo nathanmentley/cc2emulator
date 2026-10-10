@@ -109,6 +109,7 @@ namespace Compucolor::Impl::Crt
                 Common::Color background,
                 uint8_t glyphData,
                 bool blink,
+                bool plot,
                 int x,
                 int y
             ) const;

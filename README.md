@@ -1,34 +1,36 @@
 # cc2
 
-A work in progress compucolor II emulator. Currently compiles and runs on macOS, and ubuntu 20.10.
+A Compucolor II emulator written in C++. It boots the system ROM, drives the CRT (hardware scroll, blink, double-height and plot characters), accepts keyboard input, and reads floppy disk images (`.ccvf`). It compiles and runs on macOS and Linux.
+
+## Features
+
+- Intel 8080 CPU, TMS5501 I/O/timer, SMC5027 CRT controller
+- Floppy drive emulation with `.ccvf` images (see `data/disks`)
+- SFML window and keyboard input (PC `Shift`+`;` produces the Compucolor `:`)
 
 ## Deps
 
-meson
+- meson
+- sfml
+- gtest
 
-sfml
+## Building
 
-gtest
-
-## building
-
+```sh
 meson setup build
-
 cd build
-
 meson compile
-
 meson test
-
 meson install
-
 cd ../dist
-
 ./cc2_emu.sh
+```
 
+ROMs, disk images and configuration live in `data/`.
 
-## dev container
+## Dev container
 
+```sh
 devpod up . --recreate
-
 ssh cc2emulator.devpod
+```

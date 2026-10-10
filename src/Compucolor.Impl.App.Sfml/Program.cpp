@@ -76,9 +76,16 @@ void Program::ProcessEvent(const Event &event) const
 
     if (event.is<Event::KeyPressed>())
     {
-        const optional<CompucolorIIKey> key = KeyboardTranslator::ConvertKey(event.getIf<Event::KeyPressed>()->code);
+        const auto* pressed = event.getIf<Event::KeyPressed>();
+        const optional<CompucolorIIKey> key = KeyboardTranslator::ConvertKey(pressed->code);
 
-        if (key.has_value())
+        // PC Shift+; is ':', which is an unshifted key on the CC2.
+        if (pressed->code == sf::Keyboard::Key::Semicolon && pressed->shift)
+        {
+            _emulator->OnKeyUp(CompucolorIIKey::Shift);
+            _emulator->OnKeyDown(CompucolorIIKey::Colon);
+        }
+        else if (key.has_value())
         {
             _emulator->OnKeyDown(key.value());
         }
@@ -86,9 +93,20 @@ void Program::ProcessEvent(const Event &event) const
 
     if (event.is<Event::KeyReleased>())
     {
-        const optional<CompucolorIIKey> key = KeyboardTranslator::ConvertKey(event.getIf<Event::KeyReleased>()->code);
+        const auto* released = event.getIf<Event::KeyReleased>();
+        const optional<CompucolorIIKey> key = KeyboardTranslator::ConvertKey(released->code);
 
-        if (key.has_value())
+        if (released->code == sf::Keyboard::Key::Semicolon)
+        {
+            _emulator->OnKeyUp(CompucolorIIKey::Colon);
+            _emulator->OnKeyUp(CompucolorIIKey::SemiColon);
+
+            if (released->shift)
+            {
+                _emulator->OnKeyDown(CompucolorIIKey::Shift);
+            }
+        }
+        else if (key.has_value())
         {
             _emulator->OnKeyUp(key.value());
         }

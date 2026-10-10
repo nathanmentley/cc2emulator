@@ -154,6 +154,8 @@ std::optional<Compucolor::Keyboard::CompucolorIIKey> Compucolor::Impl::App::Sfml
             return Compucolor::Keyboard::CompucolorIIKey::Bksp;
         case sf::Keyboard::Key::Enter:
             return Compucolor::Keyboard::CompucolorIIKey::Cr;
+        case sf::Keyboard::Key::Semicolon:
+            return Compucolor::Keyboard::CompucolorIIKey::SemiColon;
         case sf::Keyboard::Key::Left:
         case sf::Keyboard::Key::Right:
         case sf::Keyboard::Key::Up:
@@ -161,7 +163,6 @@ std::optional<Compucolor::Keyboard::CompucolorIIKey> Compucolor::Impl::App::Sfml
         case sf::Keyboard::Key::Menu:
         case sf::Keyboard::Key::LBracket:
         case sf::Keyboard::Key::RBracket:
-        case sf::Keyboard::Key::Semicolon:
         case sf::Keyboard::Key::Comma:
         case sf::Keyboard::Key::Period:
         //case sf::Keyboard::Key::Quote:

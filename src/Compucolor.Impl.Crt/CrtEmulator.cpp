@@ -77,13 +77,15 @@ void Compucolor::Impl::Crt::CrtEmulator::RefreshDisplay() const
         const uint8_t ch = _memory->GetByte(pair);
         const uint8_t attrib = _memory->GetByte((pair + 1));  // attribute byte
 
-        const bool blink = IsBitSet(7, attrib);//((attrib & 0x40) != 0);
+        const bool blink = IsBitSet(6, attrib);
+        const bool plot = IsBitSet(7, attrib);
 
         DrawGlyph(
             GetForegroundColor(attrib),
             GetBackgroundColor(attrib),
             ch,
             blink,
+            plot,
             x,
             displayY
         );
@@ -109,6 +111,7 @@ void Compucolor::Impl::Crt::CrtEmulator::DrawCursor(const uint8_t firstRow) cons
                 Common::Color::White,
                 0x20,
                 false,
+                false,
                 x,
                 y
             );
@@ -130,6 +133,7 @@ void Compucolor::Impl::Crt::CrtEmulator::DrawGlyph(
     const Common::Color background,
     const uint8_t glyphData,
     const bool blink,
+    const bool plot,
     const int x,
     const int y
 ) const
@@ -141,7 +145,7 @@ void Compucolor::Impl::Crt::CrtEmulator::DrawGlyph(
     {
         const uint8_t* uf6_rom = get_uf6_rom();
 
-        const bool isTall = IsBitSet(7, glyphData);
+        const bool isTall = !plot && IsBitSet(7, glyphData);
         const uint8_t ch = glyphData & 0x7F;
         const uint16_t romIndex = (ch * CharacterHeight) + (isTall ? (row/2 + ((y % 2) * 4)): row);
         const uint8_t romData = uf6_rom[romIndex];
@@ -151,8 +155,12 @@ void Compucolor::Impl::Crt::CrtEmulator::DrawGlyph(
             const uint16_t targetX = column + xPos;
             const uint16_t targetY = row + yPos;
 
+            const bool pixelOn = plot ?
+                IsBitSet((row / 2) + (column >= 3 ? 4 : 0), glyphData) :
+                IsBitSet(7 - column, romData);
+
             _display->DrawPixel(
-                IsBitSet(7 - column, romData) ?
+                pixelOn ?
                     (blink && IsBlinkOn() ? Common::Color::Black : foreground):
                     background,
                 targetX,
