@@ -29,10 +29,12 @@ Program::Program():
     _loggerProvider(make_shared<ConsoleLoggerProvider>(LogLevel::Debug)),
     _configuration(make_shared<Configuration>()),
     _display(make_shared<Display>(_window)),
+    _audio(make_shared<AudioOutput>()),
     _manager(
         make_shared<PluginManager>(
             _loggerProvider,
             _display,
+            _audio,
             RequireSetting("logger_impl"),
             RequireSetting("intel8080_impl"),
             RequireSetting("memory_impl"),
@@ -51,6 +53,9 @@ Program::Program():
     _keyboardTranslator(make_unique<KeyboardTranslator>())
 {
     _display->SetSmooth(_settings->GetBool("smooth_scaling"));
+
+    _audio->SetVolume(static_cast<float>(std::clamp(_settings->GetInt("sound_volume"), 0, 100)) / 100.0f);
+    _audio->SetEnabled(_settings->GetBool("sound_enabled"));
 
     _gui->SetQuitHandler([window = _window] { window->close(); });
     (void)_gui->Init();

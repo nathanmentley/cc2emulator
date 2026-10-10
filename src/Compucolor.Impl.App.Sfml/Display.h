@@ -14,6 +14,13 @@
 
 namespace Compucolor::Impl::App::Sfml
 {
+    enum class Theme {
+        Standard = 0,
+        Synthwave = 1,
+        Gruvbox = 2,
+        WarmRetro = 3
+    };
+
     class Display: public Compucolor::Common::IDisplay {
         public:
             Display(
@@ -37,6 +44,7 @@ namespace Compucolor::Impl::App::Sfml
             static constexpr std::size_t Height = 256;
             static constexpr std::size_t FrameSize = Width * Height * 4;
 
+            Theme _currentTheme;
             std::shared_ptr<sf::RenderWindow> _window;
             sf::Texture _texture;
             std::mutex _frameMutex;
@@ -44,7 +52,8 @@ namespace Compucolor::Impl::App::Sfml
             std::array<std::uint8_t, FrameSize> _publishedFrame{};
             std::atomic<bool> _isRunning;
 
-            static uint32_t GetColor(Compucolor::Common::Color color);
+            uint32_t GetColor(Compucolor::Common::Color color);
+
             static sf::View GetLetterboxView(sf::Vector2u windowSize);
     };
 }

@@ -643,7 +643,7 @@ void Gui::DrawBrowser()
 {
     bool open = true;
 
-    ImGui::SetNextWindowSize(ImVec2(520.f * _uiScale, 420.f * _uiScale), ImGuiCond_Appearing);
+    ImGui::SetNextWindowSize(ImVec2(420.f * _uiScale, 320.f * _uiScale), ImGuiCond_Appearing);
 
     if (!ImGui::BeginPopupModal(BrowserPopup, &open))
     {

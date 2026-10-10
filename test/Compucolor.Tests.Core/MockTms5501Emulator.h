@@ -16,4 +16,5 @@ class MockTms5501Emulator: public Compucolor::Tms5501::ITms5501Emulator
         MOCK_METHOD(void, StepFloppy, (uint64_t), (override));
         MOCK_METHOD(void, TriggerExternalSensor, (), (override));
         MOCK_METHOD(void, OnInterruptConsumed, (uint8_t), (override));
+        MOCK_METHOD(void, SetEmulatedTime, (uint64_t), (override));
 };

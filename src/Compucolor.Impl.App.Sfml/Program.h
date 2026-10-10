@@ -12,6 +12,7 @@
 
 #include "Configuration.h"
 #include "AsciiKeyMap.h"
+#include "AudioOutput.h"
 #include "Display.h"
 #include "Gui.h"
 #include "KeyboardTranslator.h"
@@ -32,6 +33,7 @@ namespace Compucolor::Impl::App::Sfml
             std::shared_ptr<Compucolor::Logger::ConsoleLoggerProvider> _loggerProvider;
             std::shared_ptr<Compucolor::Common::IConfiguration> _configuration;
             std::shared_ptr<Display> _display;
+            std::shared_ptr<AudioOutput> _audio;
             std::shared_ptr<Compucolor::Common::IPluginManager> _manager;
             std::unique_ptr<Compucolor::CompucolorEmulatorProcessor> _emulator;
             std::unique_ptr<Gui> _gui;

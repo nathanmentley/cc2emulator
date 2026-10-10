@@ -21,5 +21,8 @@ namespace Compucolor::Tms5501
             virtual void TriggerExternalSensor() = 0;
 
             virtual void OnInterruptConsumed(uint8_t opcode) = 0;
+
+            // Emulated time at the start of the CPU instruction about to run; stamps audio edges.
+            virtual void SetEmulatedTime(uint64_t nanoseconds) = 0;
     };
 }

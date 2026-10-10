@@ -76,6 +76,7 @@ namespace Compucolor::Impl::CompucolorII
             std::function<uint64_t()> _clock;
             uint64_t _lastTickNanoseconds = 0;
             int64_t _budgetNanoseconds = 0;
+            uint64_t _emulatedNanoseconds = 0;
 
             static constexpr int ResetNone = 0;
             static constexpr int ResetWarm = 1;

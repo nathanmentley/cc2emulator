@@ -7,6 +7,7 @@ using Compucolor::Common::Color;
 using Compucolor::Impl::App::Sfml::Display;
 
 Display::Display(std::shared_ptr<sf::RenderWindow> window):
+    _currentTheme(Theme::Standard),
     _window(std::move(window)),
     _texture(sf::Vector2u{Width, Height}),
     _isRunning(true)
@@ -117,16 +118,61 @@ void Display::Close()
 
 uint32_t Display::GetColor(const Color color)
 {
-    switch (color)
+    switch (_currentTheme)
     {
-        case Color::Black:  return 0x000000FF;
-        case Color::Red:    return 0xFF0000FF;
-        case Color::Green:  return 0x00FF00FF;
-        case Color::Yellow: return 0xFFFF00FF;
-        case Color::Blue:   return 0x0000FFFF;
-        case Color::Purple: return 0xFF00FFFF;
-        case Color::Teal:   return 0x00FFFFFF;
-        case Color::White:  return 0xFFFFFFFF;
-        default:            return 0x000000FF;
+        case Theme::Standard:
+            switch (color)
+            {
+                case Color::Black:  return 0x000000FF;
+                case Color::Red:    return 0xFF0000FF;
+                case Color::Green:  return 0x00FF00FF;
+                case Color::Yellow: return 0xFFFF00FF;
+                case Color::Blue:   return 0x0000FFFF;
+                case Color::Purple: return 0xFF00FFFF;
+                case Color::Teal:   return 0x00FFFFFF;
+                case Color::White:  return 0xFFFFFFFF;
+                default:            return 0x000000FF;
+            }
+        case Theme::Synthwave:
+            switch (color)
+            {
+                case Color::Black:  return 0x000000FF;
+                case Color::Red:    return 0xFF0000FF;
+                case Color::Green:  return 0x00FF00FF;
+                case Color::Yellow: return 0xFFFF00FF;
+                case Color::Blue:   return 0x0000FFFF;
+                case Color::Purple: return 0xFF00FFFF;
+                case Color::Teal:   return 0x00FFFFFF;
+                case Color::White:  return 0xFFFFFFFF;
+                default:            return 0x000000FF;
+            }
+            break;
+        case Theme::Gruvbox:
+            switch (color)
+            {
+                case Color::Black:  return 0x282828FF;
+                case Color::Red:    return 0xCC241DFF;
+                case Color::Green:  return 0x98971AFF;
+                case Color::Yellow: return 0xD79921FF;
+                case Color::Blue:   return 0x458588FF;
+                case Color::Purple: return 0xB16286FF;
+                case Color::Teal:   return 0x689D6AFF;
+                case Color::White:  return 0xEBDBB2FF;
+                default:            return 0x282828FF;
+            }
+            break;
+        case Theme::WarmRetro:
+            switch (color)
+            {
+                case Color::Black:  return 0x1B1B1BFF;
+                case Color::Red:    return 0xFF6B6BFF;
+                case Color::Green:  return 0x7CFF6BFF;
+                case Color::Yellow: return 0xFFD166FF;
+                case Color::Blue:   return 0x5B8CFFFF;
+                case Color::Purple: return 0xC678DDFF;
+                case Color::Teal:   return 0x5EEAD4FF;
+                case Color::White:  return 0xF8FAFCFF;
+                default:            return 0x1B1B1BFF;
+            }
     }
 }

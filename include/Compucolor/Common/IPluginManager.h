@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include <Compucolor/Common/IAudioOutput.h>
 #include <Compucolor/Common/IDisplay.h>
 #include <Compucolor/ICompucolorEmulator.h>
 #include <Compucolor/Intel8080/IIntel8080Emulator.h>
@@ -23,6 +24,7 @@ namespace Compucolor::Common
 
             virtual std::shared_ptr<Logger::ILoggerProvider> GetLoggerProvider() = 0;
             virtual std::shared_ptr<IDisplay> GetDisplay() = 0;
+            virtual std::shared_ptr<IAudioOutput> GetAudio() = 0;
             virtual std::shared_ptr<Logger::ILogger> GetLogger() = 0;
             virtual std::shared_ptr<Scheduler::IScheduler> GetScheduler() = 0;
             virtual std::shared_ptr<Intel8080::IIntel8080Emulator> GetIntel8080() = 0;

@@ -23,7 +23,8 @@ Tms5501Emulator::Tms5501Emulator(
     shared_ptr<IIntel8080Emulator> intel8080,
     shared_ptr<IKeyboardEmulator> keyboard,
     shared_ptr<IFloppyEmulator> floppy1,
-    shared_ptr<IFloppyEmulator> floppy2
+    shared_ptr<IFloppyEmulator> floppy2,
+    shared_ptr<Compucolor::Common::IAudioOutput> audio
 ):
     _logger(std::move(logger)),
     _context(std::make_unique<Tms5501EmulatorContext>()),
@@ -31,6 +32,7 @@ Tms5501Emulator::Tms5501Emulator(
     _keyboard(std::move(keyboard)),
     _floppy1(std::move(floppy1)),
     _floppy2(std::move(floppy2)),
+    _audio(std::move(audio)),
     _outport(0)
 {
 }
@@ -53,8 +55,18 @@ void Tms5501Emulator::Step()
     CheckInterruptStatus();
 }
 
+void Tms5501Emulator::SetEmulatedTime(const uint64_t nanoseconds)
+{
+    _emulatedNanoseconds = nanoseconds;
+}
+
 void Tms5501Emulator::StepFloppy(uint64_t elapsedNanoseconds)
 {
+    if (_audio)
+    {
+        _audio->Advance(_emulatedNanoseconds);
+    }
+
     _floppy1->Step(elapsedNanoseconds);
     _floppy2->Step(elapsedNanoseconds);
 
@@ -201,13 +213,22 @@ void Tms5501Emulator::Write(uint8_t port, uint8_t data)
                 _floppyTransmitNanosecondsRemaining = 0;
                 _context->intStatus = 0x20;  // tx buffer empty interrupt
             }
-            // because the serial port isn't modeled, the break bit is
-            // mostly ignored, but if we are modeling the soundware hardware,
-            // which hangs on the TXD serial port bit, we need to let it know
-            // this state might have changed.
-            //if (serialSelected()) {
-            //    audio.breakEvent((value >> 1) & 1);
-            //}
+            // The serial port isn't modeled, but the SoundWare add-on hangs on
+            // the TXD pin, and the break bit (bit 1) forces that pin low.
+            if (IsSerialSelected())
+            {
+                const bool breakLevel = (data & 0x02) != 0;
+
+                if (breakLevel != _audioLevel)
+                {
+                    _audioLevel = breakLevel;
+
+                    if (_audio)
+                    {
+                        _audio->SetLevel(breakLevel, _emulatedNanoseconds);
+                    }
+                }
+            }
             // bit 2: interrupt 7 select
             // I assume this is only programmed to 0 (use timer #5)
             // not data input bit 7 L->H transition as interrupt trigger.
@@ -337,6 +358,17 @@ void Tms5501Emulator::Reset()
 
     for (auto &c : _context->count)
         c = 0;
+
+    // A reset releases the TXD pin.
+    if (_audioLevel)
+    {
+        _audioLevel = false;
+
+        if (_audio)
+        {
+            _audio->SetLevel(false, _emulatedNanoseconds);
+        }
+    }
 
     SetOutport(0x00);
 }
@@ -483,6 +515,7 @@ shared_ptr<ITms5501Emulator> Tms5501Emulator::Creator(IPluginManager* manager)
         manager->GetIntel8080(),
         manager->GetKeyboard(),
         manager->GetFloppyA(),
-        manager->GetFloppyB()
+        manager->GetFloppyB(),
+        manager->GetAudio()
     );
 }

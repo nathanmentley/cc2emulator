@@ -10,6 +10,7 @@ A Compucolor II emulator written in C++. It boots the system ROM, drives the CRT
 - Full keyboard matrix: cursor keys, Home, Tab, Insert/Delete, function keys and Ctrl are mapped, and PC symbols produce the matching Compucolor characters (US layout). `Alt` acts as the REPEAT key.
 - Resizable, aspect-correct window with optional smoothing and fullscreen. Settings persist in `~/.config/cc2emu/settings.config`.
 - Menu bar (Dear ImGui) that scales with the window: mount, eject and save disks (with a prompt for unsaved changes), reset, hard reset, pause, real-speed toggle, ROM version (v6.78 or v8.79), character set and display preferences. It overlays the top of the screen and can be hidden.
+- SoundWare add-on audio (the 1-bit sound used by disks such as "Life with Sound"). It is off by default: set `sound_enabled=true` (and optionally `sound_volume=0..100`) in `~/.config/cc2emu/settings.config`. A menu control is planned.
 - Screenshots saved as PNG to `~/.config/cc2emu/screenshots`.
 
 ## Hotkeys

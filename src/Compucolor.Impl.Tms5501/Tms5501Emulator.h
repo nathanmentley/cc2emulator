@@ -6,6 +6,7 @@
 #include <memory>
 #include <thread>
 
+#include <Compucolor/Common/IAudioOutput.h>
 #include <Compucolor/Common/IPluginManager.h>
 #include <Compucolor/Floppy/IFloppyEmulator.h>
 #include <Compucolor/Intel8080/IIntel8080Emulator.h>
@@ -23,7 +24,8 @@ namespace Compucolor::Impl::Tms5501 {
                 std::shared_ptr<Intel8080::IIntel8080Emulator> intel8080,
                 std::shared_ptr<Keyboard::IKeyboardEmulator> keyboard,
                 std::shared_ptr<Floppy::IFloppyEmulator> floppy1,
-                std::shared_ptr<Floppy::IFloppyEmulator> floppy2
+                std::shared_ptr<Floppy::IFloppyEmulator> floppy2,
+                std::shared_ptr<Common::IAudioOutput> audio = nullptr
             );
 
             void Start() override;
@@ -39,6 +41,7 @@ namespace Compucolor::Impl::Tms5501 {
             void Write(uint8_t port, uint8_t data) override;
 
             void OnInterruptConsumed(uint8_t opcode) override;
+            void SetEmulatedTime(uint64_t nanoseconds) override;
 
             static std::shared_ptr<ITms5501Emulator> Creator(Common::IPluginManager* manager);
         private:
@@ -48,6 +51,10 @@ namespace Compucolor::Impl::Tms5501 {
             std::shared_ptr<Keyboard::IKeyboardEmulator> _keyboard;
             std::shared_ptr<Floppy::IFloppyEmulator> _floppy1;
             std::shared_ptr<Floppy::IFloppyEmulator> _floppy2;
+            std::shared_ptr<Common::IAudioOutput> _audio;
+            uint64_t _emulatedNanoseconds = 0;
+            bool _audioLevel = false;
+
             uint8_t _outport;
             uint64_t _floppyTransmitNanosecondsRemaining = 0;
 

@@ -337,3 +337,17 @@ TEST_F(CompucolorEmulatorTest, ReturningToTheNewRomRestoresFourPhaseSteppers) {
     emulator->SetRomVersion(RomVersion::V8_79);
     scheduler->Tick();
 }
+
+TEST_F(CompucolorEmulatorTest, EachStepIsStampedWithTheEmulatedTimeItStartsAt) {
+    //Arrange: two 4 cycle steps of 2008 ns each
+    emulator->Start();
+    {
+        ::testing::InSequence sequence;
+        EXPECT_CALL(*tms5501, SetEmulatedTime(0)).Times(1);
+        EXPECT_CALL(*tms5501, SetEmulatedTime(2008)).Times(1);
+    }
+    nowNanoseconds += 2 * 4 * 502;
+
+    //Act
+    scheduler->Tick();
+}

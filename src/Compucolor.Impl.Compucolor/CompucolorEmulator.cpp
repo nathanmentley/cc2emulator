@@ -123,8 +123,12 @@ uint64_t Compucolor::Impl::CompucolorII::CompucolorEmulator::StepOnce()
     const bool wasInterruptPending = _intel8080->IsInterruptPending();
     const uint8_t pendingInterrupt = _intel8080->GetPendingInterrupt();
 
+    // Peripherals stamp events, such as audio edges, with the time this instruction starts.
+    _tms5501->SetEmulatedTime(_emulatedNanoseconds);
+
     // A step always takes at least one cycle, which also keeps the pacing loop finite.
     const uint64_t elapsedCycles = std::max<uint64_t>(_intel8080->Step(), 1);
+    _emulatedNanoseconds += elapsedCycles * CycleNanoseconds;
     _floppyCycleRemainder += elapsedCycles;
 
     if (wasInterruptPending && !_intel8080->IsInterruptPending()) {

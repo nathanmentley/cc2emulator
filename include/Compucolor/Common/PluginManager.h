@@ -14,6 +14,7 @@ namespace Compucolor::Common
             PluginManager(
                 std::shared_ptr<Logger::ILoggerProvider> loggerProvider,
                 std::shared_ptr<IDisplay> display,
+                std::shared_ptr<IAudioOutput> audio,
                 const std::string &loggerLibrary,
                 const std::string &intel8080Library,
                 const std::string &memoryLibrary,
@@ -28,6 +29,7 @@ namespace Compucolor::Common
             ):
                 _loggerProvider(std::move(loggerProvider)),
                 _display(std::move(display)),
+                _audio(std::move(audio)),
                 _loggerLoader(
                     std::make_shared<PluginLoader<Logger::ILogger>>(
                         loggerLibrary
@@ -94,6 +96,10 @@ namespace Compucolor::Common
                 return _display;
             }
 
+            std::shared_ptr<IAudioOutput> GetAudio() override {
+                return _audio;
+            }
+
             std::shared_ptr<Logger::ILogger> GetLogger() override {
                 return _loggerLoader->Create(this);
             }
@@ -140,6 +146,7 @@ namespace Compucolor::Common
     private:
             std::shared_ptr<Logger::ILoggerProvider> _loggerProvider;
             std::shared_ptr<IDisplay> _display;
+            std::shared_ptr<IAudioOutput> _audio;
             std::shared_ptr<PluginLoader<Logger::ILogger>> _loggerLoader;
             std::shared_ptr<PluginLoader<Intel8080::IIntel8080Emulator>> _intel8080PluginLoader;
             std::shared_ptr<PluginLoader<Memory::IMemory>> _memoryPluginLoader;

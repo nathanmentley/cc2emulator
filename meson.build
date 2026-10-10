@@ -138,6 +138,25 @@ tms5501ImplLib = declare_dependency(
     )
 )
 
+tms5501ImplTests = executable(
+    'Compucolor.Impl.Tests.Tms5501',
+    [
+        'test/Compucolor.Impl.Tests.Tms5501/main.cpp',
+        'test/Compucolor.Impl.Tests.Tms5501/Tms5501EmulatorTests.cpp'
+    ],
+    dependencies: [
+        dependency('gtest'),
+        dependency('gmock'),
+
+        publicHeaderLib,
+        testHeaderLib,
+
+        tms5501ImplLib
+    ],
+    include_directories: 'src/Compucolor.Impl.Tms5501/'
+)
+test('Compucolor.Impl.Tests.Tms5501', tms5501ImplTests)
+
 crtImplLib = declare_dependency(
     link_with: shared_library(
         'Compucolor.Impl.Crt',
@@ -309,8 +328,10 @@ appSettingsTests = executable(
         'test/Compucolor.Impl.Tests.App/main.cpp',
         'test/Compucolor.Impl.Tests.App/SettingsTests.cpp',
         'test/Compucolor.Impl.Tests.App/AsciiKeyMapTests.cpp',
+        'test/Compucolor.Impl.Tests.App/SoundSynthTests.cpp',
         'src/Compucolor.Impl.App.Sfml/Settings.cpp',
-        'src/Compucolor.Impl.App.Sfml/AsciiKeyMap.cpp'
+        'src/Compucolor.Impl.App.Sfml/AsciiKeyMap.cpp',
+        'src/Compucolor.Impl.App.Sfml/SoundSynth.cpp'
     ],
     dependencies: [
         dependency('gtest'),
@@ -344,6 +365,7 @@ imguiSfmlDep = dependency(
 executable(
     'Compucolor.Impl.App.Sfml',
     [
+        'src/Compucolor.Impl.App.Sfml/AudioOutput.cpp',
         'src/Compucolor.Impl.App.Sfml/Configuration.cpp',
         'src/Compucolor.Impl.App.Sfml/Display.cpp',
         'src/Compucolor.Impl.App.Sfml/ErrorHandler.cpp',
@@ -352,10 +374,12 @@ executable(
         'src/Compucolor.Impl.App.Sfml/main.cpp',
         'src/Compucolor.Impl.App.Sfml/Program.cpp',
         'src/Compucolor.Impl.App.Sfml/Settings.cpp',
-        'src/Compucolor.Impl.App.Sfml/AsciiKeyMap.cpp'
+        'src/Compucolor.Impl.App.Sfml/AsciiKeyMap.cpp',
+        'src/Compucolor.Impl.App.Sfml/SoundSynth.cpp'
     ],
     dependencies: [
         sfmlGraphicsDep,
+        dependency('sfml-audio'),
         imguiSfmlDep,
         dependency('threads'),
 
