@@ -404,6 +404,7 @@ configure_file(
 install_data('data/app.config', install_dir: install_prefix)
 install_data('data/cc2_emu.sh', install_dir: install_prefix, install_mode: 'rwxr--r--')
 
+install_subdir('include', install_dir: install_prefix)
 install_subdir('data/roms', install_dir: install_prefix)
 install_subdir('data/disks', install_dir: install_prefix)
 

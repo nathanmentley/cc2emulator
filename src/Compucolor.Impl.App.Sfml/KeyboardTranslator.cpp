@@ -139,7 +139,7 @@ std::optional<Compucolor::Keyboard::CompucolorIIKey> Compucolor::Impl::App::Sfml
         case sf::Keyboard::Key::LAlt:
             return Compucolor::Keyboard::CompucolorIIKey::Repeat;
         case sf::Keyboard::Key::LSystem:
-            return Compucolor::Keyboard::CompucolorIIKey::Repeat;
+            return Compucolor::Keyboard::CompucolorIIKey::Auto;
         case sf::Keyboard::Key::RControl:
             return Compucolor::Keyboard::CompucolorIIKey::Ctrl;
         case sf::Keyboard::Key::RShift:

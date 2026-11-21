@@ -1,5 +1,6 @@
 #include "Tms5501Emulator.h"
 
+#include <iostream>
 #include <memory>
 #include <utility>
 
@@ -378,6 +379,7 @@ void Tms5501Emulator::Write(uint8_t port, uint8_t data)
                 _floppyTransmitNanosecondsRemaining = 0;
                 _context->intStatus = 0x20;  // tx buffer empty interrupt
             }
+
             // The serial port isn't modeled, but the SoundWare add-on hangs on
             // the TXD pin, and the break bit (bit 1) forces that pin low.
             if (IsSerialSelected())

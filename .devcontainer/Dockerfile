@@ -58,6 +58,11 @@ RUN dnf -y update && \
         gzip \
         unzip \
         \
+        openal-soft \
+        openal-soft-devel \
+        pulseaudio-libs \
+        pulseaudio-utils \
+        \
         bash-completion \
     && dnf clean all \
     && rm -rf /var/cache/dnf

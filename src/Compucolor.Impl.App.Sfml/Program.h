@@ -1,7 +1,10 @@
+
 #pragma once
 
+#include <cstddef>
 #include <map>
 #include <memory>
+#include <vector>
 
 #include <SFML/Graphics.hpp>
 
@@ -9,6 +12,7 @@
 #include <Compucolor/Common/PluginManager.h>
 #include <Compucolor/Common/IConfiguration.h>
 #include <Compucolor/Logger/ConsoleLoggerProvider.h>
+#include <Compucolor/Keyboard/CompucolorIIKey.h>
 
 #include "Configuration.h"
 #include "AsciiKeyMap.h"
@@ -27,6 +31,8 @@ namespace Compucolor::Impl::App::Sfml
             [[nodiscard]] int Run() const;
 
         private:
+            using EmulatedKey = Compucolor::Keyboard::CompucolorIIKey;
+
             std::string _settingsPath;
             std::shared_ptr<Settings> _settings;
             std::shared_ptr<sf::RenderWindow> _window;
@@ -38,20 +44,40 @@ namespace Compucolor::Impl::App::Sfml
             std::unique_ptr<Compucolor::CompucolorEmulatorProcessor> _emulator;
             std::unique_ptr<Gui> _gui;
             std::unique_ptr<KeyboardTranslator> _keyboardTranslator;
-            mutable std::map<sf::Keyboard::Key, Compucolor::Keyboard::CompucolorIIKey> _activeChords;
 
-            void ProcessEvent(const sf::Event &event) const;
+            // Emulated keys currently held by each physical key.
+            mutable std::map<sf::Keyboard::Key, std::vector<EmulatedKey>> _pressedKeys;
+
+            // Number of physical sources currently holding each emulated key.
+            mutable std::map<EmulatedKey, std::size_t> _keyPressCounts;
+
+            void ProcessEvent(const sf::Event& event) const;
 
             std::string RequireSetting(const std::string& key) const;
 
             static std::shared_ptr<Settings> LoadSettings(const std::string& path);
             static std::shared_ptr<sf::RenderWindow> CreateWindow(const Settings& settings);
 
-            // Alt+Enter fullscreen, Alt+1..4 scale, Alt+S smoothing, Alt+M menu, Alt+P screenshot; returns true if handled.
+            // Alt+Enter fullscreen, Alt+1..4 scale, Alt+S smoothing,
+            // Alt+M menu, Alt+P screenshot.
             bool HandleHotkey(const sf::Event::KeyPressed& pressed) const;
+
             void RecreateWindow() const;
 
-            // Presses a key with the shift state it needs, remembering it for the matching release.
-            void PressChord(sf::Keyboard::Key physical, const KeyChord& chord) const;
+            // Presses and releases physical keys while reference-counting
+            // their corresponding emulated keys.
+            void PressPhysicalKeys(
+                sf::Keyboard::Key physical,
+                std::vector<EmulatedKey> keys
+            ) const;
+
+            void ReleasePhysicalKey(sf::Keyboard::Key physical) const;
+
+            void ReleaseAllKeys() const;
+
+            void PressChord(
+                sf::Keyboard::Key physical,
+                const KeyChord& chord
+            ) const;
     };
 }

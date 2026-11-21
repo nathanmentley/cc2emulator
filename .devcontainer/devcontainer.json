@@ -28,6 +28,9 @@
         "-e", "XDG_RUNTIME_DIR=/tmp",
         "-e", "WAYLAND_DISPLAY=${env:WAYLAND_DISPLAY}",
 
+        "-e", "PULSE_SERVER=unix:/tmp/pulse/native",
+        "-v", "${env:XDG_RUNTIME_DIR}/pulse/native:/tmp/pulse/native",
+
         "-v", "/tmp/.X11-unix:/tmp/.X11-unix:rw",
         "-v", "${env:XAUTHORITY}:/tmp/.Xauthority:ro",
 

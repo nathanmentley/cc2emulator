@@ -66,7 +66,7 @@ namespace Compucolor::Impl::App::Sfml
             // The window must not reference ImGui's cursors when they are freed.
             std::optional<sf::Cursor> _arrowCursor;
             bool _menuVisible = true;
-            bool _showDiskPanel = true;
+            bool _showDiskPanel = false;
             bool _showSettings = false;
             bool _showKeys = false;
             bool _showAbout = false;

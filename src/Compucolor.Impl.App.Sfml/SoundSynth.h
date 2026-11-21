@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <array>
@@ -37,8 +38,11 @@ namespace Compucolor::Impl::App::Sfml
 
             static constexpr std::size_t QueueSize = 8192;
 
-            // First-order RC low-pass: 1 kOhm and 0.04 uF, about 4 kHz.
+            // First-order SoundWare RC low-pass: 1 kOhm and 0.04 uF, about 4 kHz.
             static constexpr double TauNanoseconds = 40'000.0;
+
+            // DC-blocking high-pass filter, approximately 16 Hz.
+            static constexpr double DcBlockTauNanoseconds = 10'000'000.0;
 
             std::array<Edge, QueueSize> _queue{};
             std::atomic<std::size_t> _head{0};
@@ -55,6 +59,11 @@ namespace Compucolor::Impl::App::Sfml
             double _filterTimeNanoseconds = 0.0;
             double _filter = 0.0;
             bool _level = false;
+
+            // State for the DC-blocking high-pass filter.
+            double _dcPreviousInput = -0.25;
+            double _dcOutput = 0.0;
+
             float _lastSample;
 
             void Resync(uint64_t emulatedNow);

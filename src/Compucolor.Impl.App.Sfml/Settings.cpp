@@ -14,11 +14,11 @@ Settings::Settings():
         {"charset", "standard"},
         {"rom_version", "v8.79"},
         {"speed_regulated", "true"},
-        {"disk_a_path", "disks/life.ccvf"},
-        {"disk_b_path", "disks/chess.ccvf"},
+        {"disk_a_path", "disks/chomp.ccvf"},
+        {"disk_b_path", "disks/life.ccvf"},
         {"last_disk_dir", ""},
-        {"sound_enabled", "false"},
-        {"sound_volume", "50"}
+        {"sound_enabled", "true"},
+        {"sound_volume", "100"}
     }
 {
 }

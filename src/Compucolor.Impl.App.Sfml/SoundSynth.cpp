@@ -1,3 +1,4 @@
+
 #include "SoundSynth.h"
 
 #include <algorithm>
@@ -13,8 +14,10 @@ SoundSynth::SoundSynth(
     _stepNanoseconds(1e9 / static_cast<double>(sampleRate)),
     _latencyNanoseconds(latencyNanoseconds),
     _maxLagNanoseconds(maxLagNanoseconds),
-    _lastSample(Scale(0.0))
+    _lastSample(0.0f)
 {
+    // Initialize the DC blocker at the idle signal level.
+    _dcPreviousInput = Scale(0.0);
 }
 
 void SoundSynth::PushEdge(const uint64_t timeNanoseconds, const bool high)
@@ -44,28 +47,45 @@ void SoundSynth::SetVolume(const float volume)
 float SoundSynth::Scale(const double filtered) const
 {
     // Centre the 0..1 signal on zero and keep it quiet, as ccemu does.
-    return static_cast<float>((0.5 * filtered - 0.25) * _volume.load(std::memory_order_relaxed));
+    return static_cast<float>(
+        (0.5 * filtered - 0.25) * _volume.load(std::memory_order_relaxed)
+    );
 }
 
 void SoundSynth::StepFilter(const double timeNanoseconds)
 {
-    const double elapsed = std::max(0.0, timeNanoseconds - _filterTimeNanoseconds);
+    const double elapsed = std::max(
+        0.0,
+        timeNanoseconds - _filterTimeNanoseconds
+    );
+
     const double target = _level ? 1.0 : 0.0;
 
-    _filter = target + (_filter - target) * std::exp(-elapsed / TauNanoseconds);
-    _filterTimeNanoseconds = std::max(timeNanoseconds, _filterTimeNanoseconds);
+    _filter = target + (_filter - target) * std::exp(
+        -elapsed / TauNanoseconds
+    );
+
+    _filterTimeNanoseconds = std::max(
+        timeNanoseconds,
+        _filterTimeNanoseconds
+    );
 }
 
 void SoundSynth::Resync(const uint64_t emulatedNow)
 {
-    const double target = static_cast<double>(emulatedNow - _latencyNanoseconds);
+    const double target = static_cast<double>(
+        emulatedNow - _latencyNanoseconds
+    );
 
     // Skipped edges are not played, but the last one decides the level we continue from.
     for (;;)
     {
         const std::size_t tail = _tail.load(std::memory_order_relaxed);
 
-        if (tail == _head.load(std::memory_order_acquire) || static_cast<double>(_queue[tail].timeNanoseconds) > target)
+        if (
+            tail == _head.load(std::memory_order_acquire) ||
+            static_cast<double>(_queue[tail].timeNanoseconds) > target
+        )
         {
             break;
         }
@@ -94,7 +114,10 @@ void SoundSynth::Render(float* const output, const std::size_t count)
 
         Resync(now);
     }
-    else if (static_cast<double>(now) - _timelineNanoseconds > static_cast<double>(_maxLagNanoseconds))
+    else if (
+        static_cast<double>(now) - _timelineNanoseconds >
+        static_cast<double>(_maxLagNanoseconds)
+    )
     {
         Resync(now);
     }
@@ -105,6 +128,7 @@ void SoundSynth::Render(float* const output, const std::size_t count)
 
         if (next > static_cast<double>(now))
         {
+            // Not enough emulated time is available yet.
             std::fill(output + i, output + count, _lastSample);
             return;
         }
@@ -113,19 +137,41 @@ void SoundSynth::Render(float* const output, const std::size_t count)
         {
             const std::size_t tail = _tail.load(std::memory_order_relaxed);
 
-            if (tail == _head.load(std::memory_order_acquire) || static_cast<double>(_queue[tail].timeNanoseconds) > next)
+            if (
+                tail == _head.load(std::memory_order_acquire) ||
+                static_cast<double>(_queue[tail].timeNanoseconds) > next
+            )
             {
                 break;
             }
 
-            StepFilter(static_cast<double>(_queue[tail].timeNanoseconds));
+            StepFilter(
+                static_cast<double>(_queue[tail].timeNanoseconds)
+            );
+
             _level = _queue[tail].high;
-            _tail.store((tail + 1) % QueueSize, std::memory_order_release);
+
+            _tail.store(
+                (tail + 1) % QueueSize,
+                std::memory_order_release
+            );
         }
 
+        // Advance the SoundWare RC low-pass filter.
         StepFilter(next);
         _timelineNanoseconds = next;
-        _lastSample = Scale(_filter);
+
+        // Apply the DC-blocking high-pass filter.
+        const double input = Scale(_filter);
+
+        const double alpha = std::exp(
+            -_stepNanoseconds / DcBlockTauNanoseconds
+        );
+
+        _dcOutput = input - _dcPreviousInput + alpha * _dcOutput;
+        _dcPreviousInput = input;
+
+        _lastSample = static_cast<float>(_dcOutput);
         output[i] = _lastSample;
     }
 }

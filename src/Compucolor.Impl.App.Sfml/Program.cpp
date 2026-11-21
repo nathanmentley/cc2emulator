@@ -1,7 +1,9 @@
+
 #include "Program.h"
 
 #include <algorithm>
 #include <stdexcept>
+#include <utility>
 
 using std::optional;
 using std::shared_ptr;
@@ -54,10 +56,16 @@ Program::Program():
 {
     _display->SetSmooth(_settings->GetBool("smooth_scaling"));
 
-    _audio->SetVolume(static_cast<float>(std::clamp(_settings->GetInt("sound_volume"), 0, 100)) / 100.0f);
+    _audio->SetVolume(
+        static_cast<float>(
+            std::clamp(_settings->GetInt("sound_volume"), 0, 100)
+        ) / 100.0f
+    );
+
     _audio->SetEnabled(_settings->GetBool("sound_enabled"));
 
     _gui->SetQuitHandler([window = _window] { window->close(); });
+
     (void)_gui->Init();
     _gui->ApplyStartupSettings();
 }
@@ -70,11 +78,13 @@ std::string Program::RequireSetting(const std::string& key) const
     }
 
     throw std::runtime_error(
-        "Missing setting '" + key + "' in app.config. Run the emulator from the directory that contains app.config."
+        "Missing setting '" + key +
+        "' in app.config. Run the emulator from the directory that contains app.config."
     );
 }
 
-std::shared_ptr<Compucolor::Impl::App::Sfml::Settings> Program::LoadSettings(const std::string& path)
+std::shared_ptr<Compucolor::Impl::App::Sfml::Settings>
+Program::LoadSettings(const std::string& path)
 {
     auto settings = make_shared<Settings>();
     settings->Load(path);
@@ -82,9 +92,13 @@ std::shared_ptr<Compucolor::Impl::App::Sfml::Settings> Program::LoadSettings(con
     return settings;
 }
 
-std::shared_ptr<RenderWindow> Program::CreateWindow(const Settings& settings)
+std::shared_ptr<RenderWindow>
+Program::CreateWindow(const Settings& settings)
 {
-    const auto scale = static_cast<unsigned int>(std::clamp(settings.GetInt("window_scale"), 1, 8));
+    const auto scale = static_cast<unsigned int>(
+        std::clamp(settings.GetInt("window_scale"), 1, 8)
+    );
+
     const char* title = "Compucolor II Emulator";
 
     if (settings.GetBool("fullscreen"))
@@ -97,24 +111,42 @@ std::shared_ptr<RenderWindow> Program::CreateWindow(const Settings& settings)
         );
     }
 
-    return make_shared<RenderWindow>(VideoMode(Vector2u(384 * scale, 256 * scale)), title);
+    return make_shared<RenderWindow>(
+        VideoMode(Vector2u(384 * scale, 256 * scale)),
+        title
+    );
 }
 
 void Program::RecreateWindow() const
 {
-    const auto scale = static_cast<unsigned int>(std::clamp(_settings->GetInt("window_scale"), 1, 8));
+    const auto scale = static_cast<unsigned int>(
+        std::clamp(_settings->GetInt("window_scale"), 1, 8)
+    );
+
     const char* title = "Compucolor II Emulator";
+
+    // A recreated window may lose keyboard focus.
+    // Release all physical keys before replacing the window.
+    ReleaseAllKeys();
 
     // ImGui holds GL resources tied to the old window context.
     _gui->Shutdown();
 
     if (_settings->GetBool("fullscreen"))
     {
-        _window->create(VideoMode::getDesktopMode(), title, sf::Style::Default, sf::State::Fullscreen);
+        _window->create(
+            VideoMode::getDesktopMode(),
+            title,
+            sf::Style::Default,
+            sf::State::Fullscreen
+        );
     }
     else
     {
-        _window->create(VideoMode(Vector2u(384 * scale, 256 * scale)), title);
+        _window->create(
+            VideoMode(Vector2u(384 * scale, 256 * scale)),
+            title
+        );
     }
 
     (void)_gui->Init();
@@ -131,15 +163,25 @@ bool Program::HandleHotkey(const Event::KeyPressed& pressed) const
 
     if (pressed.code == Key::Enter)
     {
-        _settings->SetBool("fullscreen", !_settings->GetBool("fullscreen"));
+        _settings->SetBool(
+            "fullscreen",
+            !_settings->GetBool("fullscreen")
+        );
+
         RecreateWindow();
         return true;
     }
 
     if (pressed.code >= Key::Num1 && pressed.code <= Key::Num4)
     {
-        _settings->SetInt("window_scale", static_cast<int>(pressed.code) - static_cast<int>(Key::Num1) + 1);
+        _settings->SetInt(
+            "window_scale",
+            static_cast<int>(pressed.code) -
+            static_cast<int>(Key::Num1) + 1
+        );
+
         _settings->SetBool("fullscreen", false);
+
         RecreateWindow();
         return true;
     }
@@ -147,8 +189,10 @@ bool Program::HandleHotkey(const Event::KeyPressed& pressed) const
     if (pressed.code == Key::S)
     {
         const bool smooth = !_settings->GetBool("smooth_scaling");
+
         _settings->SetBool("smooth_scaling", smooth);
         _display->SetSmooth(smooth);
+
         return true;
     }
 
@@ -167,7 +211,169 @@ bool Program::HandleHotkey(const Event::KeyPressed& pressed) const
     return false;
 }
 
-int Program::Run() const {
+void Program::PressPhysicalKeys(
+    const sf::Keyboard::Key physical,
+    std::vector<EmulatedKey> keys
+) const
+{
+    // Ignore repeated KeyPressed events for an already-held physical key.
+    if (_pressedKeys.contains(physical))
+    {
+        return;
+    }
+
+    for (const EmulatedKey key : keys)
+    {
+        auto& count = _keyPressCounts[key];
+
+        // Only send KeyDown when the first physical source presses this key.
+        if (count == 0)
+        {
+            _emulator->OnKeyDown(key);
+        }
+
+        ++count;
+    }
+
+    _pressedKeys.emplace(physical, std::move(keys));
+}
+
+void Program::ReleasePhysicalKey(const sf::Keyboard::Key physical) const
+{
+    const auto physicalIt = _pressedKeys.find(physical);
+
+    if (physicalIt == _pressedKeys.end())
+    {
+        return;
+    }
+
+    for (const EmulatedKey key : physicalIt->second)
+    {
+        const auto countIt = _keyPressCounts.find(key);
+
+        if (countIt == _keyPressCounts.end())
+        {
+            continue;
+        }
+
+        if (countIt->second > 1)
+        {
+            --countIt->second;
+        }
+        else
+        {
+            // Only send KeyUp when the last physical source releases it.
+            _emulator->OnKeyUp(key);
+            _keyPressCounts.erase(countIt);
+        }
+    }
+
+    _pressedKeys.erase(physicalIt);
+}
+
+void Program::ReleaseAllKeys() const
+{
+    // Every key in this map is currently logically pressed in the emulator.
+    for (const auto& [key, count] : _keyPressCounts)
+    {
+        (void)count;
+        _emulator->OnKeyUp(key);
+    }
+
+    _pressedKeys.clear();
+    _keyPressCounts.clear();
+}
+
+void Program::PressChord(
+    const sf::Keyboard::Key physical,
+    const KeyChord& chord
+) const
+{
+    std::vector<EmulatedKey> keys;
+
+    if (chord.shift)
+    {
+        keys.push_back(CompucolorIIKey::Shift);
+    }
+
+    keys.push_back(chord.key);
+
+    PressPhysicalKeys(physical, std::move(keys));
+}
+
+void Program::ProcessEvent(const Event& event) const
+{
+    _gui->ProcessEvent(event);
+
+    if (event.is<Event::Closed>())
+    {
+        ReleaseAllKeys();
+        _gui->RequestQuit();
+        return;
+    }
+
+    // SFML does not guarantee that we will receive KeyReleased events
+    // for keys held when the window loses focus.
+    if (event.is<Event::FocusLost>())
+    {
+        ReleaseAllKeys();
+        return;
+    }
+
+    if (event.is<Event::KeyPressed>())
+    {
+        const auto* pressed = event.getIf<Event::KeyPressed>();
+
+        if (HandleHotkey(*pressed))
+        {
+            return;
+        }
+
+        // Don't forward new keyboard input while the GUI wants it.
+        // Existing keys are still released below, regardless of GUI focus.
+        if (_gui->WantsKeyboard())
+        {
+            return;
+        }
+
+        // Digits and punctuation go through their character so PC symbols
+        // land on the matching CC2 keys.
+        if (const optional<char> character =
+            KeyboardTranslator::ToAscii(pressed->code, pressed->shift))
+        {
+            if (const optional<KeyChord> chord =
+                AsciiKeyMap::Lookup(character.value()))
+            {
+                PressChord(pressed->code, chord.value());
+            }
+
+            return;
+        }
+
+        if (const optional<CompucolorIIKey> key =
+            KeyboardTranslator::ConvertKey(pressed->code))
+        {
+            PressPhysicalKeys(
+                pressed->code,
+                { key.value() }
+            );
+        }
+
+        return;
+    }
+
+    if (event.is<Event::KeyReleased>())
+    {
+        const auto* released = event.getIf<Event::KeyReleased>();
+
+        // Only release keys that we actually forwarded on KeyPressed.
+        // This also works if the GUI has since taken keyboard focus.
+        ReleasePhysicalKey(released->code);
+    }
+}
+
+int Program::Run() const
+{
     _emulator->Start();
 
     sf::Clock frameClock;
@@ -176,7 +382,8 @@ int Program::Run() const {
     {
         while (optional<Event> event = _window->pollEvent())
         {
-            if (event.has_value()) {
+            if (event.has_value())
+            {
                 ProcessEvent(event.value());
             }
         }
@@ -192,6 +399,8 @@ int Program::Run() const {
         }
     }
 
+    ReleaseAllKeys();
+
     _emulator->Stop();
     _display->Close();
     _gui->Shutdown();
@@ -199,90 +408,4 @@ int Program::Run() const {
     _settings->Save(_settingsPath);
 
     return EXIT_SUCCESS;
-}
-
-void Program::PressChord(const sf::Keyboard::Key physical, const KeyChord& chord) const
-{
-    _activeChords[physical] = chord.key;
-
-    if (chord.shift)
-    {
-        _emulator->OnKeyDown(CompucolorIIKey::Shift);
-    }
-    else
-    {
-        _emulator->OnKeyUp(CompucolorIIKey::Shift);
-    }
-
-    _emulator->OnKeyDown(chord.key);
-}
-
-void Program::ProcessEvent(const Event &event) const
-{
-    _gui->ProcessEvent(event);
-
-    if (event.is<Event::Closed>())
-    {
-        _gui->RequestQuit();
-    }
-
-    if (event.is<Event::KeyPressed>())
-    {
-        const auto* pressed = event.getIf<Event::KeyPressed>();
-
-        if (HandleHotkey(*pressed))
-        {
-            return;
-        }
-
-        // Releases always pass through so a key held while the GUI took focus is not left pressed.
-        if (_gui->WantsKeyboard())
-        {
-            return;
-        }
-
-        // Digits and punctuation go through their character so PC symbols land on the matching CC2 keys.
-        if (const optional<char> character = KeyboardTranslator::ToAscii(pressed->code, pressed->shift))
-        {
-            if (const optional<KeyChord> chord = AsciiKeyMap::Lookup(character.value()))
-            {
-                PressChord(pressed->code, chord.value());
-            }
-
-            return;
-        }
-
-        if (const optional<CompucolorIIKey> key = KeyboardTranslator::ConvertKey(pressed->code))
-        {
-            _emulator->OnKeyDown(key.value());
-        }
-    }
-
-    if (event.is<Event::KeyReleased>())
-    {
-        const auto* released = event.getIf<Event::KeyReleased>();
-
-        if (const auto chord = _activeChords.find(released->code); chord != _activeChords.end())
-        {
-            _emulator->OnKeyUp(chord->second);
-            _activeChords.erase(chord);
-
-            // Put Shift back to what the physical key is doing.
-            if (released->shift)
-            {
-                _emulator->OnKeyDown(CompucolorIIKey::Shift);
-            }
-            else
-            {
-                _emulator->OnKeyUp(CompucolorIIKey::Shift);
-            }
-
-            return;
-        }
-
-        if (const optional<CompucolorIIKey> key = KeyboardTranslator::ConvertKey(released->code))
-        {
-            _emulator->OnKeyUp(key.value());
-        }
-    }
 }
