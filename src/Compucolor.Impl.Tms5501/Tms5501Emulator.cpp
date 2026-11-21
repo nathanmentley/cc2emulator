@@ -81,7 +81,11 @@ void Tms5501Emulator::StepFloppy(uint64_t elapsedNanoseconds)
         _context->sstatus = (_context->sstatus & 0x3E) |
                             (framingError ? 0x01 : 0x00) |
                             (overrun ? 0x02 : 0x00) | 0x08;
-        _context->intStatus |= 0x10;
+        // Floppy data is consumed by the polled FCS disk routines. Do not
+        // raise the serial receive interrupt for it: the ROM's RST4 handler
+        // would store the byte in the shared console input buffer at $81FE,
+        // where it can be mistaken for the first character of the next typed
+        // command (e.g. a stray 'P' turning "RUN CHOMP" into "PRUN CHOMP").
     }
     else if (IsFloppy2Selected() && _floppy2->HasData())
     {
@@ -91,7 +95,8 @@ void Tms5501Emulator::StepFloppy(uint64_t elapsedNanoseconds)
         _context->sstatus = (_context->sstatus & 0x3E) |
                     (framingError ? 0x01 : 0x00) |
                     (overrun ? 0x02 : 0x00) | 0x08;
-        _context->intStatus |= 0x10;
+        // See the floppy 1 branch above: keep floppy bytes out of the
+        // console-input interrupt path.
     }
 
     if (_floppyTransmitNanosecondsRemaining > 0)

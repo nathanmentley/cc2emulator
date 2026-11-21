@@ -14,6 +14,7 @@
 using Compucolor::Impl::Tms5501::Tms5501Emulator;
 
 using ::testing::NiceMock;
+using ::testing::Return;
 using ::testing::_;
 
 namespace
@@ -126,4 +127,37 @@ TEST_F(Tms5501EmulatorTest, WorksWithoutAnAudioOutput) {
 
     //Assert: reaching here without a crash is the check
     SUCCEED();
+}
+
+TEST_F(Tms5501EmulatorTest, FloppyOneDataDoesNotRaiseSerialReceiveInterrupt) {
+    //Arrange: output bits 5:4 = 1 selects floppy drive A
+    tms5501->Write(OutputPort, 0x10);
+    EXPECT_CALL(*floppy1, HasData()).WillRepeatedly(Return(true));
+    EXPECT_CALL(*floppy1, Read(0)).WillOnce(Return(0x50));
+
+    //Act
+    tms5501->StepFloppy(16'000);
+
+    //Assert: the byte is available to polled FCS reads, but the RST4 handler
+    //must not store it in the console input buffer as a typed character.
+    auto state = tms5501->SaveState();
+    EXPECT_EQ(state->at("rxdata").as_uint64(), 0x50U);
+    EXPECT_EQ(state->at("sstatus").as_uint64() & 0x08U, 0x08U);
+    EXPECT_EQ(state->at("intStatus").as_uint64() & 0x10U, 0x00U);
+}
+
+TEST_F(Tms5501EmulatorTest, FloppyTwoDataDoesNotRaiseSerialReceiveInterrupt) {
+    //Arrange: output bits 5:4 = 2 selects floppy drive B
+    tms5501->Write(OutputPort, 0x20);
+    EXPECT_CALL(*floppy2, HasData()).WillRepeatedly(Return(true));
+    EXPECT_CALL(*floppy2, Read(0)).WillOnce(Return(0x32));
+
+    //Act
+    tms5501->StepFloppy(16'000);
+
+    //Assert
+    auto state = tms5501->SaveState();
+    EXPECT_EQ(state->at("rxdata").as_uint64(), 0x32U);
+    EXPECT_EQ(state->at("sstatus").as_uint64() & 0x08U, 0x08U);
+    EXPECT_EQ(state->at("intStatus").as_uint64() & 0x10U, 0x00U);
 }
