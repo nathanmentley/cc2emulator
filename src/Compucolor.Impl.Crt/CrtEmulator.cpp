@@ -54,6 +54,39 @@ void Compucolor::Impl::Crt::CrtEmulator::Stop()
     }
 }
 
+std::unique_ptr<boost::json::value> Compucolor::Impl::Crt::CrtEmulator::SaveState()
+{
+    boost::json::object state;
+
+    state["phase"] = _phase;
+    state["lowercaseCharset"] = _lowercaseCharset.load(std::memory_order_relaxed);
+
+    return std::make_unique<boost::json::value>(std::move(state));
+}
+
+void Compucolor::Impl::Crt::CrtEmulator::LoadState(
+    std::shared_ptr<boost::json::value> state
+)
+{
+    if (!state || !state->is_object())
+    {
+        throw std::runtime_error("Invalid CrtEmulator state");
+    }
+
+    const auto& object = state->as_object();
+
+    const auto phase = object.at("phase").as_int64();
+    const auto lowercaseCharset = object.at("lowercaseCharset").as_bool();
+
+    if (phase < 0 || phase >= 16)
+    {
+        throw std::runtime_error("Invalid CRT phase");
+    }
+
+    _phase = static_cast<int>(phase);
+    _lowercaseCharset.store(lowercaseCharset, std::memory_order_relaxed);
+}
+
 void Compucolor::Impl::Crt::CrtEmulator::SetLowercaseCharset(const bool lowercase)
 {
     _lowercaseCharset.store(lowercase, std::memory_order_relaxed);

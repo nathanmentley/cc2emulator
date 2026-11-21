@@ -126,6 +126,171 @@ void Tms5501Emulator::Stop()
 {
 }
 
+std::unique_ptr<boost::json::value> Tms5501Emulator::SaveState()
+{
+    boost::json::object state;
+
+    // TMS5501 registers and buffers
+    state["rxdata"] = static_cast<uint64_t>(_context->rxdata);
+    state["txdata"] = static_cast<uint64_t>(_context->txdata);
+    state["txdata2"] = static_cast<uint64_t>(_context->txdata2);
+    state["txdataCount"] = static_cast<uint64_t>(_context->txdataCount);
+
+    state["outport"] = static_cast<uint64_t>(_outport);
+    state["sstatus"] = static_cast<uint64_t>(_context->sstatus);
+    state["rate"] = static_cast<uint64_t>(_context->rate);
+    state["intMask"] = static_cast<uint64_t>(_context->intMask);
+    state["intStatus"] = static_cast<uint64_t>(_context->intStatus);
+    state["dscCmd"] = static_cast<uint64_t>(_context->dscCmd);
+
+    // Timer counters
+    boost::json::array count;
+
+    for (const auto counter : _context->count)
+    {
+        count.push_back(static_cast<uint64_t>(counter));
+    }
+
+    state["count"] = std::move(count);
+
+    // Emulator integration state
+    state["emulatedNanoseconds"] = _emulatedNanoseconds;
+    state["audioLevel"] = _audioLevel;
+    state["floppyTransmitNanosecondsRemaining"] =
+        _floppyTransmitNanosecondsRemaining;
+
+    return std::make_unique<boost::json::value>(
+        std::move(state)
+    );
+}
+
+void Tms5501Emulator::LoadState(
+    std::shared_ptr<boost::json::value> value
+)
+{
+    if (!value || !value->is_object())
+    {
+        throw std::runtime_error("Invalid Tms5501Emulator state");
+    }
+
+    const auto& state = value->as_object();
+
+    // Helper for safely reading unsigned integers.
+    auto getUnsigned = [](const boost::json::value& value) -> uint64_t
+    {
+        if (value.is_uint64())
+        {
+            return value.as_uint64();
+        }
+
+        if (value.is_int64() && value.as_int64() >= 0)
+        {
+            return static_cast<uint64_t>(value.as_int64());
+        }
+
+        throw std::runtime_error(
+            "Expected non-negative integer in TMS5501 state"
+        );
+    };
+
+    // Helper for reading byte-sized registers.
+    auto getByte = [&getUnsigned](const boost::json::value& value) -> uint8_t
+    {
+        const uint64_t number = getUnsigned(value);
+
+        if (number > 255)
+        {
+            throw std::runtime_error(
+                "TMS5501 register value exceeds 255"
+            );
+        }
+
+        return static_cast<uint8_t>(number);
+    };
+
+    // TMS5501 registers and buffers
+    const uint8_t rxdata = getByte(state.at("rxdata"));
+    const uint8_t txdata = getByte(state.at("txdata"));
+    const uint8_t txdata2 = getByte(state.at("txdata2"));
+    const uint8_t txdataCount = getByte(state.at("txdataCount"));
+
+    const uint8_t outport = getByte(state.at("outport"));
+    const uint8_t sstatus = getByte(state.at("sstatus"));
+    const uint8_t rate = getByte(state.at("rate"));
+    const uint8_t intMask = getByte(state.at("intMask"));
+    const uint8_t intStatus = getByte(state.at("intStatus"));
+    const uint8_t dscCmd = getByte(state.at("dscCmd"));
+
+    if (txdataCount > 2)
+    {
+        throw std::runtime_error(
+            "Invalid TMS5501 transmit buffer count"
+        );
+    }
+
+    // Timer counters
+    const auto& countJson = state.at("count").as_array();
+
+    if (countJson.size() != 5)
+    {
+        throw std::runtime_error(
+            "Invalid TMS5501 timer counter count"
+        );
+    }
+
+    std::array<uint8_t, 5> count{};
+
+    for (std::size_t i = 0; i < count.size(); i++)
+    {
+        count[i] = getByte(countJson[i]);
+    }
+
+    // Emulator integration state
+    const uint64_t emulatedNanoseconds =
+        getUnsigned(state.at("emulatedNanoseconds"));
+
+    const bool audioLevel =
+        state.at("audioLevel").as_bool();
+
+    const uint64_t floppyTransmitNanosecondsRemaining =
+        getUnsigned(state.at("floppyTransmitNanosecondsRemaining"));
+
+    // Restore the state after all fields have been validated.
+    _context->rxdata = rxdata;
+    _context->txdata = txdata;
+    _context->txdata2 = txdata2;
+    _context->txdataCount = txdataCount;
+
+    _context->outport = outport;
+    _outport = outport;
+
+    _context->sstatus = sstatus;
+    _context->rate = rate;
+    _context->intMask = intMask;
+    _context->intStatus = intStatus;
+    _context->dscCmd = dscCmd;
+
+    for (std::size_t i = 0; i < count.size(); i++)
+    {
+        _context->count[i] = count[i];
+    }
+
+    _emulatedNanoseconds = emulatedNanoseconds;
+    _audioLevel = audioLevel;
+
+    _floppyTransmitNanosecondsRemaining =
+        floppyTransmitNanosecondsRemaining;
+
+    // Restore the audio output line.
+    if (_audio)
+    {
+        _audio->SetLevel(
+            _audioLevel,
+            _emulatedNanoseconds
+        );
+    }
+}
+
 uint8_t Tms5501Emulator::Read(uint8_t port)
 {
     uint8_t convertedPort = ConvertPort(port);

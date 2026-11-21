@@ -24,6 +24,10 @@ namespace Compucolor::Impl::Intel8080
 
             void Stop() override;
 
+            std::unique_ptr<boost::json::value> SaveState() override;
+
+            void LoadState(std::shared_ptr<boost::json::value>) override;
+
             void Reset() override;
 
             void SetBus(std::shared_ptr<Compucolor::Intel8080::IIntel8080Bus> intel8080Bus) override;

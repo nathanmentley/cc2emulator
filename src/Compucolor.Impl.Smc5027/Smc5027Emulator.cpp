@@ -32,6 +32,89 @@ void Smc5027Emulator::Stop()
     Reset();
 }
 
+std::unique_ptr<boost::json::value> Smc5027Emulator::SaveState()
+{
+    boost::json::object state;
+    boost::json::array registers;
+
+    registers.reserve(REGISTER_COUNT);
+
+    for (const auto& reg : _registers)
+    {
+        registers.push_back(
+            static_cast<uint64_t>(
+                reg.load(std::memory_order_relaxed)
+            )
+        );
+    }
+
+    state["registers"] = std::move(registers);
+
+    return std::make_unique<boost::json::value>(
+        std::move(state)
+    );
+}
+
+void Smc5027Emulator::LoadState(
+    std::shared_ptr<boost::json::value> value
+)
+{
+    if (!value || !value->is_object())
+    {
+        throw std::runtime_error("Invalid Smc5027Emulator state");
+    }
+
+    const auto& state = value->as_object();
+    const auto& registersJson = state.at("registers").as_array();
+
+    if (registersJson.size() != REGISTER_COUNT)
+    {
+        throw std::runtime_error("Invalid SMC5027 register count");
+    }
+
+    std::array<uint8_t, REGISTER_COUNT> registers{};
+
+    for (std::size_t i = 0; i < registersJson.size(); i++)
+    {
+        const auto& entry = registersJson[i];
+
+        uint64_t number;
+
+        if (entry.is_uint64())
+        {
+            number = entry.as_uint64();
+        }
+        else if (entry.is_int64() && entry.as_int64() >= 0)
+        {
+            number = static_cast<uint64_t>(entry.as_int64());
+        }
+        else
+        {
+            throw std::runtime_error(
+                "Invalid SMC5027 register value"
+            );
+        }
+
+        if (number > 255)
+        {
+            throw std::runtime_error(
+                "SMC5027 register value exceeds 255"
+            );
+        }
+
+        registers[i] = static_cast<uint8_t>(number);
+    }
+
+    // Restore only after validating the entire state.
+    for (std::size_t i = 0; i < registers.size(); i++)
+    {
+        _registers[i].store(
+            registers[i],
+            std::memory_order_relaxed
+        );
+    }
+}
+
 uint8_t Smc5027Emulator::Read(uint8_t port)
 {
     uint8_t data = 0x00;

@@ -61,6 +61,10 @@ namespace Compucolor::Impl::Crt
 
             void SetLowercaseCharset(bool lowercase) override;
 
+            std::unique_ptr<boost::json::value> SaveState() override;
+
+            void LoadState(std::shared_ptr<boost::json::value>) override;
+
             static std::shared_ptr<ICrtEmulator> Creator(Common::IPluginManager* manager);
 
         private:

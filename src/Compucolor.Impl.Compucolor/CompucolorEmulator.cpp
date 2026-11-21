@@ -4,6 +4,11 @@
 #include <chrono>
 #include <memory>
 #include <utility>
+#include <fstream>
+#include <iterator>
+#include <string>
+#include <stdexcept>
+#include <boost/json.hpp>
 
 void Compucolor::Impl::CompucolorII::LoadRom(
     Memory::IMemory* memory,
@@ -225,6 +230,220 @@ void Compucolor::Impl::CompucolorII::CompucolorEmulator::SetRomVersion(const Rom
 {
     _romVersion.store(version);
     Reset(true);
+}
+
+std::unique_ptr<boost::json::value> Compucolor::Impl::CompucolorII::CompucolorEmulator::SaveState()
+{
+    const bool wasPaused = IsPaused();
+    Pause();
+
+    try
+    {
+        boost::json::object state;
+
+        auto saveComponent = [](const auto& component) -> boost::json::value
+        {
+            if (!component)
+            {
+                throw std::runtime_error("Cannot save null emulator component");
+            }
+
+            auto componentState = component->SaveState();
+
+            if (!componentState)
+            {
+                throw std::runtime_error("Component returned an empty save state");
+            }
+
+            return *componentState;
+        };
+
+        state["crt"] = saveComponent(_crt);
+        state["floppyA"] = saveComponent(_floppyA);
+        state["floppyB"] = saveComponent(_floppyB);
+        state["intel8080"] = saveComponent(_intel8080);
+        state["keyboard"] = saveComponent(_keyboard);
+        state["memory"] = saveComponent(_memory);
+        state["smc5027"] = saveComponent(_smc5027);
+        state["tms5501"] = saveComponent(_tms5501);
+
+        // Emulator scheduling state.
+        state["loopInterval"] = static_cast<int64_t>(_loopInterval);
+        state["floppyCycleRemainder"] = _floppyCycleRemainder;
+        state["emulatedNanoseconds"] = _emulatedNanoseconds;
+
+        // Machine configuration.
+        state["romVersion"] =
+            _romVersion.load() == RomVersion::V6_78 ? "6.78" : "8.79";
+
+        state["speedRegulated"] = _speedRegulated.load();
+
+        // Preserve a reset request that hasn't yet been processed.
+        state["resetRequest"] =
+            static_cast<int64_t>(_resetRequest.load());
+
+        auto result = std::make_unique<boost::json::value>(
+            std::move(state)
+        );
+
+        if (!wasPaused)
+        {
+            Resume();
+        }
+
+        return result;
+    }
+    catch (...)
+    {
+        if (!wasPaused)
+        {
+            Resume();
+        }
+
+        throw;
+    }
+}
+
+void Compucolor::Impl::CompucolorII::CompucolorEmulator::LoadState(
+    std::shared_ptr<boost::json::value> value
+)
+{
+    const bool wasPaused = IsPaused();
+    Pause();
+
+    try
+    {
+        if (!value || !value->is_object())
+        {
+            throw std::runtime_error("Invalid Compucolor emulator state");
+        }
+
+        const auto& state = value->as_object();
+
+        auto getUnsigned = [](const boost::json::value& value) -> uint64_t
+        {
+            if (value.is_uint64())
+            {
+                return value.as_uint64();
+            }
+
+            if (value.is_int64() && value.as_int64() >= 0)
+            {
+                return static_cast<uint64_t>(value.as_int64());
+            }
+
+            throw std::runtime_error(
+                "Expected non-negative integer in Compucolor state"
+            );
+        };
+
+        const int64_t loopIntervalValue =
+            state.at("loopInterval").as_int64();
+
+        if (loopIntervalValue < 0 || loopIntervalValue >= 128)
+        {
+            throw std::runtime_error("Invalid loop interval in Compucolor state");
+        }
+
+        const uint64_t floppyCycleRemainder =
+            getUnsigned(state.at("floppyCycleRemainder"));
+
+        const uint64_t emulatedNanoseconds =
+            getUnsigned(state.at("emulatedNanoseconds"));
+
+        const std::string romVersion(
+            state.at("romVersion").as_string().c_str()
+        );
+
+        RomVersion restoredRomVersion;
+
+        if (romVersion == "6.78")
+        {
+            restoredRomVersion = RomVersion::V6_78;
+        }
+        else if (romVersion == "8.79")
+        {
+            restoredRomVersion = RomVersion::V8_79;
+        }
+        else
+        {
+            throw std::runtime_error("Unsupported ROM version in Compucolor state");
+        }
+
+        const bool speedRegulated =
+            state.at("speedRegulated").as_bool();
+
+        const int64_t resetRequestValue =
+            state.at("resetRequest").as_int64();
+
+        if (resetRequestValue < ResetNone || resetRequestValue > ResetHard)
+        {
+            throw std::runtime_error("Invalid reset request in Compucolor state");
+        }
+
+        // Restore component states.
+        //
+        // Memory must be restored before the CPU resumes execution.
+        _memory->LoadState(
+            std::make_shared<boost::json::value>(state.at("memory"))
+        );
+
+        _floppyA->LoadState(
+            std::make_shared<boost::json::value>(state.at("floppyA"))
+        );
+
+        _floppyB->LoadState(
+            std::make_shared<boost::json::value>(state.at("floppyB"))
+        );
+
+        _keyboard->LoadState(
+            std::make_shared<boost::json::value>(state.at("keyboard"))
+        );
+
+        _crt->LoadState(
+            std::make_shared<boost::json::value>(state.at("crt"))
+        );
+
+        _smc5027->LoadState(
+            std::make_shared<boost::json::value>(state.at("smc5027"))
+        );
+
+        _intel8080->LoadState(
+            std::make_shared<boost::json::value>(state.at("intel8080"))
+        );
+
+        _tms5501->LoadState(
+            std::make_shared<boost::json::value>(state.at("tms5501"))
+        );
+
+        // Restore emulator scheduling state.
+        _loopInterval = static_cast<int>(loopIntervalValue);
+        _floppyCycleRemainder = floppyCycleRemainder;
+        _emulatedNanoseconds = emulatedNanoseconds;
+
+        // Restore machine configuration.
+        _romVersion.store(restoredRomVersion);
+        _speedRegulated.store(speedRegulated);
+        _resetRequest.store(static_cast<int>(resetRequestValue));
+
+        // Wall-clock pacing state must be restarted from the current time.
+        _lastTickNanoseconds = _clock();
+        _budgetNanoseconds = 0;
+
+        if (!wasPaused)
+        {
+            Resume();
+        }
+    }
+    catch (...)
+    {
+        if (!wasPaused)
+        {
+            Resume();
+        }
+
+        throw;
+    }
 }
 
 std::shared_ptr<Compucolor::Floppy::IFloppyEmulator> Compucolor::Impl::CompucolorII::CompucolorEmulator::GetFloppy(

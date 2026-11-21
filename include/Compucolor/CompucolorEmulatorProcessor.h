@@ -4,6 +4,12 @@
 #include <optional>
 #include <thread>
 #include <utility>
+#include <fstream>
+#include <iterator>
+#include <stdexcept>
+#include <string>
+
+#include <boost/json.hpp>
 
 #include <Compucolor/ICompucolorEmulator.h>
 
@@ -73,6 +79,52 @@ namespace Compucolor
             void SetLowercaseCharset(bool lowercase) { _emulator->SetLowercaseCharset(lowercase); }
 
             void SetRomVersion(RomVersion version) { _emulator->SetRomVersion(version); }
+
+            void SaveState()
+            {
+                auto state = _emulator->SaveState();
+            
+                if (!state)
+                {
+                    throw std::runtime_error("Emulator returned an empty save state");
+                }
+            
+                std::ofstream file("compucolor-state.json");
+            
+                if (!file.is_open())
+                {
+                    throw std::runtime_error("Unable to open compucolor-state.json for writing");
+                }
+            
+                file << boost::json::serialize(*state);
+            
+                if (!file.good())
+                {
+                    throw std::runtime_error("Failed to write compucolor-state.json");
+                }
+            }
+
+            void LoadState()
+            {
+                std::ifstream file("compucolor-state.json");
+            
+                if (!file.is_open())
+                {
+                    throw std::runtime_error("Unable to open compucolor-state.json for reading");
+                }
+            
+                std::string contents{
+                    std::istreambuf_iterator<char>(file),
+                    std::istreambuf_iterator<char>()
+                };
+            
+                auto state = std::make_shared<boost::json::value>(
+                    boost::json::parse(contents)
+                );
+            
+                _emulator->LoadState(state);
+            }
+
 
             [[nodiscard]] std::shared_ptr<Floppy::IFloppyEmulator> GetFloppy(int drive) const
             {

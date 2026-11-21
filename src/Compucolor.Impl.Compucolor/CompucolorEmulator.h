@@ -55,6 +55,8 @@ namespace Compucolor::Impl::CompucolorII
             [[nodiscard]] bool IsSpeedRegulated() const override;
             void SetLowercaseCharset(bool lowercase) override;
             void SetRomVersion(RomVersion version) override;
+            std::unique_ptr<boost::json::value> SaveState() override;
+            void LoadState(std::shared_ptr<boost::json::value>) override;
             [[nodiscard]] std::shared_ptr<Floppy::IFloppyEmulator> GetFloppy(int drive) const override;
 
             static std::shared_ptr<ICompucolorEmulator> Creator(Common::IPluginManager* manager);

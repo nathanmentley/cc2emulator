@@ -43,6 +43,10 @@ namespace Compucolor::Impl::Keyboard
              */
             void Stop() override;
 
+            std::unique_ptr<boost::json::value> SaveState() override;
+
+            void LoadState(std::shared_ptr<boost::json::value>) override;
+
             /**
              * @brief  
              * @note   

@@ -22,6 +22,9 @@ namespace Compucolor::Impl::Floppy
         void Stop() override;
         void Reset() override;
 
+        std::unique_ptr<boost::json::value> SaveState() override;
+        void LoadState(std::shared_ptr<boost::json::value>) override;
+
         uint8_t Read(uint8_t port) override;
         void Write(uint8_t port, uint8_t data) override;
 

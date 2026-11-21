@@ -36,6 +36,10 @@ namespace Compucolor::Impl::Smc5027 {
              * @retval None
              */
             virtual void Stop() override;
+
+            std::unique_ptr<boost::json::value> SaveState() override;
+
+            void LoadState(std::shared_ptr<boost::json::value>) override;
     
             /**
              * @brief  

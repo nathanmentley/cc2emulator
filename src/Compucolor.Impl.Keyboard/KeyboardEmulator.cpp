@@ -29,16 +29,91 @@ void Compucolor::Impl::Keyboard::KeyboardEmulator::Stop()
     Reset();
 }
 
+std::unique_ptr<boost::json::value> Compucolor::Impl::Keyboard::KeyboardEmulator::SaveState()
+{
+    boost::json::object state;
+    boost::json::array matrix;
+
+    matrix.reserve(_kbMatrix.size());
+
+    for (const auto& row : _kbMatrix)
+    {
+        matrix.push_back(
+            static_cast<uint64_t>(
+                row.load(std::memory_order_relaxed)
+            )
+        );
+    }
+
+    state["matrix"] = std::move(matrix);
+
+    return std::make_unique<boost::json::value>(
+        std::move(state)
+    );
+}
+
+void Compucolor::Impl::Keyboard::KeyboardEmulator::LoadState(
+    std::shared_ptr<boost::json::value> value
+)
+{
+    if (!value || !value->is_object())
+    {
+        throw std::runtime_error("Invalid KeyboardEmulator state");
+    }
+
+    const auto& state = value->as_object();
+    const auto& matrixJson = state.at("matrix").as_array();
+
+    if (matrixJson.size() != _kbMatrix.size())
+    {
+        throw std::runtime_error("Invalid keyboard matrix size");
+    }
+
+    std::array<uint8_t, 17> matrix{};
+
+    for (std::size_t i = 0; i < matrixJson.size(); i++)
+    {
+        const auto& entry = matrixJson[i];
+
+        uint64_t byte;
+
+        if (entry.is_uint64())
+        {
+            byte = entry.as_uint64();
+        }
+        else if (entry.is_int64() && entry.as_int64() >= 0)
+        {
+            byte = static_cast<uint64_t>(entry.as_int64());
+        }
+        else
+        {
+            throw std::runtime_error(
+                "Invalid value in keyboard matrix"
+            );
+        }
+
+        if (byte > 255)
+        {
+            throw std::runtime_error(
+                "Keyboard matrix value exceeds 255"
+            );
+        }
+
+        matrix[i] = static_cast<uint8_t>(byte);
+    }
+
+    // Restore the matrix only after the entire state has been validated.
+    for (std::size_t i = 0; i < matrix.size(); i++)
+    {
+        _kbMatrix[i].store(
+            matrix[i],
+            std::memory_order_relaxed
+        );
+    }
+}
+
 uint8_t Compucolor::Impl::Keyboard::KeyboardEmulator::Read(uint8_t port)
 {
-    /*
-    _logger->LogTrace(
-        "Reading keyboard byte %d in %s",
-        port,
-        "KeyboardEmulator"
-    );
-    */
-
     return _kbMatrix[port].load(std::memory_order_relaxed);
 }
 

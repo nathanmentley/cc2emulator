@@ -284,6 +284,18 @@ void Gui::DrawMenu()
 
     if (ImGui::BeginMenu("File"))
     {
+        if (ImGui::MenuItem("Save State"))
+        {
+            _emulator.SaveState();
+        }
+
+        if (ImGui::MenuItem("Load State"))
+        {
+            _emulator.LoadState();
+        }
+
+        ImGui::Separator();
+
         for (int drive = 0; drive < 2; drive++)
         {
             ImGui::PushID(drive);
@@ -294,14 +306,6 @@ void Gui::DrawMenu()
                 GuardUnsaved({drive}, [this, drive] { OpenBrowser(BrowserMode::Mount, drive); });
             }
 
-            ImGui::PopID();
-        }
-
-        ImGui::Separator();
-
-        for (int drive = 0; drive < 2; drive++)
-        {
-            ImGui::PushID(drive);
             const auto floppy = _emulator.GetFloppy(drive);
             const bool mounted = floppy && floppy->IsMounted();
 

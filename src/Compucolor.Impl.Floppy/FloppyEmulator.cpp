@@ -33,6 +33,304 @@ void FloppyEmulator::Stop()
 {
 }
 
+std::unique_ptr<boost::json::value> FloppyEmulator::SaveState()
+{
+    std::lock_guard lock(_mutex);
+
+    boost::json::object state;
+
+    // Disk image
+    boost::json::array disk;
+    disk.reserve(_disk.size());
+
+    for (const uint8_t byte : _disk)
+    {
+        disk.push_back(static_cast<uint64_t>(byte));
+    }
+
+    state["disk"] = std::move(disk);
+
+    // Disk metadata
+    boost::json::array labels;
+
+    for (const auto& label : _labels)
+    {
+        labels.push_back(boost::json::string(label));
+    }
+
+    state["labels"] = std::move(labels);
+    state["mounted"] = _mounted;
+    state["modified"] = _modified;
+    state["mountedPath"] = _mountedPath;
+
+    // Drive state
+    state["selected"] = _selected;
+    state["writeEnable"] = _writeEnable;
+
+    state["track"] = _track;
+    state["stepTrack"] = _stepTrack;
+    state["stepperPhases"] = _stepperPhases;
+    state["stepperPhase"] = static_cast<uint64_t>(_stepperPhase);
+
+    // Disk rotation and timing
+    state["bitPos"] = static_cast<uint64_t>(_bitPos);
+    state["bitClockRemainder"] = _bitClockRemainder;
+    state["motorCoastNanoseconds"] = _motorCoastNanoseconds;
+
+    // Pending read operation
+    state["scheduledStartBit"] = _scheduledStartBit
+        ? boost::json::value(static_cast<uint64_t>(*_scheduledStartBit))
+        : boost::json::value(nullptr);
+
+    state["bitsUntilRead"] = static_cast<uint64_t>(_bitsUntilRead);
+
+    state["readData"] = _readData
+        ? boost::json::value(static_cast<uint64_t>(*_readData))
+        : boost::json::value(nullptr);
+
+    state["readFramingError"] = _readFramingError;
+
+    return std::make_unique<boost::json::value>(
+        std::move(state)
+    );
+}
+
+void FloppyEmulator::LoadState(
+    std::shared_ptr<boost::json::value> value
+)
+{
+    if (!value || !value->is_object())
+    {
+        throw std::runtime_error("Invalid FloppyEmulator state");
+    }
+
+    const auto& state = value->as_object();
+
+    // Helper for safely reading unsigned integers.
+    auto getUnsigned = [](const boost::json::value& value) -> uint64_t
+    {
+        if (value.is_uint64())
+            return value.as_uint64();
+
+        if (value.is_int64() && value.as_int64() >= 0)
+            return static_cast<uint64_t>(value.as_int64());
+
+        throw std::runtime_error(
+            "Expected non-negative integer in floppy state"
+        );
+    };
+
+    // Disk image
+    const auto& diskJson = state.at("disk").as_array();
+
+    if (diskJson.size() != DISK_SIZE)
+    {
+        throw std::runtime_error("Invalid floppy disk image size");
+    }
+
+    std::vector<uint8_t> disk;
+    disk.reserve(DISK_SIZE);
+
+    for (const auto& byte : diskJson)
+    {
+        const uint64_t number = getUnsigned(byte);
+
+        if (number > 255)
+        {
+            throw std::runtime_error(
+                "Invalid byte value in floppy disk image"
+            );
+        }
+
+        disk.push_back(static_cast<uint8_t>(number));
+    }
+
+    // Labels
+    std::vector<std::string> labels;
+
+    for (const auto& label : state.at("labels").as_array())
+    {
+        if (!label.is_string())
+        {
+            throw std::runtime_error("Invalid floppy disk label");
+        }
+
+        labels.emplace_back(label.as_string());
+    }
+
+    // Mount metadata
+    const bool mounted = state.at("mounted").as_bool();
+    const bool modified = state.at("modified").as_bool();
+
+    const std::string mountedPath(
+        state.at("mountedPath").as_string().c_str()
+    );
+
+    // Drive state
+    const bool selected = state.at("selected").as_bool();
+    const bool writeEnable = state.at("writeEnable").as_bool();
+
+    const uint64_t trackValue = getUnsigned(state.at("track"));
+    const uint64_t stepTrackValue = getUnsigned(state.at("stepTrack"));
+    const uint64_t stepperPhasesValue = getUnsigned(
+        state.at("stepperPhases")
+    );
+
+    const uint64_t stepperPhaseValue = getUnsigned(
+        state.at("stepperPhase")
+    );
+
+    // Disk rotation and timing
+    const uint64_t bitPosValue = getUnsigned(state.at("bitPos"));
+
+    const uint64_t bitClockRemainder =
+        getUnsigned(state.at("bitClockRemainder"));
+
+    const uint64_t motorCoastNanoseconds =
+        getUnsigned(state.at("motorCoastNanoseconds"));
+
+    // Pending read operation
+    std::optional<std::size_t> scheduledStartBit;
+
+    const auto& scheduledStartBitJson = state.at("scheduledStartBit");
+
+    if (!scheduledStartBitJson.is_null())
+    {
+        const uint64_t position = getUnsigned(scheduledStartBitJson);
+
+        if (position > std::numeric_limits<std::size_t>::max())
+        {
+            throw std::runtime_error(
+                "Invalid scheduled floppy read position"
+            );
+        }
+
+        scheduledStartBit = static_cast<std::size_t>(position);
+    }
+
+    const uint64_t bitsUntilReadValue =
+        getUnsigned(state.at("bitsUntilRead"));
+
+    std::optional<uint8_t> readData;
+
+    const auto& readDataJson = state.at("readData");
+
+    if (!readDataJson.is_null())
+    {
+        const uint64_t number = getUnsigned(readDataJson);
+
+        if (number > 255)
+        {
+            throw std::runtime_error("Invalid floppy read data");
+        }
+
+        readData = static_cast<uint8_t>(number);
+    }
+
+    const bool readFramingError =
+        state.at("readFramingError").as_bool();
+
+    // Validate drive state
+    constexpr uint64_t BITS_PER_TRACK =
+        static_cast<uint64_t>(TRACK_SIZE) * 8;
+
+    if (trackValue >= TRACKS)
+    {
+        throw std::runtime_error("Invalid floppy track");
+    }
+
+    if (stepTrackValue > 80)
+    {
+        throw std::runtime_error("Invalid floppy step track");
+    }
+
+    if (stepperPhasesValue != 3 && stepperPhasesValue != 4)
+    {
+        throw std::runtime_error("Invalid floppy stepper configuration");
+    }
+
+    if (stepperPhaseValue != 0 &&
+        stepperPhaseValue != 1 &&
+        stepperPhaseValue != 2 &&
+        stepperPhaseValue != 4)
+    {
+        throw std::runtime_error("Invalid floppy stepper phase");
+    }
+
+    if (stepperPhasesValue == 3 && stepTrackValue > 40)
+    {
+        throw std::runtime_error("Invalid three-phase step track");
+    }
+
+    const uint64_t expectedTrack = stepperPhasesValue == 3
+        ? stepTrackValue
+        : stepTrackValue >> 1;
+
+    if (trackValue != expectedTrack)
+    {
+        throw std::runtime_error("Inconsistent floppy head position");
+    }
+
+    if (bitPosValue >= BITS_PER_TRACK)
+    {
+        throw std::runtime_error("Invalid floppy bit position");
+    }
+
+    if (bitClockRemainder >= 1'000'000'000)
+    {
+        throw std::runtime_error("Invalid floppy bit clock remainder");
+    }
+
+    if (motorCoastNanoseconds > 680'000'000)
+    {
+        throw std::runtime_error("Invalid floppy motor coast duration");
+    }
+
+    if (scheduledStartBit && *scheduledStartBit >= BITS_PER_TRACK)
+    {
+        throw std::runtime_error("Invalid scheduled floppy read position");
+    }
+
+    if (bitsUntilReadValue > BITS_PER_TRACK + 10)
+    {
+        throw std::runtime_error("Invalid floppy read countdown");
+    }
+
+    if (bitsUntilReadValue > std::numeric_limits<std::size_t>::max())
+    {
+        throw std::runtime_error("Invalid floppy read countdown");
+    }
+
+    // Apply restored state.
+    // Everything above this point happens before modifying the drive.
+    std::lock_guard lock(_mutex);
+
+    _disk = std::move(disk);
+    _labels = std::move(labels);
+
+    _mounted = mounted;
+    _modified = modified;
+    _mountedPath = mountedPath;
+
+    _selected = selected;
+    _writeEnable = writeEnable;
+
+    _track = static_cast<int>(trackValue);
+    _stepTrack = static_cast<int>(stepTrackValue);
+    _stepperPhases = static_cast<int>(stepperPhasesValue);
+    _stepperPhase = static_cast<uint8_t>(stepperPhaseValue);
+
+    _bitPos = static_cast<std::size_t>(bitPosValue);
+    _bitClockRemainder = bitClockRemainder;
+    _motorCoastNanoseconds = motorCoastNanoseconds;
+
+    _scheduledStartBit = scheduledStartBit;
+    _bitsUntilRead = static_cast<std::size_t>(bitsUntilReadValue);
+
+    _readData = readData;
+    _readFramingError = readFramingError;
+}
+
 void FloppyEmulator::Reset()
 {
     std::lock_guard lock(_mutex);

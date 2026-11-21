@@ -25,11 +25,13 @@ namespace Compucolor::Impl::Tms5501 {
                 std::shared_ptr<Keyboard::IKeyboardEmulator> keyboard,
                 std::shared_ptr<Floppy::IFloppyEmulator> floppy1,
                 std::shared_ptr<Floppy::IFloppyEmulator> floppy2,
-                std::shared_ptr<Common::IAudioOutput> audio = nullptr
+                std::shared_ptr<Common::IAudioOutput> audio
             );
 
             void Start() override;
             void Stop() override;
+            std::unique_ptr<boost::json::value> SaveState() override;
+            void LoadState(std::shared_ptr<boost::json::value>) override;
             void Reset() override;
 
             void Step() override;

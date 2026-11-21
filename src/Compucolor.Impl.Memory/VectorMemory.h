@@ -16,6 +16,11 @@ namespace Compucolor::Impl::Memory
             uint8_t GetByte(uint16_t address) override;
             void SetByte(uint16_t address, uint8_t data) override;
 
+            void Start() override;
+            void Stop() override;
+            std::unique_ptr<boost::json::value> SaveState() override;
+            void LoadState(std::shared_ptr<boost::json::value>) override;
+
             static std::shared_ptr<IMemory> Creator(Common::IPluginManager* manager);
 
         private:

@@ -2,11 +2,12 @@
 
 #include <cstdint>
 
+#include <Compucolor/Common/IEmulatable.h>
 #include <Compucolor/Common/IPlugin.h>
 
 namespace Compucolor::Memory
 {
-    class IMemory: public Common::IPlugin {
+    class IMemory: public Common::IPlugin, public Common::IEmulatable {
         public:
             virtual ~IMemory() = default;
 

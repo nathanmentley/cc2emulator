@@ -12,7 +12,7 @@ install_prefix = join_paths(project_root, 'dist')  # install inside project dir
 publicHeaderLib = declare_dependency(
     include_directories: include_directories('include'),
     dependencies: [
-        dependency('boost', modules : ['filesystem'])
+        dependency('boost', modules : ['filesystem', 'json'])
     ]
 )
 
