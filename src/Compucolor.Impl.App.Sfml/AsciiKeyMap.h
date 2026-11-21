@@ -14,7 +14,7 @@ namespace Compucolor::Impl::App::Sfml
     // Maps printable ASCII to the Compucolor key and shift state that produce it.
     class AsciiKeyMap {
         public:
-            // Lowercase letters map to uppercase because the standard character set has no lowercase.
+            // Lowercase letters use the unshifted key; uppercase letters use Shift.
             static std::optional<KeyChord> Lookup(char character);
     };
 }

@@ -175,6 +175,7 @@ std::optional<Compucolor::Keyboard::CompucolorIIKey> Compucolor::Impl::App::Sfml
         case sf::Keyboard::Key::PageDown:
             return Compucolor::Keyboard::CompucolorIIKey::ELine;
         case sf::Keyboard::Key::End:
+            return Compucolor::Keyboard::CompucolorIIKey::Home;
         case sf::Keyboard::Key::Pause:
             return Compucolor::Keyboard::CompucolorIIKey::Break;
         case sf::Keyboard::Key::Add:
@@ -192,6 +193,13 @@ std::optional<char> Compucolor::Impl::App::Sfml::KeyboardTranslator::ToAscii(
 )
 {
     using Key = sf::Keyboard::Key;
+
+    if (key >= Key::A && key <= Key::Z)
+    {
+        const int offset = static_cast<int>(key) - static_cast<int>(Key::A);
+
+        return static_cast<char>((!shift ? 'A' : 'a') + offset);
+    }
 
     if (key >= Key::Num0 && key <= Key::Num9)
     {

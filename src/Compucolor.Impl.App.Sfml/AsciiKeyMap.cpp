@@ -9,14 +9,18 @@ std::optional<KeyChord> AsciiKeyMap::Lookup(const char character)
 {
     if (character >= 'a' && character <= 'z')
     {
-        return Lookup(static_cast<char>(character - 'a' + 'A'));
+        const int offset = character - 'a';
+
+        return KeyChord{static_cast<CompucolorIIKey>(static_cast<int>(CompucolorIIKey::A) + offset), false};
     }
 
     if (character >= 'A' && character <= 'Z')
     {
         const int offset = character - 'A';
 
-        return KeyChord{static_cast<CompucolorIIKey>(static_cast<int>(CompucolorIIKey::A) + offset), false};
+        // The CC2 generates lowercase letters without Shift and uppercase
+        // letters with it, just like a typewriter.
+        return KeyChord{static_cast<CompucolorIIKey>(static_cast<int>(CompucolorIIKey::A) + offset), true};
     }
 
     if (character >= '0' && character <= '9')

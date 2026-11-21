@@ -5,17 +5,17 @@
 using Compucolor::Keyboard::CompucolorIIKey;
 using Compucolor::Impl::App::Sfml::AsciiKeyMap;
 
-TEST(AsciiKeyMap, UppercaseLetterIsUnshiftedLetterKey) {
+TEST(AsciiKeyMap, UppercaseLetterIsShiftedLetterKey) {
     //Act
     const auto chord = AsciiKeyMap::Lookup('Q');
 
     //Assert
     ASSERT_TRUE(chord.has_value());
     EXPECT_EQ(CompucolorIIKey::Q, chord->key);
-    EXPECT_FALSE(chord->shift);
+    EXPECT_TRUE(chord->shift);
 }
 
-TEST(AsciiKeyMap, LowercaseLetterTypesAsUppercase) {
+TEST(AsciiKeyMap, LowercaseLetterIsUnshiftedLetterKey) {
     //Act
     const auto chord = AsciiKeyMap::Lookup('z');
 
@@ -50,6 +50,12 @@ TEST(AsciiKeyMap, ColonIsUnshiftedAndPlusIsShiftedSemicolon) {
     EXPECT_FALSE(AsciiKeyMap::Lookup(':')->shift);
     EXPECT_EQ(CompucolorIIKey::SemiColon, AsciiKeyMap::Lookup('+')->key);
     EXPECT_TRUE(AsciiKeyMap::Lookup('+')->shift);
+}
+
+TEST(AsciiKeyMap, AsteriskIsShiftedColon) {
+    //Assert: on the Compucolor '*' is shift+Colon, not shift+Eight.
+    EXPECT_EQ(CompucolorIIKey::Colon, AsciiKeyMap::Lookup('*')->key);
+    EXPECT_TRUE(AsciiKeyMap::Lookup('*')->shift);
 }
 
 TEST(AsciiKeyMap, EqualsIsShiftedDash) {

@@ -376,6 +376,15 @@ void Program::ProcessEvent(const Event& event) const
             return;
         }
 
+        // Shift is part of the chord resolved from the typed character below.
+        // Forwarding it here as well would double-apply it: PC Shift+Semicolon
+        // resolves to ':', but CC2 Shift+Colon is '*'.
+        if (pressed->code == sf::Keyboard::Key::LShift ||
+            pressed->code == sf::Keyboard::Key::RShift)
+        {
+            return;
+        }
+
         // Digits and punctuation go through their character so PC symbols
         // land on the matching CC2 keys.
         if (const optional<char> character =
