@@ -1,10 +1,7 @@
 #include "AudioOutput.h"
 
-#include <iostream>
-
 #include <algorithm>
 
-#include <cmath>
 #include <cstdint>
 
 using Compucolor::Impl::App::Sfml::AudioOutput;
@@ -62,24 +59,9 @@ void AudioOutput::SetVolume(const float volume)
     _synth.SetVolume(volume);
 }
 
-static unsigned int calls = 0;
 bool AudioOutput::onGetData(Chunk& data)
 {
-
-    if (++calls % 100 == 0)
-    {
-        const auto [min, max] = std::minmax_element(
-            _floats.begin(),
-            _floats.end()
-        );
-    }
-
     _synth.Render(_floats.data(), _floats.size());
-
-    const auto [minIt, maxIt] = std::minmax_element(
-        _samples.begin(),
-        _samples.end()
-    );
 
     for (std::size_t i = 0; i < _floats.size(); i++)
     {

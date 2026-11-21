@@ -24,6 +24,17 @@ using Compucolor::Keyboard::CompucolorIIKey;
 
 using Compucolor::Impl::App::Sfml::Program;
 
+namespace
+{
+    constexpr auto OneShotKeyTimeout = std::chrono::milliseconds(200);
+
+    bool IsOneShotPhysicalKey(const sf::Keyboard::Key key)
+    {
+        // Left Super/Windows is mapped to the CC2 AUTO command.
+        return key == sf::Keyboard::Key::LSystem;
+    }
+}
+
 Program::Program():
     _settingsPath(Settings::DefaultPath()),
     _settings(LoadSettings(_settingsPath)),
@@ -51,18 +62,10 @@ Program::Program():
         )
     ),
     _emulator(make_unique<CompucolorEmulatorProcessor>(_manager->GetCompucolor())),
-    _gui(make_unique<Gui>(_window, _settings, *_emulator, _display)),
+    _gui(make_unique<Gui>(_window, _settings, *_emulator, _display, _audio)),
     _keyboardTranslator(make_unique<KeyboardTranslator>())
 {
     _display->SetSmooth(_settings->GetBool("smooth_scaling"));
-
-    _audio->SetVolume(
-        static_cast<float>(
-            std::clamp(_settings->GetInt("sound_volume"), 0, 100)
-        ) / 100.0f
-    );
-
-    _audio->SetEnabled(_settings->GetBool("sound_enabled"));
 
     _gui->SetQuitHandler([window = _window] { window->close(); });
 
@@ -208,6 +211,12 @@ bool Program::HandleHotkey(const Event::KeyPressed& pressed) const
         return true;
     }
 
+    if (pressed.code == Key::A)
+    {
+        _gui->ToggleSound();
+        return true;
+    }
+
     return false;
 }
 
@@ -236,6 +245,11 @@ void Program::PressPhysicalKeys(
     }
 
     _pressedKeys.emplace(physical, std::move(keys));
+
+    if (IsOneShotPhysicalKey(physical))
+    {
+        _oneShotKeyPressTimes[physical] = std::chrono::steady_clock::now();
+    }
 }
 
 void Program::ReleasePhysicalKey(const sf::Keyboard::Key physical) const
@@ -269,6 +283,7 @@ void Program::ReleasePhysicalKey(const sf::Keyboard::Key physical) const
     }
 
     _pressedKeys.erase(physicalIt);
+    _oneShotKeyPressTimes.erase(physical);
 }
 
 void Program::ReleaseAllKeys() const
@@ -282,6 +297,31 @@ void Program::ReleaseAllKeys() const
 
     _pressedKeys.clear();
     _keyPressCounts.clear();
+    _oneShotKeyPressTimes.clear();
+}
+
+void Program::ReleaseStuckOneShotKeys() const
+{
+    if (_oneShotKeyPressTimes.empty())
+    {
+        return;
+    }
+
+    const auto now = std::chrono::steady_clock::now();
+    std::vector<sf::Keyboard::Key> expired;
+
+    for (const auto& [physical, pressedAt] : _oneShotKeyPressTimes)
+    {
+        if (now - pressedAt >= OneShotKeyTimeout)
+        {
+            expired.push_back(physical);
+        }
+    }
+
+    for (const sf::Keyboard::Key physical : expired)
+    {
+        ReleasePhysicalKey(physical);
+    }
 }
 
 void Program::PressChord(
@@ -387,6 +427,8 @@ int Program::Run() const
                 ProcessEvent(event.value());
             }
         }
+
+        ReleaseStuckOneShotKeys();
 
         const sf::Time elapsed = frameClock.restart();
 

@@ -1,6 +1,6 @@
 # Sound Plan
 
-Status: phases 1 to 5 are implemented. Phase 6 (menu and preferences) and phase 7 (checking on real tones) are open. Until phase 6, enable sound with `sound_enabled=true` in the settings file.
+Status: phases 1 to 6 are implemented. Phase 7 (checking on real tones) is open. Sound is on by default and can be toggled from the Sound menu, Preferences or with Alt+A; volume and enable state persist in `~/.config/cc2emu/settings.config`.
 
 Goal: play audio from the emulated Compucolor II through the SFML frontend.
 
@@ -63,10 +63,10 @@ The emulator runs against the wall clock and the sound card runs on its own cloc
 2. If there are audible glitches, add feedback like ccemu's `audioBoostCpu`: if the buffer is low, run the CPU about 2% fast; if high, about 2% slow. The pacing code in `CompucolorEmulator` (the wall-clock budget) is the place for this.
 - In unregulated or paused mode, mute and flush the queue.
 
-### 6. UI and settings
-- Settings keys `sound_enabled` (default off, like ccemu) and `sound_volume`.
-- Menu entry, Preferences controls, hotkey if wanted, and a line in the README.
-- Persist through `Settings` and apply at startup.
+### 6. UI and settings (done)
+- Settings keys `sound_enabled` (on by default here) and `sound_volume` (0-100).
+- Sound menu with enable toggle and volume slider, Preferences section with the same controls, and Alt+A hotkey.
+- Persist through `Settings`, apply at startup and update live while running.
 
 ### 7. Verify on the real thing
 - Run `life.ccvf` and check for tones, correct pitch and no clicks at start or stop.

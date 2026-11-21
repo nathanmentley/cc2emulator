@@ -31,6 +31,8 @@ void Compucolor::Impl::Keyboard::KeyboardEmulator::Stop()
 
 std::unique_ptr<boost::json::value> Compucolor::Impl::Keyboard::KeyboardEmulator::SaveState()
 {
+    std::lock_guard lock(_mutex);
+
     boost::json::object state;
     boost::json::array matrix;
 
@@ -56,6 +58,8 @@ void Compucolor::Impl::Keyboard::KeyboardEmulator::LoadState(
     std::shared_ptr<boost::json::value> value
 )
 {
+    std::lock_guard lock(_mutex);
+
     if (!value || !value->is_object())
     {
         throw std::runtime_error("Invalid KeyboardEmulator state");
@@ -110,11 +114,67 @@ void Compucolor::Impl::Keyboard::KeyboardEmulator::LoadState(
             std::memory_order_relaxed
         );
     }
+
+    // Transient scan state belongs to the host keyboard, not the saved machine.
+    for (auto& row : _pressCounts)
+    {
+        row.fill(0);
+    }
+
+    for (auto& row : _pendingReleaseScans)
+    {
+        row.fill(0);
+    }
+
+    for (auto& row : _observedScans)
+    {
+        row.fill(0);
+    }
 }
 
 uint8_t Compucolor::Impl::Keyboard::KeyboardEmulator::Read(uint8_t port)
 {
-    return _kbMatrix[port].load(std::memory_order_relaxed);
+    if (port >= _kbMatrix.size())
+    {
+        return 0xFF;
+    }
+
+    std::lock_guard lock(_mutex);
+
+    // Return the state that includes a pending release first, then open that
+    // contact for the next scan. This makes even a zero-duration host tap
+    // visible to the CPU exactly once.
+    const uint8_t value = _kbMatrix[port].load(std::memory_order_relaxed);
+
+    auto& observedRow = _observedScans[port];
+    auto& pendingRow = _pendingReleaseScans[port];
+
+    for (int bit = 0; bit < 8; ++bit)
+    {
+        const uint8_t mask = static_cast<uint8_t>(1U << bit);
+
+        if ((value & mask) == 0 && observedRow[bit] < DebounceScans)
+        {
+            ++observedRow[bit];
+        }
+
+        if (pendingRow[bit] == 0)
+        {
+            continue;
+        }
+
+        --pendingRow[bit];
+
+        if (pendingRow[bit] == 0)
+        {
+            _kbMatrix[port].fetch_or(
+                static_cast<uint8_t>(1U << bit),
+                std::memory_order_relaxed
+            );
+        }
+    }
+
+    return value;
 }
 
 void Compucolor::Impl::Keyboard::KeyboardEmulator::Reset()
@@ -124,16 +184,33 @@ void Compucolor::Impl::Keyboard::KeyboardEmulator::Reset()
         "KeyboardEmulator"
     );
 
+    std::lock_guard lock(_mutex);
+
     for(uint8_t i = 0; i < 17; i++)
     {
         _kbMatrix[i].store(0xFF, std::memory_order_relaxed);
+    }
+
+    for (auto& row : _pressCounts)
+    {
+        row.fill(0);
+    }
+
+    for (auto& row : _pendingReleaseScans)
+    {
+        row.fill(0);
+    }
+
+    for (auto& row : _observedScans)
+    {
+        row.fill(0);
     }
 }
 
 void Compucolor::Impl::Keyboard::KeyboardEmulator::OnKeyUp(Compucolor::Keyboard::CompucolorIIKey key)
 {
-    std::optional<int> row = GetRow(key);
-    std::optional<int> bit = GetBit(key);
+    const std::optional<int> row = GetRow(key);
+    const std::optional<int> bit = GetBit(key);
 
     _logger->LogTrace(
         "OnKeyUp for %d (%d, %d) in %s",
@@ -143,13 +220,51 @@ void Compucolor::Impl::Keyboard::KeyboardEmulator::OnKeyUp(Compucolor::Keyboard:
         "KeyboardEmulator"
     );
 
-    if(row.has_value() && bit.has_value())
+    if (!row.has_value() || !bit.has_value())
     {
-        _kbMatrix[row.value()].fetch_or(
-            static_cast<uint8_t>(1 << bit.value()),
-            std::memory_order_relaxed
-        );
+        return;
     }
+
+    std::lock_guard lock(_mutex);
+
+    const uint8_t mask = static_cast<uint8_t>(1U << bit.value());
+    uint8_t& count = _pressCounts[row.value()][bit.value()];
+
+    if (count > 0)
+    {
+        --count;
+    }
+
+    if (count > 0)
+    {
+        return;
+    }
+
+    // Row 16 holds modifiers. The ROM only samples that row while another key
+    // is pressed, so latching a modifier release would leave Shift/Ctrl stuck
+    // until the next key press and turn that key into its shifted code.
+    // Modifiers must therefore always be released immediately.
+    if (row.value() == 16)
+    {
+        _kbMatrix[row.value()].fetch_or(mask, std::memory_order_relaxed);
+        _observedScans[row.value()][bit.value()] = 0;
+        _pendingReleaseScans[row.value()][bit.value()] = 0;
+        return;
+    }
+
+    uint8_t& observed = _observedScans[row.value()][bit.value()];
+
+    if (observed >= DebounceScans)
+    {
+        // The CPU already saw this contact while it was pressed.
+        _kbMatrix[row.value()].fetch_or(mask, std::memory_order_relaxed);
+        observed = 0;
+        _pendingReleaseScans[row.value()][bit.value()] = 0;
+        return;
+    }
+
+    // Keep the contact closed until the CPU has had one chance to scan it.
+    _pendingReleaseScans[row.value()][bit.value()] = DebounceScans - observed;
 }
 
 void Compucolor::Impl::Keyboard::KeyboardEmulator::OnKeyDown(Compucolor::Keyboard::CompucolorIIKey key)
@@ -165,21 +280,28 @@ void Compucolor::Impl::Keyboard::KeyboardEmulator::OnKeyDown(Compucolor::Keyboar
         "KeyboardEmulator"
     );
 
-    if (!row.has_value()) {
-        //throw std::invalid_argument("received invalid value: " + std::to_string(static_cast<int>(key)));
-    }
-
-    if (!bit.has_value()) {
-        //throw std::invalid_argument("received invalid value: " + std::to_string(static_cast<int>(key)));
-    }
-
-    if(row.has_value() && bit.has_value())
+    if (!row.has_value() || !bit.has_value())
     {
-        _kbMatrix[row.value()].fetch_and(
-            static_cast<uint8_t>(~(1 << bit.value()) & 0xFF),
-            std::memory_order_relaxed
-        );
+        return;
     }
+
+    std::lock_guard lock(_mutex);
+
+    const uint8_t mask = static_cast<uint8_t>(1U << bit.value());
+    uint8_t& count = _pressCounts[row.value()][bit.value()];
+
+    if (count == 0)
+    {
+        // A new press supersedes any release waiting for a scan.
+        _pendingReleaseScans[row.value()][bit.value()] = 0;
+        _observedScans[row.value()][bit.value()] = 0;
+    }
+
+    ++count;
+    _kbMatrix[row.value()].fetch_and(
+        static_cast<uint8_t>(~mask),
+        std::memory_order_relaxed
+    );
 }
 
 namespace

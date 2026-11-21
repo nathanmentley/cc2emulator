@@ -77,10 +77,66 @@ TEST_F(KeyboardEmulatorTest, ReleasingAKeyKeepsOtherKeysInTheSameRowPressed) {
     //Arrange
     keyboard.OnKeyDown(CompucolorIIKey::Shift);
     keyboard.OnKeyDown(CompucolorIIKey::Ctrl);
+    EXPECT_EQ(0xCF, keyboard.Read(16));
 
     //Act
     keyboard.OnKeyUp(CompucolorIIKey::Shift);
 
     //Assert: only Ctrl (bit 4) stays down.
     EXPECT_EQ(0xEF, keyboard.Read(16));
+}
+
+TEST_F(KeyboardEmulatorTest, ShortTapIsVisibleToTheNextScan) {
+    //Act: the key goes down and up without any keyboard scan in between.
+    keyboard.OnKeyDown(CompucolorIIKey::Colon);
+    keyboard.OnKeyUp(CompucolorIIKey::Colon);
+
+    //Assert: the contact is held closed until the next scan, then released.
+    EXPECT_EQ(0xFE, keyboard.Read(5));
+    EXPECT_EQ(0xFF, keyboard.Read(5));
+}
+
+TEST_F(KeyboardEmulatorTest, ObservedPressReleasesImmediately) {
+    //Arrange: the CPU has already scanned the held key.
+    keyboard.OnKeyDown(CompucolorIIKey::Colon);
+    EXPECT_EQ(0xFE, keyboard.Read(5));
+
+    //Act
+    keyboard.OnKeyUp(CompucolorIIKey::Colon);
+
+    //Assert
+    EXPECT_EQ(0xFF, keyboard.Read(5));
+}
+
+TEST_F(KeyboardEmulatorTest, ShortModifierTapIsNotLatched) {
+    //Act: Shift goes down and up without being observed by a scan.
+    keyboard.OnKeyDown(CompucolorIIKey::Shift);
+    keyboard.OnKeyUp(CompucolorIIKey::Shift);
+
+    //Assert: the modifier is released immediately because the ROM only reads
+    // row 16 while some other key is pressed.
+    EXPECT_EQ(0xFF, keyboard.Read(16));
+    EXPECT_EQ(0xFF, keyboard.Read(16));
+
+    // A following key therefore remains unshifted.
+    keyboard.OnKeyDown(CompucolorIIKey::One);
+    keyboard.OnKeyUp(CompucolorIIKey::One);
+    EXPECT_EQ(0xFE, keyboard.Read(14));
+    EXPECT_EQ(0xFF, keyboard.Read(16));
+}
+
+TEST_F(KeyboardEmulatorTest, RepressBeforeScanCancelsThePendingRelease) {
+    //Arrange
+    keyboard.OnKeyDown(CompucolorIIKey::Colon);
+    keyboard.OnKeyUp(CompucolorIIKey::Colon);
+
+    //Act
+    keyboard.OnKeyDown(CompucolorIIKey::Colon);
+
+    //Assert: the pending release is cancelled and the contact stays closed.
+    EXPECT_EQ(0xFE, keyboard.Read(5));
+
+    // That scan observed the new press, so its release is immediate.
+    keyboard.OnKeyUp(CompucolorIIKey::Colon);
+    EXPECT_EQ(0xFF, keyboard.Read(5));
 }

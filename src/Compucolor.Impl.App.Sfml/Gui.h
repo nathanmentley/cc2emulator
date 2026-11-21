@@ -12,6 +12,7 @@
 
 #include <Compucolor/CompucolorEmulatorProcessor.h>
 
+#include "AudioOutput.h"
 #include "Display.h"
 #include "Settings.h"
 
@@ -24,7 +25,8 @@ namespace Compucolor::Impl::App::Sfml
                 std::shared_ptr<sf::RenderWindow> window,
                 std::shared_ptr<Settings> settings,
                 Compucolor::CompucolorEmulatorProcessor& emulator,
-                std::shared_ptr<Display> display
+                std::shared_ptr<Display> display,
+                std::shared_ptr<AudioOutput> audio
             );
 
             // Must be called again after the window is recreated.
@@ -49,6 +51,11 @@ namespace Compucolor::Impl::App::Sfml
 
             void SaveScreenshot();
 
+            // Sound controls used by the Sound menu, Preferences and the keyboard shortcut.
+            void SetSoundEnabled(bool enabled);
+            void SetSoundVolume(int volume);
+            void ToggleSound();
+
             // True once if the window mode or scale changed and the window must be recreated.
             bool ConsumeWindowChange();
 
@@ -59,6 +66,7 @@ namespace Compucolor::Impl::App::Sfml
             std::shared_ptr<Settings> _settings;
             Compucolor::CompucolorEmulatorProcessor& _emulator;
             std::shared_ptr<Display> _display;
+            std::shared_ptr<AudioOutput> _audio;
             std::function<void()> _quit;
 
             bool _ready = false;
@@ -89,6 +97,7 @@ namespace Compucolor::Impl::App::Sfml
 
             void ShowStatus(const std::string& message);
             void DrawStatus();
+            void DrawMenuStatus();
 
             void DrawMenu();
             void DrawDiskPanel();
@@ -105,6 +114,10 @@ namespace Compucolor::Impl::App::Sfml
             void UpdateScale();
 
             void ApplyMachineSettings();
+            void ApplySoundSettings();
+            void SaveState();
+            void LoadState();
+            void AcceptBrowser();
             bool MountDisk(int drive, const std::string& path);
             void EjectDisk(int drive);
             void SaveDisk(int drive);
@@ -120,5 +133,6 @@ namespace Compucolor::Impl::App::Sfml
 
             static const char* DriveLabel(int drive);
             static const char* DiskSettingKey(int drive);
+            static void HelpMarker(const char* text);
     };
 }

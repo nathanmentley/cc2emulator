@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include <chrono>
 #include <cstddef>
 #include <map>
 #include <memory>
@@ -51,6 +52,12 @@ namespace Compucolor::Impl::App::Sfml
             // Number of physical sources currently holding each emulated key.
             mutable std::map<EmulatedKey, std::size_t> _keyPressCounts;
 
+            // Some desktop environments swallow the release of the Super key,
+            // which is mapped to the CC2 AUTO command. AUTO is a one-shot
+            // command, so release it automatically if its keyup never arrives.
+            mutable std::map<sf::Keyboard::Key, std::chrono::steady_clock::time_point>
+                _oneShotKeyPressTimes;
+
             void ProcessEvent(const sf::Event& event) const;
 
             std::string RequireSetting(const std::string& key) const;
@@ -59,7 +66,7 @@ namespace Compucolor::Impl::App::Sfml
             static std::shared_ptr<sf::RenderWindow> CreateWindow(const Settings& settings);
 
             // Alt+Enter fullscreen, Alt+1..4 scale, Alt+S smoothing,
-            // Alt+M menu, Alt+P screenshot.
+            // Alt+A sound, Alt+M menu, Alt+P screenshot.
             bool HandleHotkey(const sf::Event::KeyPressed& pressed) const;
 
             void RecreateWindow() const;
@@ -74,6 +81,8 @@ namespace Compucolor::Impl::App::Sfml
             void ReleasePhysicalKey(sf::Keyboard::Key physical) const;
 
             void ReleaseAllKeys() const;
+
+            void ReleaseStuckOneShotKeys() const;
 
             void PressChord(
                 sf::Keyboard::Key physical,

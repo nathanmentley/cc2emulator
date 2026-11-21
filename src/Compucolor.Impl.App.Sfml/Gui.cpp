@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstring>
 #include <ctime>
+#include <exception>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -23,18 +24,21 @@ namespace
     constexpr const char* UnsavedPopup = "Unsaved Changes";
     constexpr const char* ErrorPopup = "Error";
     constexpr const char* DiskExtension = ".ccvf";
+    constexpr const char* StateFileName = "compucolor-state.json";
 }
 
 Gui::Gui(
     std::shared_ptr<sf::RenderWindow> window,
     std::shared_ptr<Settings> settings,
     Compucolor::CompucolorEmulatorProcessor& emulator,
-    std::shared_ptr<Display> display
+    std::shared_ptr<Display> display,
+    std::shared_ptr<AudioOutput> audio
 ):
     _window(std::move(window)),
     _settings(std::move(settings)),
     _emulator(emulator),
-    _display(std::move(display))
+    _display(std::move(display)),
+    _audio(std::move(audio))
 {
 }
 
@@ -85,6 +89,7 @@ void Gui::SetQuitHandler(std::function<void()> handler)
 void Gui::ApplyStartupSettings()
 {
     ApplyMachineSettings();
+    ApplySoundSettings();
 
     for (int drive = 0; drive < 2; drive++)
     {
@@ -105,6 +110,72 @@ void Gui::ApplyMachineSettings()
     if (_settings->GetString("rom_version") == "v6.78")
     {
         _emulator.SetRomVersion(Compucolor::RomVersion::V6_78);
+    }
+}
+
+void Gui::ApplySoundSettings()
+{
+    if (!_audio)
+    {
+        return;
+    }
+
+    const int volume = std::clamp(_settings->GetInt("sound_volume"), 0, 100);
+    _audio->SetVolume(static_cast<float>(volume) / 100.0f);
+    _audio->SetEnabled(_settings->GetBool("sound_enabled"));
+}
+
+void Gui::SetSoundEnabled(const bool enabled)
+{
+    _settings->SetBool("sound_enabled", enabled);
+
+    if (_audio)
+    {
+        _audio->SetEnabled(enabled);
+    }
+
+    ShowStatus(enabled ? "Sound enabled" : "Sound muted");
+}
+
+void Gui::SetSoundVolume(const int volume)
+{
+    const int clamped = std::clamp(volume, 0, 100);
+    _settings->SetInt("sound_volume", clamped);
+
+    if (_audio)
+    {
+        _audio->SetVolume(static_cast<float>(clamped) / 100.0f);
+    }
+}
+
+void Gui::ToggleSound()
+{
+    SetSoundEnabled(!_settings->GetBool("sound_enabled"));
+}
+
+void Gui::SaveState()
+{
+    try
+    {
+        _emulator.SaveState();
+        ShowStatus("Saved emulator state");
+    }
+    catch (const std::exception& error)
+    {
+        _errorMessage = std::string("Unable to save state: ") + error.what();
+    }
+}
+
+void Gui::LoadState()
+{
+    try
+    {
+        _emulator.LoadState();
+        ShowStatus("Loaded emulator state");
+    }
+    catch (const std::exception& error)
+    {
+        _errorMessage = std::string("Unable to load state: ") + error.what();
     }
 }
 
@@ -208,7 +279,8 @@ void Gui::DrawStatus()
         ImGuiCond_Always,
         ImVec2(0.f, 1.f)
     );
-    ImGui::SetNextWindowBgAlpha(0.8f);
+    ImGui::SetNextWindowBgAlpha(0.9f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.f * _uiScale, 6.f * _uiScale));
 
     if (ImGui::Begin("##status", nullptr, flags))
     {
@@ -216,6 +288,69 @@ void Gui::DrawStatus()
     }
 
     ImGui::End();
+    ImGui::PopStyleVar();
+}
+
+void Gui::DrawMenuStatus()
+{
+    struct Chip {
+        std::string text;
+        ImVec4 color;
+    };
+
+    std::vector<Chip> chips;
+
+    if (_emulator.IsPaused())
+    {
+        chips.push_back({"PAUSED", ImVec4(1.0f, 0.78f, 0.25f, 1.0f)});
+    }
+
+    if (!_emulator.IsSpeedRegulated())
+    {
+        chips.push_back({"UNREGULATED", ImVec4(0.40f, 0.85f, 1.0f, 1.0f)});
+    }
+
+    if (!_settings->GetBool("sound_enabled"))
+    {
+        chips.push_back({"SOUND OFF", ImVec4(0.75f, 0.75f, 0.82f, 1.0f)});
+    }
+
+    for (int drive = 0; drive < 2; drive++)
+    {
+        if (IsModified(drive))
+        {
+            chips.push_back({std::string("DISK ") + DriveLabel(drive) + " *", ImVec4(1.0f, 0.55f, 0.45f, 1.0f)});
+        }
+    }
+
+    if (chips.empty())
+    {
+        return;
+    }
+
+    const float spacing = 10.f * _uiScale;
+    float totalWidth = 0.f;
+
+    for (const Chip& chip : chips)
+    {
+        totalWidth += ImGui::CalcTextSize(chip.text.c_str()).x + spacing;
+    }
+
+    // Leave the menu names enough room on small windows.
+    if (ImGui::GetWindowWidth() - totalWidth < 430.f * _uiScale)
+    {
+        return;
+    }
+
+    float x = ImGui::GetWindowWidth() - ImGui::GetStyle().WindowPadding.x;
+    const float y = ImGui::GetCursorPosY();
+
+    for (auto it = chips.rbegin(); it != chips.rend(); ++it)
+    {
+        x -= ImGui::CalcTextSize(it->text.c_str()).x + spacing;
+        ImGui::SetCursorPos(ImVec2(x, y));
+        ImGui::TextColored(it->color, "%s", it->text.c_str());
+    }
 }
 
 void Gui::SaveScreenshot()
@@ -255,6 +390,11 @@ void Gui::Render()
 void Gui::ToggleMenu()
 {
     _menuVisible = !_menuVisible;
+
+    if (!_menuVisible)
+    {
+        ShowStatus("Menu hidden - press Alt+M to show it again");
+    }
 }
 
 bool Gui::ConsumeWindowChange()
@@ -286,12 +426,14 @@ void Gui::DrawMenu()
     {
         if (ImGui::MenuItem("Save State"))
         {
-            _emulator.SaveState();
+            SaveState();
         }
 
-        if (ImGui::MenuItem("Load State"))
+        std::error_code stateError;
+        const bool hasState = fs::exists(StateFileName, stateError) && !stateError;
+        if (ImGui::MenuItem("Load State", nullptr, false, hasState))
         {
-            _emulator.LoadState();
+            LoadState();
         }
 
         ImGui::Separator();
@@ -384,6 +526,30 @@ void Gui::DrawMenu()
         ImGui::EndMenu();
     }
 
+    if (ImGui::BeginMenu("Sound"))
+    {
+        bool enabled = _settings->GetBool("sound_enabled");
+        if (ImGui::MenuItem("Enable Sound", "Alt+A", &enabled))
+        {
+            SetSoundEnabled(enabled);
+        }
+
+        ImGui::Separator();
+
+        int volume = std::clamp(_settings->GetInt("sound_volume"), 0, 100);
+        ImGui::SetNextItemWidth(140.f * _uiScale);
+        if (ImGui::SliderInt("Volume", &volume, 0, 100, "%d%%"))
+        {
+            SetSoundVolume(volume);
+        }
+
+        ImGui::TextDisabled("SoundWare 1-bit audio");
+        ImGui::SameLine();
+        HelpMarker("Some disks use the SoundWare add-on. Sound is generated by toggling the serial line, so it only affects programs written for it.");
+
+        ImGui::EndMenu();
+    }
+
     if (ImGui::BeginMenu("View"))
     {
         const int scale = _settings->GetInt("window_scale");
@@ -437,6 +603,8 @@ void Gui::DrawMenu()
 
         ImGui::EndMenu();
     }
+
+    DrawMenuStatus();
 
     ImGui::EndMainMenuBar();
 }
@@ -526,6 +694,7 @@ void Gui::DrawSettings()
         }
 
         int scale = std::clamp(_settings->GetInt("window_scale"), 1, 8);
+        ImGui::SetNextItemWidth(200.f * _uiScale);
         if (ImGui::SliderInt("Window scale", &scale, 1, 8))
         {
             SetScale(scale);
@@ -537,10 +706,36 @@ void Gui::DrawSettings()
             SetSmooth(smooth);
         }
 
+        ImGui::SameLine();
+        HelpMarker("Smooths the 384x256 display when it is scaled. Best at non-integer window sizes.");
+
+        ImGui::SeparatorText("Sound");
+
+        bool enabled = _settings->GetBool("sound_enabled");
+        if (ImGui::Checkbox("Enable sound", &enabled))
+        {
+            SetSoundEnabled(enabled);
+        }
+
+        ImGui::SameLine();
+        HelpMarker("Sound comes from the optional SoundWare add-on, not the stock machine.");
+
+        int volume = std::clamp(_settings->GetInt("sound_volume"), 0, 100);
+        ImGui::BeginDisabled(!enabled);
+        ImGui::SetNextItemWidth(200.f * _uiScale);
+        if (ImGui::SliderInt("Volume", &volume, 0, 100, "%d%%"))
+        {
+            SetSoundVolume(volume);
+        }
+        ImGui::EndDisabled();
+
+        ImGui::TextDisabled("Only SoundWare-aware disks produce audio.");
+
         ImGui::SeparatorText("Machine");
 
         int charset = _settings->GetString("charset") == "lowercase" ? 1 : 0;
         const char* charsets[] = {"Standard", "Lowercase"};
+        ImGui::SetNextItemWidth(200.f * _uiScale);
         if (ImGui::Combo("Character set", &charset, charsets, 2))
         {
             _settings->SetString("charset", charset == 1 ? "lowercase" : "standard");
@@ -549,6 +744,7 @@ void Gui::DrawSettings()
 
         int rom = _settings->GetString("rom_version") == "v6.78" ? 0 : 1;
         const char* roms[] = {"v6.78", "v8.79"};
+        ImGui::SetNextItemWidth(200.f * _uiScale);
         if (ImGui::Combo("System ROM", &rom, roms, 2))
         {
             _settings->SetString("rom_version", roms[rom]);
@@ -563,6 +759,9 @@ void Gui::DrawSettings()
             _emulator.SetSpeedRegulated(regulated);
             _settings->SetBool("speed_regulated", regulated);
         }
+
+        ImGui::SameLine();
+        HelpMarker("Turn off to run the CPU as fast as possible.");
     }
 
     ImGui::End();
@@ -581,8 +780,10 @@ void Gui::DrawKeyHelp()
         ImGui::BulletText("Alt+Enter: fullscreen");
         ImGui::BulletText("Alt+1 .. Alt+4: window scale");
         ImGui::BulletText("Alt+S: smooth scaling");
+        ImGui::BulletText("Alt+A: sound on / off");
         ImGui::BulletText("Alt+M: show or hide the menu");
         ImGui::BulletText("Alt+P: save a screenshot");
+        ImGui::TextDisabled("Save and load state are in the File menu.");
 
         ImGui::SeparatorText("PC keys on the Compucolor");
         ImGui::BulletText("Alt / Windows key: REPEAT");
@@ -610,7 +811,18 @@ void Gui::DrawAbout()
     if (ImGui::Begin("About", &_showAbout, ImGuiWindowFlags_AlwaysAutoResize))
     {
         ImGui::Text("Compucolor II Emulator");
-        ImGui::TextDisabled("A Compucolor II Emulator.");
+        ImGui::TextDisabled("An 8080-based home computer, emulated in C++.");
+
+        ImGui::Separator();
+
+        ImGui::BulletText("Intel 8080 CPU with cycle-paced timing");
+        ImGui::BulletText("CRT controller with scroll, blink and plot characters");
+        ImGui::BulletText("Two floppy drives with .ccvf disk images");
+        ImGui::BulletText("Optional SoundWare add-on audio");
+
+        ImGui::Separator();
+
+        ImGui::TextDisabled("Press Alt+M to show or hide the menu.");
     }
 
     ImGui::End();
@@ -687,6 +899,8 @@ void Gui::DrawBrowser()
     std::sort(directories.begin(), directories.end());
     std::sort(files.begin(), files.end());
 
+    bool accepted = false;
+
     ImGui::BeginChild("entries", ImVec2(0.f, -ImGui::GetFrameHeightWithSpacing() * 2.f), ImGuiChildFlags_Borders);
 
     fs::path enter;
@@ -709,6 +923,11 @@ void Gui::DrawBrowser()
         {
             std::memset(_fileName, 0, sizeof(_fileName));
             std::strncpy(_fileName, name.c_str(), sizeof(_fileName) - 1);
+
+            if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+            {
+                accepted = true;
+            }
         }
     }
 
@@ -719,9 +938,8 @@ void Gui::DrawBrowser()
         _browserDir = enter;
     }
 
-    ImGui::InputText("File name", _fileName, sizeof(_fileName));
-
-    bool accepted = false;
+    ImGui::InputText("File name", _fileName, sizeof(_fileName), ImGuiInputTextFlags_EnterReturnsTrue);
+    ImGui::TextDisabled("Double-click a file or press Enter to continue.");
 
     ImGui::BeginDisabled(_fileName[0] == '\0');
     if (ImGui::Button(saving ? "Save" : "Mount"))
@@ -737,35 +955,9 @@ void Gui::DrawBrowser()
         open = false;
     }
 
-    if (accepted)
+    if (accepted && _fileName[0] != '\0')
     {
-        fs::path target = _browserDir / _fileName;
-
-        if (saving && target.extension().empty())
-        {
-            target += DiskExtension;
-        }
-
-        if (saving)
-        {
-            const auto floppy = _emulator.GetFloppy(_browserDrive);
-            std::string saveError;
-
-            if (floppy && floppy->SaveAs(target.string(), saveError))
-            {
-                _settings->SetString(DiskSettingKey(_browserDrive), target.string());
-                _settings->SetString("last_disk_dir", _browserDir.string());
-            }
-            else
-            {
-                _errorMessage = saveError;
-            }
-        }
-        else
-        {
-            MountDisk(_browserDrive, target.string());
-        }
-
+        AcceptBrowser();
         open = false;
     }
 
@@ -775,6 +967,40 @@ void Gui::DrawBrowser()
     }
 
     ImGui::EndPopup();
+}
+
+void Gui::AcceptBrowser()
+{
+    fs::path target = _browserDir / _fileName;
+
+    if (_browserMode == BrowserMode::SaveAs && target.extension().empty())
+    {
+        target += DiskExtension;
+    }
+
+    if (_browserMode == BrowserMode::SaveAs)
+    {
+        const auto floppy = _emulator.GetFloppy(_browserDrive);
+        std::string saveError;
+
+        if (floppy && floppy->SaveAs(target.string(), saveError))
+        {
+            _settings->SetString(DiskSettingKey(_browserDrive), target.string());
+            _settings->SetString("last_disk_dir", _browserDir.string());
+            ShowStatus("Saved disk " + target.filename().string());
+        }
+        else
+        {
+            _errorMessage = saveError;
+        }
+
+        return;
+    }
+
+    if (MountDisk(_browserDrive, target.string()))
+    {
+        ShowStatus("Mounted " + target.filename().string() + " in drive " + DriveLabel(_browserDrive));
+    }
 }
 
 void Gui::GuardUnsaved(const std::vector<int>& drives, std::function<void()> action)
@@ -918,6 +1144,7 @@ void Gui::EjectDisk(const int drive)
     {
         floppy->Eject();
         _settings->SetString(DiskSettingKey(drive), "");
+        ShowStatus(std::string("Ejected drive ") + DriveLabel(drive));
     }
 }
 
@@ -929,6 +1156,12 @@ void Gui::SaveDisk(const int drive)
     if (floppy && !floppy->Save(error))
     {
         _errorMessage = error;
+        return;
+    }
+
+    if (floppy)
+    {
+        ShowStatus("Saved " + fs::path(floppy->GetMountedPath()).filename().string());
     }
 }
 
@@ -959,4 +1192,20 @@ const char* Gui::DriveLabel(const int drive)
 const char* Gui::DiskSettingKey(const int drive)
 {
     return drive == 0 ? "disk_a_path" : "disk_b_path";
+}
+
+void Gui::HelpMarker(const char* text)
+{
+    ImGui::TextDisabled("(?)");
+
+    if (!ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort))
+    {
+        return;
+    }
+
+    ImGui::BeginTooltip();
+    ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+    ImGui::TextUnformatted(text);
+    ImGui::PopTextWrapPos();
+    ImGui::EndTooltip();
 }

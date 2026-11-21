@@ -3,7 +3,9 @@
 
 #include <array>
 #include <atomic>
+#include <cstdint>
 #include <memory>
+#include <mutex>
 #include <optional>
 
 #include <Compucolor/Common/IPluginManager.h>
@@ -83,6 +85,18 @@ namespace Compucolor::Impl::Keyboard
         private:
             std::shared_ptr<Logger::ILogger> _logger;
             std::array<std::atomic<uint8_t>, 17> _kbMatrix{};
+
+            // A host tap can begin and end between two keyboard scans. Keep
+            // such a press closed until the next scan so it is not lost.
+            // Row 16 is exempt because the ROM only samples modifiers while
+            // another key is pressed. Counts are per matrix contact because
+            // aliases share contacts.
+            static constexpr uint8_t DebounceScans = 1;
+
+            mutable std::mutex _mutex;
+            std::array<std::array<uint8_t, 8>, 17> _pressCounts{};
+            std::array<std::array<uint8_t, 8>, 17> _pendingReleaseScans{};
+            std::array<std::array<uint8_t, 8>, 17> _observedScans{};
 
             static std::optional<int> GetRow(Compucolor::Keyboard::CompucolorIIKey key);
 
