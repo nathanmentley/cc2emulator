@@ -6,12 +6,16 @@
 
 namespace Compucolor::Impl::Scheduler
 {
+    // One worker thread that runs a callback immediately, then waits against a
+    // steady-clock deadline. Long callbacks delay later runs rather than overlap.
     class ScheduledTask final : public Compucolor::Scheduler::IScheduledTask {
     public:
         ScheduledTask();
 
+        // Stops and joins the worker if still running.
         ~ScheduledTask() override;
 
+        // Starts the worker; interval is in nanoseconds.
         void Start(uint64_t everyNanoseconds, std::function<int()> logic);
 
         void Stop() override;

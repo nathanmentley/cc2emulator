@@ -23,10 +23,16 @@
 
 namespace Compucolor::Impl::CompucolorII
 {
+    // Copies length bytes of ROM into memory starting at startPosition.
     void LoadRom(Memory::IMemory* memory, const uint8_t* rom, uint16_t startPosition, uint16_t length);
 
+    // Top-level machine: composes the 8080, its bus, memory, CRT, timer/I/O chip,
+    // keyboard, floppies and scheduler. CPU work runs on a 1 ms scheduler task;
+    // the CRT has its own 10 ms refresh task.
     class CompucolorEmulator: public ICompucolorEmulator {
         public:
+            // The optional clock returns a monotonically increasing nanosecond count;
+            // tests inject a fake clock to control pacing deterministically.
             CompucolorEmulator(
                 std::shared_ptr<Crt::ICrtEmulator> crt,
                 std::shared_ptr<Floppy::IFloppyEmulator> floppyA,
@@ -40,7 +46,10 @@ namespace Compucolor::Impl::CompucolorII
                 std::function<uint64_t()> clock = nullptr
             );
 
+            // Loads the ROM, starts all components and schedules the machine tick.
             void Start() override;
+
+            // Stops and joins the tick, then stops every component.
             void Stop() override;
 
             void OnKeyUp(Keyboard::CompucolorIIKey key) override;
@@ -55,10 +64,17 @@ namespace Compucolor::Impl::CompucolorII
             [[nodiscard]] bool IsSpeedRegulated() const override;
             void SetLowercaseCharset(bool lowercase) override;
             void SetRomVersion(RomVersion version) override;
+
+            // Pauses briefly, aggregates every component's JSON state plus the
+            // machine's pacing/configuration fields, and restores the pause state.
             std::unique_ptr<boost::json::value> SaveState() override;
+
+            // Validates state, restores memory first and then the other components.
             void LoadState(std::shared_ptr<boost::json::value>) override;
+
             [[nodiscard]] std::shared_ptr<Floppy::IFloppyEmulator> GetFloppy(int drive) const override;
 
+            // Plugin factory: resolves all components through the plugin manager.
             static std::shared_ptr<ICompucolorEmulator> Creator(Common::IPluginManager* manager);
 
         private:
@@ -95,8 +111,13 @@ namespace Compucolor::Impl::CompucolorII
             std::atomic<bool> _speedRegulated{true};
             std::atomic<RomVersion> _romVersion{RomVersion::V8_79};
 
+            // Runs one CPU instruction, stamps peripheral time and drives floppy/timer steps.
             uint64_t StepOnce();
+
+            // Selects the embedded ROM for the current version and configures stepper phases.
             void LoadSystemRom();
+
+            // Resets CPU, timers, SMC and keyboard; hard reset reloads ROM and clears BASIC's warm-start flag.
             void ApplyReset(bool hard);
     };
 }

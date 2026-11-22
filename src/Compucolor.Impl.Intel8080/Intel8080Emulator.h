@@ -14,6 +14,10 @@
 
 namespace Compucolor::Impl::Intel8080
 {
+    // Adapter around the vendored i8080 core. Start()/Reset() call i8080_init
+    // and install memory/port callbacks; Step() executes one instruction and
+    // returns the elapsed cycle count. Writes below 0x4000 are ignored to
+    // protect the ROM; port accesses go through the injected IIntel8080Bus.
     class Intel8080Emulator: public Compucolor::Intel8080::IIntel8080Emulator {
         public:
             Intel8080Emulator(

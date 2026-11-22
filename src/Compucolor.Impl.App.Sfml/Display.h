@@ -14,6 +14,8 @@
 
 namespace Compucolor::Impl::App::Sfml
 {
+    // Palettes for the eight hardware colors. Only Standard is used by default;
+    // there is currently no UI control for selecting another palette.
     enum class Theme {
         Standard = 0,
         Synthwave = 1,
@@ -33,6 +35,9 @@ namespace Compucolor::Impl::App::Sfml
             void Render(const std::function<void()>& overlay = {});
 
             void SetSmooth(bool smooth);
+
+            // Selects the palette used to convert hardware colors to RGBA.
+            void SetTheme(Theme theme);
 
             // Writes the most recent complete frame as a PNG.
             bool SaveScreenshot(const std::string& path);

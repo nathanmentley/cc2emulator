@@ -343,13 +343,6 @@ uint8_t Tms5501Emulator::Read(uint8_t port)
             // bit 5 indicates if there is an unmasked interrupt pending
             retval = (retval & ~0x20) |
                      ((_context->intMask & _context->intStatus) ? 0x20 : 0x00);
-            //if (0 && floppy_dbg) {
-            //    console.log('T' + ccemu.getTickCount() +
-            //                ':: 8080 read 5501 status(3): bit3=' + ((retval>>3) & 1) +
-            //                ' @pc=' + cpu.pc.toString(16) +
-            //                ' caller=' + (cpu.ram[cpu.sp] + 256*cpu.ram[cpu.sp+1]).toString(16)
-            //               );
-            //}
             // reading the status register clears the serial overrun flag
             _context->sstatus &= ~0x02;  // clear bit 1
 
@@ -367,7 +360,8 @@ void Tms5501Emulator::Write(uint8_t port, uint8_t data)
     uint8_t convertedPort = ConvertPort(port);
     switch (convertedPort)
     {
-        case 0x4: { //TODO
+        case 0x4: {
+            // DSC command/control register: reset, serial break and interrupt setup.
             _context->dscCmd = data;
             if (data & 0x01) {
                 // reset status
@@ -376,10 +370,6 @@ void Tms5501Emulator::Write(uint8_t port, uint8_t data)
                 //        but it doesn't affect the tx buffer itself
                 // the interrupt reg is cleared,
                 // except tx buffer empty is set high
-                //if (txCallbackTimer) {
-                //    txCallbackTimer.cancel();
-                //    txCallbackTimer = undefined;
-                //}
                 _context->txdataCount = 0;
                 _floppyTransmitNanosecondsRemaining = 0;
                 _context->intStatus = 0x20;  // tx buffer empty interrupt
@@ -405,9 +395,6 @@ void Tms5501Emulator::Write(uint8_t port, uint8_t data)
             // I assume this is only programmed to 0 (use timer #5)
             // not data input bit 7 L->H transition as interrupt trigger.
             // Bit 7 corresponds to the caps lock state.
-            //if (data & 0x04) {
-            //    alert("Emulator modeling error: dscCmd & 0x04");
-            //}
             // bit 3: interrupt acknowledge enable
             //    1=accept int ack
             //    0=ignore int ack
@@ -424,14 +411,8 @@ void Tms5501Emulator::Write(uint8_t port, uint8_t data)
             _context->rate = data;
             break;
 
-        case 0x6: { //TODO
-            //if (0 && floppy_dbg) {
-            //    console.log('T' + ccemu.getTickCount() +
-            //                ':: 8080 sending serial data ' + value.toString(16) +
-            //                ' @pc=' + cpu.pc.toString(16) +
-            //                ' caller=' + (cpu.ram[cpu.sp] + 256*cpu.ram[cpu.sp+1]).toString(16)
-            //               );
-            //}
+        case 0x6: {
+            // Transmit data register: route the byte to the selected device.
 
             // put it in the buffer
             _context->txdata = data;
@@ -449,20 +430,14 @@ void Tms5501Emulator::Write(uint8_t port, uint8_t data)
                 _context->intStatus &= ~0x20;     // !serial character sent
             }
             if (_context->txdataCount == 1) {
-                //    console.log('5501 wr() is sending txdata at T=' + ccemu.getTickCount());
-                //}
                 _context->txdata2 = _context->txdata;
                 if (IsFloppy1Selected()) {
                     _floppy1->Write(0, _context->txdata2);
                 } else if (IsFloppy2Selected()) {
                     _floppy2->Write(0, _context->txdata2);
                 } else if (IsSerialSelected()) {
-                    // make a callback to retire the tx byte
-                //    var ticks = byteToTicks();
-                //    txCallbackTimer = scheduler.oneShot(ticks, serialTxCallback,
-                //                                        "txCB");
-                //    // send it to the soundware emulation too just in case
-                //    audio.txData(txdata2);
+                    // Serial transmit timing is not modeled; TXD edges are
+                    // produced from the break bit in the command register.
                 }
                 if (IsFloppy1Selected() || IsFloppy2Selected())
                     _floppyTransmitNanosecondsRemaining = 10'000'000'000ULL / 76'800;
@@ -481,7 +456,6 @@ void Tms5501Emulator::Write(uint8_t port, uint8_t data)
 
             CheckInterruptStatus();
         }
-            //TODO
             break;
         case 0x7:
             SetOutport(data);
@@ -613,7 +587,7 @@ void Tms5501Emulator::ClearIntAddr(uint8_t op) {
 void Tms5501Emulator::CheckInterruptStatus()
 {
     // CPU already has an interrupt pending → do nothing
-    if (_intel8080->IsInterruptPending())   // you may need to expose this
+    if (_intel8080->IsInterruptPending())
         return;
 
     uint8_t masked = _context->intStatus & _context->intMask;

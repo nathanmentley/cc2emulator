@@ -18,13 +18,19 @@
 
 namespace Compucolor::Common
 {
+    // Service locator passed to every plugin factory.
+    // The first three services are owned by the host; the rest are created lazily
+    // from the plugin libraries configured in app.config.
     class IPluginManager {
         public:
             virtual ~IPluginManager() = default;
 
+            // Host-owned services.
             virtual std::shared_ptr<Logger::ILoggerProvider> GetLoggerProvider() = 0;
             virtual std::shared_ptr<IDisplay> GetDisplay() = 0;
             virtual std::shared_ptr<IAudioOutput> GetAudio() = 0;
+
+            // Plugin-provided services. Repeated calls return the same instance.
             virtual std::shared_ptr<Logger::ILogger> GetLogger() = 0;
             virtual std::shared_ptr<Scheduler::IScheduler> GetScheduler() = 0;
             virtual std::shared_ptr<Intel8080::IIntel8080Emulator> GetIntel8080() = 0;

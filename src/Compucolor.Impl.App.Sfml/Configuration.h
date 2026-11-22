@@ -7,6 +7,8 @@
 
 namespace Compucolor::Impl::App::Sfml
 {
+    // Reads key=value lines from ./app.config. This file lists plugin library
+    // paths relative to the working directory; user preferences live in Settings.
     class Configuration: public Compucolor::Common::IConfiguration {
         public:
             Configuration();

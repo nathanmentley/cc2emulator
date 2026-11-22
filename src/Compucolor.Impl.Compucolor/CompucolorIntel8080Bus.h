@@ -8,6 +8,9 @@
 
 namespace Compucolor::Impl::CompucolorII
 {
+    // Decodes 8080 I/O ports: 0x00-0x1F go to the TMS5501 (masked to 0x0F),
+    // writes 0x60-0x7F go to the SMC5027 (masked to 0x0F), and reads
+    // 0x80-0x9F come from the CRT timing PROM. Other reads return the port number.
     class CompucolorIntel8080Bus: public Intel8080::IIntel8080Bus
     {
         public:

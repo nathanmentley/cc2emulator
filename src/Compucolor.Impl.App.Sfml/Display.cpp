@@ -72,6 +72,11 @@ void Display::SetSmooth(const bool smooth)
     _texture.setSmooth(smooth);
 }
 
+void Display::SetTheme(const Theme theme)
+{
+    _currentTheme = theme;
+}
+
 bool Display::SaveScreenshot(const std::string& path)
 {
     std::lock_guard lock(_frameMutex);

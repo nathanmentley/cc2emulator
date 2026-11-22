@@ -27,6 +27,136 @@ namespace
     constexpr const char* StateFileName = "compucolor-state.json";
 }
 
+
+void ApplyCompucolorTheme(ImGuiStyle& style)
+{
+    using Color = ImVec4;
+
+    // Geometry
+    style.WindowPadding = ImVec2(12.f, 10.f);
+    style.FramePadding = ImVec2(9.f, 6.f);
+    style.CellPadding = ImVec2(8.f, 5.f);
+    style.ItemSpacing = ImVec2(8.f, 7.f);
+    style.ItemInnerSpacing = ImVec2(6.f, 5.f);
+    style.IndentSpacing = 20.f;
+    style.ScrollbarSize = 13.f;
+    style.GrabMinSize = 10.f;
+
+    // Subtle rounding: industrial equipment, not a mobile app.
+    style.WindowRounding = 7.f;
+    style.ChildRounding = 5.f;
+    style.FrameRounding = 4.f;
+    style.PopupRounding = 5.f;
+    style.ScrollbarRounding = 6.f;
+    style.GrabRounding = 4.f;
+    style.TabRounding = 4.f;
+
+    style.WindowBorderSize = 1.f;
+    style.ChildBorderSize = 1.f;
+    style.PopupBorderSize = 1.f;
+    style.FrameBorderSize = 0.f;
+    style.TabBorderSize = 0.f;
+
+    style.WindowTitleAlign = ImVec2(0.0f, 0.5f);
+    style.ButtonTextAlign = ImVec2(0.5f, 0.5f);
+    style.SelectableTextAlign = ImVec2(0.0f, 0.5f);
+
+    style.SeparatorTextBorderSize = 1.f;
+    style.SeparatorTextAlign = ImVec2(0.0f, 0.5f);
+    style.SeparatorTextPadding = ImVec2(8.f, 5.f);
+
+    // Palette
+    const Color background       = Color(0.067f, 0.110f, 0.145f, 1.00f);
+    const Color surface          = Color(0.090f, 0.153f, 0.192f, 1.00f);
+    const Color elevated         = Color(0.122f, 0.192f, 0.231f, 1.00f);
+    const Color hover            = Color(0.165f, 0.259f, 0.290f, 1.00f);
+    const Color border           = Color(0.220f, 0.298f, 0.333f, 1.00f);
+
+    const Color text             = Color(0.914f, 0.898f, 0.835f, 1.00f);
+    const Color muted            = Color(0.565f, 0.647f, 0.659f, 1.00f);
+
+    const Color amber            = Color(0.914f, 0.725f, 0.357f, 1.00f);
+    const Color amberHover       = Color(0.980f, 0.796f, 0.435f, 1.00f);
+    const Color green            = Color(0.467f, 0.788f, 0.690f, 1.00f);
+    const Color red              = Color(0.843f, 0.482f, 0.412f, 1.00f);
+
+    ImVec4* colors = style.Colors;
+
+    colors[ImGuiCol_Text]                  = text;
+    colors[ImGuiCol_TextDisabled]          = muted;
+
+    colors[ImGuiCol_WindowBg]              = background;
+    colors[ImGuiCol_ChildBg]               = background;
+    colors[ImGuiCol_PopupBg]               = surface;
+
+    colors[ImGuiCol_Border]                = border;
+    colors[ImGuiCol_BorderShadow]          = Color(0.f, 0.f, 0.f, 0.f);
+
+    colors[ImGuiCol_FrameBg]               = surface;
+    colors[ImGuiCol_FrameBgHovered]        = elevated;
+    colors[ImGuiCol_FrameBgActive]         = hover;
+
+    colors[ImGuiCol_TitleBg]               = background;
+    colors[ImGuiCol_TitleBgActive]         = surface;
+    colors[ImGuiCol_TitleBgCollapsed]      = background;
+
+    colors[ImGuiCol_MenuBarBg]              = surface;
+
+    colors[ImGuiCol_ScrollbarBg]           = background;
+    colors[ImGuiCol_ScrollbarGrab]         = elevated;
+    colors[ImGuiCol_ScrollbarGrabHovered]  = border;
+    colors[ImGuiCol_ScrollbarGrabActive]   = amber;
+
+    colors[ImGuiCol_CheckMark]             = green;
+    colors[ImGuiCol_SliderGrab]            = amber;
+    colors[ImGuiCol_SliderGrabActive]      = amberHover;
+
+    colors[ImGuiCol_Button]                = elevated;
+    colors[ImGuiCol_ButtonHovered]         = hover;
+    colors[ImGuiCol_ButtonActive]          = amber;
+
+    colors[ImGuiCol_Header]                = elevated;
+    colors[ImGuiCol_HeaderHovered]         = hover;
+    colors[ImGuiCol_HeaderActive]          = Color(0.24f, 0.34f, 0.35f, 1.f);
+
+    colors[ImGuiCol_Separator]             = border;
+    colors[ImGuiCol_SeparatorHovered]      = amber;
+    colors[ImGuiCol_SeparatorActive]       = amberHover;
+
+    colors[ImGuiCol_ResizeGrip]            = Color(amber.x, amber.y, amber.z, 0.20f);
+    colors[ImGuiCol_ResizeGripHovered]     = amber;
+    colors[ImGuiCol_ResizeGripActive]      = amberHover;
+
+    colors[ImGuiCol_Tab]                   = background;
+    colors[ImGuiCol_TabHovered]            = hover;
+    colors[ImGuiCol_TabActive]             = surface;
+    colors[ImGuiCol_TabUnfocused]          = background;
+    colors[ImGuiCol_TabUnfocusedActive]    = surface;
+
+    colors[ImGuiCol_PlotLines]             = green;
+    colors[ImGuiCol_PlotLinesHovered]      = amber;
+    colors[ImGuiCol_PlotHistogram]         = amber;
+    colors[ImGuiCol_PlotHistogramHovered]  = amberHover;
+
+    colors[ImGuiCol_TableHeaderBg]         = elevated;
+    colors[ImGuiCol_TableBorderStrong]     = border;
+    colors[ImGuiCol_TableBorderLight]      = surface;
+    colors[ImGuiCol_TableRowBg]            = Color(0.f, 0.f, 0.f, 0.f);
+    colors[ImGuiCol_TableRowBgAlt]         = Color(1.f, 1.f, 1.f, 0.025f);
+
+    colors[ImGuiCol_TextSelectedBg]        = Color(
+        amber.x, amber.y, amber.z, 0.30f
+    );
+
+    colors[ImGuiCol_DragDropTarget]        = amber;
+
+    colors[ImGuiCol_NavHighlight]          = amber;
+    colors[ImGuiCol_NavWindowingHighlight] = amber;
+    colors[ImGuiCol_NavWindowingDimBg]     = Color(0.f, 0.f, 0.f, 0.55f);
+    colors[ImGuiCol_ModalWindowDimBg]       = Color(0.f, 0.f, 0.f, 0.65f);
+}
+
+
 Gui::Gui(
     std::shared_ptr<sf::RenderWindow> window,
     std::shared_ptr<Settings> settings,
@@ -196,7 +326,11 @@ void Gui::UpdateScale()
 {
     // Quarter steps avoid rebuilding the style on every pixel of a resize.
     const float height = static_cast<float>(_window->getSize().y);
-    const float scale = std::clamp(std::round(height / 360.f * 4.f) / 4.f, 1.f, 4.f);
+    const float scale = std::clamp(
+        std::round(height / 360.f * 4.f) / 4.f,
+        1.f,
+        4.f
+    );
 
     if (scale == _uiScale)
     {
@@ -206,7 +340,8 @@ void Gui::UpdateScale()
     _uiScale = scale;
 
     ImGuiStyle style;
-    ImGui::StyleColorsDark(&style);
+    ApplyCompucolorTheme(style);
+
     style.ScaleAllSizes(scale);
     ImGui::GetStyle() = style;
 
@@ -709,6 +844,16 @@ void Gui::DrawSettings()
         ImGui::SameLine();
         HelpMarker("Smooths the 384x256 display when it is scaled. Best at non-integer window sizes.");
 
+        int theme = _settings->GetInt("theme");
+        const char* themes[] = {"Standard", "Synthwave", "Gruvbox", "WarmRetro"};
+        ImGui::SetNextItemWidth(200.f * _uiScale);
+        if (ImGui::Combo("Theme", &theme, themes, 4))
+        {
+            _settings->SetInt("theme", theme);
+            _display->SetTheme(static_cast<Theme>(theme));
+        }
+
+
         ImGui::SeparatorText("Sound");
 
         bool enabled = _settings->GetBool("sound_enabled");
@@ -786,13 +931,13 @@ void Gui::DrawKeyHelp()
         ImGui::TextDisabled("Save and load state are in the File menu.");
 
         ImGui::SeparatorText("PC keys on the Compucolor");
-        ImGui::BulletText("Alt / Windows key: REPEAT");
+        ImGui::BulletText("Alt / right Windows key: REPEAT; left Windows key: AUTO");
         ImGui::BulletText("Ctrl: CONTROL");
         ImGui::BulletText("Symbols follow the printed character, e.g. Shift+; is ':' and Shift+7 is '&'");
         ImGui::BulletText("Arrow keys, Home, Tab: cursor keys");
         ImGui::BulletText("Insert / Delete: insert and delete character");
         ImGui::BulletText("Page Up / Page Down: erase page / erase line");
-        ImGui::BulletText("End / Pause: BREAK");
+        ImGui::BulletText("Pause: BREAK; End: HOME");
         ImGui::BulletText("Backspace: left arrow / delete");
         ImGui::BulletText("Enter: RETURN");
         ImGui::BulletText("F1 .. F15: function keys");

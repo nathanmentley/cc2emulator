@@ -207,9 +207,7 @@ void Compucolor::Impl::Intel8080::Intel8080Emulator::Reset()
 {
     Stop();
 
-    //TODO:
-    //reset cpu state
-
+    // Start() reinitializes the vendored core, clearing registers and flags.
     Start();
 }
 

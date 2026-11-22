@@ -14,70 +14,31 @@
 
 namespace Compucolor::Impl::Keyboard
 {
-    /**
-     * @brief  
-     * @note   
-     * @retval None
-     */
+    // 17x8 active-low keyboard matrix read by the TMS5501 on port 1.
+    // Save/load state persists the matrix but not transient debounce counters.
     class KeyboardEmulator: public Compucolor::Keyboard::IKeyboardEmulator {
         public:
-            /**
-             * @brief  
-             * @note   
-             * @param  logger:
-             * @retval 
-             */
             KeyboardEmulator(
                 std::shared_ptr<Logger::ILogger> logger
             );
 
-            /**
-             * @brief  
-             * @note   
-             * @retval None
-             */
             void Start() override;
-
-            /**
-             * @brief  
-             * @note   
-             * @retval None
-             */
             void Stop() override;
 
             std::unique_ptr<boost::json::value> SaveState() override;
-
             void LoadState(std::shared_ptr<boost::json::value>) override;
 
-            /**
-             * @brief  
-             * @note   
-             * @param  port: 
-             * @retval 
-             */
+            // Returns the row selected by port & 0x0F, or 0xFF for unknown rows.
+            // One-scan pending releases keep very short host taps visible to the ROM.
             uint8_t Read(uint8_t port) override;
 
-            /**
-             * @brief  
-             * @note   
-             * @retval None
-             */
+            // Clears the matrix to all-ones (no keys pressed).
             void Reset() override;
 
-            /**
-             * @brief  
-             * @note   
-             * @param  key: 
-             * @retval None
-             */
+            // Releases a matrix contact, reference-counted across alias keys.
             void OnKeyUp(Compucolor::Keyboard::CompucolorIIKey key) override;
 
-            /**
-             * @brief  
-             * @note   
-             * @param  key: 
-             * @retval None
-             */
+            // Presses a matrix contact; modifiers in row 16 release immediately.
             void OnKeyDown(Compucolor::Keyboard::CompucolorIIKey key) override;
 
             static std::shared_ptr<Compucolor::Keyboard::IKeyboardEmulator> Creator(Common::IPluginManager* manager);

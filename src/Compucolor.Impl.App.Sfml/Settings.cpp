@@ -8,7 +8,7 @@ using Compucolor::Impl::App::Sfml::Settings;
 
 Settings::Settings():
     _data{
-        {"window_scale", "2"},
+        {"window_scale", "4"},
         {"fullscreen", "false"},
         {"smooth_scaling", "false"},
         {"charset", "standard"},

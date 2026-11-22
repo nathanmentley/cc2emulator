@@ -18,24 +18,11 @@
 
 namespace Compucolor::Impl::Crt
 {
-    /**
-     * @brief  
-     * @note   
-     * @retval None
-     */
+    // Renders the 64x32 character screen from video RAM at 0x7000-0x7FFF every
+    // 10 ms. Every 16th refresh triggers the TMS5501 external sensor interrupt;
+    // alternating refresh phases implement attribute blink.
     class CrtEmulator: public Compucolor::Crt::ICrtEmulator {
         public:
-            /**
-             * @brief  
-             * @note   
-             * @param  logger:
-             * @param  display:
-             * @param  scheduler:
-             * @param  memory:
-             * @param  smc5027emulator:
-             * @param  tms5501Emulator:
-             * @retval
-             */
             CrtEmulator(
                 std::shared_ptr<Logger::ILogger> logger,
                 std::shared_ptr<Common::IDisplay> display,
@@ -45,24 +32,19 @@ namespace Compucolor::Impl::Crt
                 std::shared_ptr<Tms5501::ITms5501Emulator> tms5501Emulator
             );
 
-            /**
-             * @brief  
-             * @note   
-             * @retval None
-             */
+            // Starts the 10 ms refresh task.
             void Start() override;
 
-            /**
-             * @brief  
-             * @note   
-             * @retval None
-             */
+            // Stops and joins the refresh task.
             void Stop() override;
 
+            // Switches between the embedded standard and lowercase UF6 fonts.
             void SetLowercaseCharset(bool lowercase) override;
 
+            // Persists the blink phase and selected character set.
             std::unique_ptr<boost::json::value> SaveState() override;
 
+            // Validates phase/charset before applying them.
             void LoadState(std::shared_ptr<boost::json::value>) override;
 
             static std::shared_ptr<ICrtEmulator> Creator(Common::IPluginManager* manager);
@@ -87,31 +69,14 @@ namespace Compucolor::Impl::Crt
             int _phase;
             std::atomic<bool> _lowercaseCharset{false};
 
-            /**
-             * @brief  
-             * @note   
-             * @retval None
-             */
+            // Reads each glyph/attribute pair, applies SMC5027 scrolling and draws the cursor.
             void RefreshDisplay() const;
 
-            /**
-             * @brief  
-             * @note   
-             * @retval None
-             */
+            // Draws the cursor as a solid white cell during the blink-on phase.
             void DrawCursor(uint8_t firstRow) const;
 
-            /**
-             * @brief  
-             * @note   
-             * @param  foreground: 
-             * @param  background: 
-             * @param  glyphData: 
-             * @param  blink: 
-             * @param  x: 
-             * @param  y: 
-             * @retval None
-             */
+            // Draws one 6x8 cell. With plot set, glyphData is a 2x3 pixel bitmap;
+            // otherwise bit 7 selects double-height text and bits 0-6 index the font.
             void DrawGlyph(
                 Common::Color foreground,
                 Common::Color background,
@@ -122,44 +87,14 @@ namespace Compucolor::Impl::Crt
                 int y
             ) const;
 
-            /**
-             * @brief  
-             * @note   
-             * @retval 
-             */
+            // True on alternating refreshes, used to blink attributes and the cursor.
             [[nodiscard]] bool IsBlinkOn() const;
 
-            /**
-             * @brief  
-             * @note   
-             * @param  bit: 
-             * @param  data: 
-             * @retval 
-             */
             static bool IsBitSet(int bit, uint8_t data);
 
-            /**
-             * @brief  
-             * @note   
-             * @param  data: 
-             * @retval 
-             */
+            // Attribute bits 0-2 and 3-5 select one of eight hardware colors.
             static Common::Color GetForegroundColor(uint8_t data);
-
-            /**
-             * @brief  
-             * @note   
-             * @param  data: 
-             * @retval 
-             */
             static Common::Color GetBackgroundColor(uint8_t data);
-
-            /**
-             * @brief  
-             * @note   
-             * @param  data: 
-             * @retval 
-             */
             static Common::Color GetColor(uint8_t data);
     };
 }

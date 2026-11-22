@@ -25,10 +25,14 @@
 
 namespace Compucolor::Impl::App::Sfml
 {
+    // SFML host application. Construction loads settings/config, creates the
+    // window and host services, builds the plugin manager and initializes the GUI.
     class Program {
         public:
             Program();
 
+            // Starts the emulator and runs the event/render loop until the window
+            // closes, then releases keys, stops emulation and saves settings.
             [[nodiscard]] int Run() const;
 
         private:

@@ -9,6 +9,8 @@
 
 namespace Compucolor::Impl::Memory
 {
+    // 64 KiB of atomic bytes. Addresses 0x6000-0x6FFF alias video RAM at
+    // 0x7000-0x7FFF so software can use either range.
     class VectorMemory: public Compucolor::Memory::IMemory {
         public:
             VectorMemory();

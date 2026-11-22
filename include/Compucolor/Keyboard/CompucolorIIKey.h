@@ -2,6 +2,9 @@
 
 namespace Compucolor::Keyboard
 {
+    // Keys of the Compucolor II keyboard matrix. Several entries are aliases
+    // that share a matrix contact (for example upper/lowercase letters), selected
+    // by the shift bit of the character chord produced by the host keyboard translator.
     enum class CompucolorIIKey
     {
         Zero,

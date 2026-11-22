@@ -8,12 +8,14 @@
 
 namespace Compucolor::Logger
 {
+    // printf-style logging facade. The convenience methods forward a varargs
+    // format string to the host's ILoggerProvider, which applies the level threshold.
     class ILogger: public Common::IPlugin {
         public:
             virtual ~ILogger() = default;
-    
+
             virtual void Log(LogLevel level, std::string message, ...) = 0;
-    
+
             virtual void LogTrace(std::string message, ...) = 0;
             virtual void LogDebug(std::string message, ...) = 0;
             virtual void LogInformation(std::string message, ...) = 0;

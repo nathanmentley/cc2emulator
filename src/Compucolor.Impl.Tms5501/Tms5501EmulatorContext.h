@@ -5,6 +5,7 @@
 #include <vector>
 
 namespace Compucolor::Impl::Tms5501 {
+    // Mutable TMS5501 register file shared by port handlers, timers and save state.
     class Tms5501EmulatorContext
     {
         public:
@@ -37,7 +38,7 @@ namespace Compucolor::Impl::Tms5501 {
                               //   bit 0: 1= enable timer #1 interrupt
                               //   bit 1: 1= enable timer #2 interrupt
                               //   bit 2: 1= enable interrupt external sensor
-                              //             fires at 60 Hz (50 in europe)
+                              //             the CRT triggers it every 160 ms
                               //   bit 3: 1= enable timer #3 interrupt
                               //   bit 4: 1= enable serial rx interrupt
                               //   bit 5: 1= enable serial tx interrupt
@@ -49,7 +50,7 @@ namespace Compucolor::Impl::Tms5501 {
                               // not a CPU accessible register
             uint8_t dscCmd = 0x00;      // discrete command
 
-            std::vector<uint8_t> count;// = [0x00, 0x00, 0x00, 0x00, 0x00], // current counter
+            std::vector<uint8_t> count; // five timer counters (ports 9-D)
 
             Tms5501EmulatorContext();
     };

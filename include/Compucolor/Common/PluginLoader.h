@@ -11,7 +11,10 @@
 
 namespace Compucolor::Common
 {
-    template<typename TPlugin> 
+    // Loads one plugin shared library and caches its single created instance.
+    // The library must export "create" with the signature shared_ptr<TPlugin>(IPluginManager*);
+    // append_decorations lets configuration omit the platform library suffix.
+    template<typename TPlugin>
     class PluginLoader {
         typedef std::shared_ptr<TPlugin>(pluginapi_create_t)(IPluginManager*);
 
@@ -29,6 +32,8 @@ namespace Compucolor::Common
                     );
             };
 
+            // Invokes the factory on first use with the manager so the plugin
+            // can resolve its dependencies; later calls return the cached object.
             std::shared_ptr<TPlugin> Create(IPluginManager* manager)
             {
                 if (!_plugin.has_value())

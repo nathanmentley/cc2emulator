@@ -103,7 +103,7 @@ void Compucolor::Impl::Crt::CrtEmulator::RefreshDisplay() const
     for (uint16_t i = 0x7000; i < 0x8000; i += 2)
     {
         // Update video memory
-        const uint16_t baseAddress = i - 0x7000;   // 0x6... range to avoid wait for hblank
+        const uint16_t baseAddress = i - 0x7000;   // offset within the 4 KiB video RAM window
         // two bytes per char, 64 char/row
         const uint16_t x = (baseAddress >> 1) & 0x3F;
         // 128 bytes per row, 32 rows

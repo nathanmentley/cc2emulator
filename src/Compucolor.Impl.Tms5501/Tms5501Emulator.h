@@ -17,6 +17,9 @@
 #include "Tms5501EmulatorContext.h"
 
 namespace Compucolor::Impl::Tms5501 {
+    // Port-level TMS5501 emulation: keyboard rows, discrete commands, baud rate,
+    // serial transmit, outport decode, interrupt mask/RST vectors and five timers.
+    // The serial line drives SoundWare audio; floppy bytes never raise RX interrupts.
     class Tms5501Emulator: public Compucolor::Tms5501::ITms5501Emulator {
         public:
             Tms5501Emulator(
@@ -32,17 +35,27 @@ namespace Compucolor::Impl::Tms5501 {
             void Stop() override;
             std::unique_ptr<boost::json::value> SaveState() override;
             void LoadState(std::shared_ptr<boost::json::value>) override;
+
+            // Clears interrupt/timer state and releases the TXD audio line.
             void Reset() override;
 
+            // Decrements timer counters and registers one due interrupt with the CPU.
             void Step() override;
+
+            // Advances selected drive and audio time; completes pending serial transfers.
             void StepFloppy(uint64_t elapsedNanoseconds) override;
+
+            // Latches the external sensor interrupt (0x04).
             void TriggerExternalSensor() override;
 
             uint8_t Read(uint8_t port) override;
 
+            // Port 4's break bit toggles the SoundWare TXD line with a timestamp.
             void Write(uint8_t port, uint8_t data) override;
 
+            // Clears the latched source matching an acknowledged RST opcode.
             void OnInterruptConsumed(uint8_t opcode) override;
+
             void SetEmulatedTime(uint64_t nanoseconds) override;
 
             static std::shared_ptr<ITms5501Emulator> Creator(Common::IPluginManager* manager);
@@ -60,14 +73,17 @@ namespace Compucolor::Impl::Tms5501 {
             uint8_t _outport;
             uint64_t _floppyTransmitNanosecondsRemaining = 0;
 
+            // Decodes drive select, write enable and stepper phase (TMS5501 port 7).
             void SetOutport(uint8_t value);
             void CompleteFloppyTransmit();
             void ClearIntAddr(uint8_t op);
+            // Latches at most one pending interrupt as an RST opcode for the CPU.
             void CheckInterruptStatus();
 
             [[nodiscard]] bool IsSerialSelected() const;
             [[nodiscard]] bool IsFloppy1Selected() const;
             [[nodiscard]] bool IsFloppy2Selected() const;
+            // Returns the RST opcode for the lowest-numbered unmasked pending interrupt.
             [[nodiscard]] uint8_t GetIntAddr() const;
 
             static uint8_t ConvertPort(uint8_t port);

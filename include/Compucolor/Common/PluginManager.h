@@ -9,8 +9,13 @@
 
 namespace Compucolor::Common
 {
+    // Concrete service locator. Display, audio and logger provider are supplied
+    // by the host; every other component is created on first request from a
+    // configured plugin library. Floppy A and B use separate loaders, so they
+    // are distinct emulator instances.
     class PluginManager: public IPluginManager {
         public:
+            // Paths are relative to the working directory and normally come from app.config.
             PluginManager(
                 std::shared_ptr<Logger::ILoggerProvider> loggerProvider,
                 std::shared_ptr<IDisplay> display,

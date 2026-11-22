@@ -38,10 +38,16 @@ namespace Compucolor::Impl::App::Sfml
             // Applies saved machine settings and mounts the saved disks.
             void ApplyStartupSettings();
 
+            // Forwards SFML events to ImGui's menubar, dialogs and file browser.
             void ProcessEvent(const sf::Event& event);
+
+            // Advances animations/status messages and lays out the next frame.
             void BeginFrame(sf::Time elapsed);
+
+            // Draws the overlay inside the Display::Render callback.
             void Render();
 
+            // True when a text field or popup should receive keyboard input.
             [[nodiscard]] bool WantsKeyboard() const;
 
             // Closes immediately unless a disk has unsaved changes.
@@ -49,6 +55,7 @@ namespace Compucolor::Impl::App::Sfml
 
             void ToggleMenu();
 
+            // Saves the raw emulated frame to the screenshots directory.
             void SaveScreenshot();
 
             // Sound controls used by the Sound menu, Preferences and the keyboard shortcut.
@@ -115,6 +122,8 @@ namespace Compucolor::Impl::App::Sfml
 
             void ApplyMachineSettings();
             void ApplySoundSettings();
+
+            // Delegates to the processor's compucolor-state.json and shows errors as a modal.
             void SaveState();
             void LoadState();
             void AcceptBrowser();

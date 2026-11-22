@@ -15,6 +15,8 @@
 
 namespace Compucolor
 {
+    // Host-side façade for ICompucolorEmulator: owns the startup thread and
+    // persists complete emulator state in ./compucolor-state.json.
     class CompucolorEmulatorProcessor {
         public:
             CompucolorEmulatorProcessor(
@@ -25,11 +27,15 @@ namespace Compucolor
             {
             };
 
+            // Stops the emulator if still running.
             ~CompucolorEmulatorProcessor()
             {
                 Stop();
             }
 
+            // Starts ICompucolorEmulator::Start() on a dedicated thread.
+            // The machine itself performs its work on scheduler threads, so this
+            // thread mainly keeps those tasks alive until Stop() is called.
             void Start()
             {
                 if (!_thread.has_value())
@@ -42,6 +48,7 @@ namespace Compucolor
                 }
             };
 
+            // Joins the startup thread, then stops the machine.
             void Stop()
             {
                 if (_thread.has_value())
@@ -80,6 +87,9 @@ namespace Compucolor
 
             void SetRomVersion(RomVersion version) { _emulator->SetRomVersion(version); }
 
+            // Serializes the composite state to compucolor-state.json in the
+            // current working directory. Throws if the state is empty or the
+            // file cannot be written.
             void SaveState()
             {
                 auto state = _emulator->SaveState();
@@ -104,6 +114,9 @@ namespace Compucolor
                 }
             }
 
+            // Parses the same file and forwards the document to the emulator.
+            // Throws if the file cannot be read; invalid contents are rejected
+            // by the emulator's state loader.
             void LoadState()
             {
                 std::ifstream file("compucolor-state.json");
@@ -126,6 +139,7 @@ namespace Compucolor
             }
 
 
+            // Drive 0 is A, drive 1 is B.
             [[nodiscard]] std::shared_ptr<Floppy::IFloppyEmulator> GetFloppy(int drive) const
             {
                 return _emulator->GetFloppy(drive);
