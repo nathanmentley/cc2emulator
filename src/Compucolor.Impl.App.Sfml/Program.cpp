@@ -23,6 +23,7 @@ using Compucolor::Logger::ConsoleLoggerProvider;
 using Compucolor::Keyboard::CompucolorIIKey;
 
 using Compucolor::Impl::App::Sfml::Program;
+using Compucolor::Impl::App::Sfml::ThemeFromInt;
 
 namespace
 {
@@ -66,6 +67,7 @@ Program::Program():
     _keyboardTranslator(make_unique<KeyboardTranslator>())
 {
     _display->SetSmooth(_settings->GetBool("smooth_scaling"));
+    _display->SetTheme(ThemeFromInt(_settings->GetInt("theme")));
 
     _gui->SetQuitHandler([window = _window] { window->close(); });
 

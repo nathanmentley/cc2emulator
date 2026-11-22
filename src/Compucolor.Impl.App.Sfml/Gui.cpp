@@ -844,13 +844,17 @@ void Gui::DrawSettings()
         ImGui::SameLine();
         HelpMarker("Smooths the 384x256 display when it is scaled. Best at non-integer window sizes.");
 
-        int theme = _settings->GetInt("theme");
-        const char* themes[] = {"Standard", "Synthwave", "Gruvbox", "WarmRetro"};
+        int theme = static_cast<int>(ThemeFromInt(_settings->GetInt("theme")));
         ImGui::SetNextItemWidth(200.f * _uiScale);
-        if (ImGui::Combo("Theme", &theme, themes, 4))
+        if (ImGui::Combo(
+            "Theme",
+            &theme,
+            ThemeNames.data(),
+            static_cast<int>(ThemeCount())
+        ))
         {
             _settings->SetInt("theme", theme);
-            _display->SetTheme(static_cast<Theme>(theme));
+            _display->SetTheme(ThemeFromInt(theme));
         }
 
 

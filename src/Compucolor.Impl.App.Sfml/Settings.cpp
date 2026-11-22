@@ -18,7 +18,8 @@ Settings::Settings():
         {"disk_b_path", "disks/life.ccvf"},
         {"last_disk_dir", ""},
         {"sound_enabled", "true"},
-        {"sound_volume", "100"}
+        {"sound_volume", "100"},
+        {"theme", "0"}
     }
 {
 }

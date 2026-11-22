@@ -141,15 +141,15 @@ uint32_t Display::GetColor(const Color color)
         case Theme::Synthwave:
             switch (color)
             {
-                case Color::Black:  return 0x000000FF;
-                case Color::Red:    return 0xFF0000FF;
-                case Color::Green:  return 0x00FF00FF;
-                case Color::Yellow: return 0xFFFF00FF;
-                case Color::Blue:   return 0x0000FFFF;
-                case Color::Purple: return 0xFF00FFFF;
-                case Color::Teal:   return 0x00FFFFFF;
-                case Color::White:  return 0xFFFFFFFF;
-                default:            return 0x000000FF;
+                case Color::Black:  return 0x0B0221FF;
+                case Color::Red:    return 0xFF2E88FF;
+                case Color::Green:  return 0x39FF14FF;
+                case Color::Yellow: return 0xFFD166FF;
+                case Color::Blue:   return 0x6C5CE7FF;
+                case Color::Purple: return 0xB026FFFF;
+                case Color::Teal:   return 0x00F5D4FF;
+                case Color::White:  return 0xF8F0FFFF;
+                default:            return 0x0B0221FF;
             }
             break;
         case Theme::Gruvbox:
@@ -179,5 +179,90 @@ uint32_t Display::GetColor(const Color color)
                 case Color::White:  return 0xF8FAFCFF;
                 default:            return 0x1B1B1BFF;
             }
+            break;
+        case Theme::AmberTerminal:
+            switch (color)
+            {
+                case Color::Black:  return 0x0A0600FF;
+                case Color::Red:    return 0xFF7A18FF;
+                case Color::Green:  return 0xFFB000FF;
+                case Color::Yellow: return 0xFFD479FF;
+                case Color::Blue:   return 0x5A3200FF;
+                case Color::Purple: return 0x8A4B00FF;
+                case Color::Teal:   return 0xC97A00FF;
+                case Color::White:  return 0xFFF1C9FF;
+                default:            return 0x0A0600FF;
+            }
+            break;
+        case Theme::GreenPhosphor:
+            switch (color)
+            {
+                case Color::Black:  return 0x001005FF;
+                case Color::Red:    return 0x4CE87AFF;
+                case Color::Green:  return 0x39FF6AFF;
+                case Color::Yellow: return 0xC6FF8AFF;
+                case Color::Blue:   return 0x0E7A3AFF;
+                case Color::Purple: return 0x2FAE64FF;
+                case Color::Teal:   return 0x6BFFB0FF;
+                case Color::White:  return 0xE6FFE6FF;
+                default:            return 0x001005FF;
+            }
+            break;
+        case Theme::Commodore64:
+            switch (color)
+            {
+                case Color::Black:  return 0x000000FF;
+                case Color::Red:    return 0x68372BFF;
+                case Color::Green:  return 0x588D43FF;
+                case Color::Yellow: return 0xB8C76FFF;
+                case Color::Blue:   return 0x352879FF;
+                case Color::Purple: return 0x6F3D86FF;
+                case Color::Teal:   return 0x70A4B2FF;
+                case Color::White:  return 0xFFFFFFFF;
+                default:            return 0x000000FF;
+            }
+            break;
+        case Theme::Cga:
+            switch (color)
+            {
+                case Color::Black:  return 0x000000FF;
+                case Color::Red:    return 0xAA0000FF;
+                case Color::Green:  return 0x00AA00FF;
+                case Color::Yellow: return 0xAA5500FF;
+                case Color::Blue:   return 0x0000AAFF;
+                case Color::Purple: return 0xAA00AAFF;
+                case Color::Teal:   return 0x00AAAAFF;
+                case Color::White:  return 0xAAAAAAFF;
+                default:            return 0x000000FF;
+            }
+            break;
+        case Theme::SolarizedDark:
+            switch (color)
+            {
+                case Color::Black:  return 0x002B36FF;
+                case Color::Red:    return 0xDC322FFF;
+                case Color::Green:  return 0x859900FF;
+                case Color::Yellow: return 0xB58900FF;
+                case Color::Blue:   return 0x268BD2FF;
+                case Color::Purple: return 0xD33682FF;
+                case Color::Teal:   return 0x2AA198FF;
+                case Color::White:  return 0xEEE8D5FF;
+                default:            return 0x002B36FF;
+            }
+            break;
+        case Theme::Nord:
+            switch (color)
+            {
+                case Color::Black:  return 0x2E3440FF;
+                case Color::Red:    return 0xBF616AFF;
+                case Color::Green:  return 0xA3BE8CFF;
+                case Color::Yellow: return 0xEBCB8BFF;
+                case Color::Blue:   return 0x81A1C1FF;
+                case Color::Purple: return 0xB48EADFF;
+                case Color::Teal:   return 0x88C0D0FF;
+                case Color::White:  return 0xECEFF4FF;
+                default:            return 0x2E3440FF;
+            }
+            break;
     }
 }
