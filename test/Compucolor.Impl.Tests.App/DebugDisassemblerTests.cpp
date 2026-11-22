@@ -7,10 +7,10 @@
 
 #include <gtest/gtest.h>
 
-#include "DebugDisassembler.h"
+#include <Compucolor/App/DebugDisassembler.h>
 
-using Compucolor::Impl::App::Sfml::DisassembledInstruction;
-using Compucolor::Impl::App::Sfml::Disassemble8080;
+using Compucolor::Impl::App::DisassembledInstruction;
+using Compucolor::Impl::App::Disassemble8080;
 
 namespace
 {

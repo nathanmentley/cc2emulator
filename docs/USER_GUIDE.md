@@ -11,7 +11,17 @@ cd dist
 ./cc2_emu.sh
 ```
 
-The launcher changes to `dist/` because `app.config`, plugin libraries, disk images and the saved emulator state are resolved relative to the current working directory. Running the binary directly from another directory produces a "Missing setting ... in app.config" error. The only command-line option is `--trace-jsonl <path>` (also accepted as `--trace-jsonl=<path>`), which starts recording debug events to that file as soon as the emulator starts.
+The launcher changes to `dist/` because `app.config`, plugin libraries, disk images and the saved emulator state are resolved relative to the current working directory. Running the binary directly from another directory produces a "Missing setting ... in app.config" error. Both `--flag <path>` and `--flag=<path>` forms are accepted. The separate headless replay tool is described under [Headless replay](#headless-replay).
+
+| Flag | Effect |
+| --- | --- |
+| `--trace-jsonl <path>` | Start JSONL debug recording as soon as the emulator starts. |
+| `--load-state <path>` | Load a saved state immediately after startup. |
+| `--replay-bundle <path>` | Load a bundle's state and replay its input in the GUI. |
+| `--record-replay <path>` | Capture startup state and record keyboard input until exit. |
+| `--trace-filter <spec>` | Restrict JSONL records; repeatable and also accepted as `--trace-filter=<spec>`. |
+
+`--load-state` cannot be combined with `--replay-bundle`; `--record-replay` cannot be combined with `--replay-bundle`.
 
 The window title is "Compucolor II Emulator". On first launch the default disks are `chomp.ccvf` in drive A and `life.ccvf` in drive B; the fresh default window scale is 4x (384×256 scaled to 1536×1024). Existing settings files are unchanged by code updates.
 
@@ -45,6 +55,8 @@ The menu bar scales with window height and overlays the top of the window; it is
 ### File
 
 - **Save State** / **Load State** — write/read `compucolor-state.json` in the working directory. Load State is enabled only when that file exists. State includes CPU, memory, both drives, keyboard, display, timers and machine configuration.
+- **Start Replay Recording…** — opens a save browser for a `.cc2replay.json` path, then captures the current state and starts recording emulated key down/up events. A `REC` chip appears in the menu bar.
+- **Stop Replay Recording** — writes the bundle to the chosen path immediately. Enabled only while recording. Quitting while still recording also writes the bundle.
 - **Mount Disk A/B…** — opens the built-in `.ccvf` browser. If the current disk has unsaved changes, you can save, discard or cancel first.
 - **Eject Disk A/B** — unmounts the drive (with the same unsaved-changes prompt) and clears the saved disk path.
 - **Save Disk A/B** — writes the mounted image in place immediately. It does not prompt; a failed write (for example, a read-only file) shows an Error dialog.
@@ -52,7 +64,7 @@ The menu bar scales with window height and overlays the top of the window; it is
 - **Save Screenshot** — writes a PNG of the raw 384×256 emulated screen to the `screenshots/` directory next to `settings.config` (by default `~/.config/cc2emu/screenshots/`). The menu overlay and window letterboxing are not included.
 - **Quit** — checks both drives for unsaved changes before closing. Settings are saved on this clean exit.
 
-The disk browser starts in the last used disk directory, otherwise `disks/`, otherwise the working directory. It lists directories and `.ccvf` files only; use `Up` to navigate, double-click or Enter to accept a file, and Cancel to close.
+The file browser starts in the last used disk directory, otherwise `disks/`, otherwise the working directory. Disk actions list directories and `.ccvf` files only; replay recording lists directories and `.json` files. Use `Up` to navigate, double-click or Enter to accept a file, and Cancel to close.
 
 ### Machine
 
@@ -70,6 +82,7 @@ The disk browser starts in the last used disk directory, otherwise `disks/`, oth
 - **Trace** — shows recorded instruction events with sequence number, PC, raw opcode bytes, decoded mnemonic, cycle count and flags. Its **Filters** section can limit events by PC range and by a case-insensitive substring of the mnemonic (for example `MVI` or `CALL`).
 - **TMS5501** — shows the chip status byte, interrupt mask/pending bits, the next RST vector, five timer counters, serial data registers, decoded select lines, audio TXD level and the discrete outport.
 - **SMC5027** — shows cursor X/Y, the first visible display row and a 32-row scroll-origin ruler.
+- **Replay Status** — shows the current emulated time, next input event time and stop target while recording or replaying. It opens automatically when either action is active.
 - **Clear traces** — empties both event buffers; CPU and memory state are unaffected.
 
 Both the Ports and Trace windows also have a Record checkbox and Clear button. In either Filters section, **Enabled** turns filtering on; when it is off, all events of that kind are recorded. **Stop on match** records the first matching event and then freezes that stream until **Rearm** (or **Clear traces**). The other stream keeps recording independently. There are no single-step, step-N, run-to-address or breakpoint controls yet; use Machine → Pause (or the CPU window) to inspect memory safely.
@@ -84,7 +97,61 @@ Start the launcher with `--trace-jsonl trace.jsonl` or `--trace-jsonl=trace.json
 - `tms5501` — status/interrupt/timer/serial fields and decoded line flags
 - `smc5027` — cursor and first display row (hex strings)
 
-Hex fields are uppercase `0x`-prefixed strings. The Debug → Record trace checkbox pauses and resumes JSONL recording as well as the in-memory buffers; when a CLI trace is requested, recording starts enabled. Filters configured in the GUI apply only to the in-memory windows, so the JSONL file always contains the unfiltered stream.
+Hex fields are uppercase `0x`-prefixed strings. The Debug → Record trace checkbox pauses and resumes JSONL recording as well as the in-memory buffers; when a CLI trace is requested, recording starts enabled. Filters configured in the Debug windows apply only to those in-memory windows. JSONL filtering is configured separately with `--trace-filter`; without it, the JSONL file contains the full stream. A `text=` filter decodes the instruction for matching but does not add `text` to the JSONL record.
+
+#### CLI JSONL filters
+
+`--trace-filter <spec>` (or `--trace-filter=<spec>`) uses `kind[:key=value[,key=value...]]`. Repeat the flag to OR multiple filters; a record is written when a filter for its kind matches. If no filter mentions a kind, that kind is omitted. Invalid specs fail at startup with an error naming the spec. `seq` stays dense over the records actually written.
+
+| Kind | Keys |
+| --- | --- |
+| `cpu` | `pc` |
+| `instr` | `pc`, `text` |
+| `port` | `pc`, `port`, `dir` |
+| `tms5501` | none (bare kind only) |
+| `smc5027` | none (bare kind only) |
+
+`pc` and `port` take an inclusive hex range (`0x0100-0x01ff`) or a single hex value (`0x0100`); `port` values are 0–255. `dir` is `read`, `write` or `any`. `text` is a case-insensitive substring of the disassembled instruction.
+
+```sh
+./dist/cc2_emu.sh --trace-jsonl trace.jsonl --trace-filter instr:text=MOV
+./dist/cc2_replay.sh --bundle replay.cc2replay.json \
+  --trace-jsonl trace.jsonl \
+  --trace-filter 'instr:pc=0x0100-0x01ff' \
+  --trace-filter 'port:port=0x07,dir=write'
+```
+
+### GUI recording and replay
+
+Start **File → Start Replay Recording…**, choose a `.cc2replay.json` path, and interact with the machine normally. The recorder stores the state at the moment recording starts plus each `CompucolorIIKey` down/up event with its emulated timestamp. **File → Stop Replay Recording** writes the bundle; quitting while recording writes it automatically.
+
+Start the GUI from a bundle with:
+
+```sh
+./dist/cc2_emu.sh --replay-bundle replay.cc2replay.json
+```
+
+The GUI loads the bundle state after the machine starts and applies input on 1 ms tick boundaries through the same keyboard path used by live input. While replay is active, live keyboard input is ignored so the playback cannot be contaminated; normal input resumes automatically when the replay reaches its stop time. Host controls, menus and Pause/Resume still work. A `REPLAY` chip appears in the menu bar, and **Debug → Replay Status** reports current/next/stop times in emulated microseconds. This mode is for visual confirmation; use `Compucolor.Impl.App.Headless` when exact state hashes or trace comparisons matter.
+
+`--load-state <path>` starts the GUI from a saved state without replaying input. It is rejected together with `--replay-bundle`.
+
+### Headless replay
+
+`dist/cc2_replay.sh` launches `dist/bin/Compucolor.Impl.App.Headless` to replay a saved state without opening a window or reading `app.config`. The launcher changes to `dist/` and points `LD_LIBRARY_PATH` at `plugins/`, because the headless executable links the hardware libraries directly:
+
+```sh
+./dist/cc2_replay.sh --bundle replay.cc2replay.json
+./dist/cc2_replay.sh --bundle replay.cc2replay.json --trace-jsonl trace.jsonl
+./dist/cc2_replay.sh --bundle replay.cc2replay.json \
+  --trace-jsonl trace.jsonl \
+  --trace-filter instr:text=MOV
+./dist/cc2_replay.sh --bundle replay.cc2replay.json \
+  --expected-state-hash ea9677ef6c0a044abdf846275cf992384c68744124fa3d4ea4fe59d475019553
+```
+
+Both `--flag value` and `--flag=value` forms are accepted. A version 1 bundle is JSON with `version`, optional `createdBy`, the complete saved `state`, a time-sorted `input` array and `stop.emulatedNanoseconds`. Each input entry is `{"t": <emulated nanoseconds>, "key": "<CompucolorIIKey name>", "down": true|false}`. Names are exact `CompucolorIIKey` enum names such as `A`, `Shift`, `F1` and `CurUp`.
+
+The runner applies input on 1 ms machine-tick boundaries. An event may therefore take effect slightly after its timestamp, and replay stops on the first tick that reaches or passes `stop.emulatedNanoseconds`. The final SHA-256 of the canonicalized state is printed as `stateHash`; `--expected-state-hash` fails the run if it differs. CLI trace filters are described under [CLI JSONL filters](#cli-jsonl-filters); the GUI recording/replay workflow is described above. Filtering does not change the final state hash.
 
 ### Sound
 

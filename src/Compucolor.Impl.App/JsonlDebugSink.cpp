@@ -1,23 +1,43 @@
-#include "JsonlDebugSink.h"
+#include <Compucolor/App/JsonlDebugSink.h>
+
+#include <Compucolor/App/DebugDisassembler.h>
 
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
 #include <utility>
 
-Compucolor::Impl::App::Sfml::JsonlDebugSink::JsonlDebugSink(std::string path):
+Compucolor::Impl::App::JsonlDebugSink::JsonlDebugSink(
+    std::string path,
+    TraceFilterConfig filters
+):
     _path(std::move(path)),
+    _filters(std::move(filters)),
     _stream(_path, std::ios::out | std::ios::trunc | std::ios::binary)
 {
     if (!_stream.is_open())
     {
         throw std::runtime_error("Unable to open debug JSONL file: " + _path);
     }
+
+    _worker = std::thread([this] { WorkerLoop(); });
 }
 
-Compucolor::Impl::App::Sfml::JsonlDebugSink::~JsonlDebugSink()
+Compucolor::Impl::App::JsonlDebugSink::~JsonlDebugSink()
 {
-    std::lock_guard<std::mutex> lock(_mutex);
+    {
+        std::lock_guard<std::mutex> lock(_queueMutex);
+        _stopping = true;
+    }
+
+    _queueCv.notify_all();
+
+    if (_worker.joinable())
+    {
+        _worker.join();
+    }
+
+    std::lock_guard<std::mutex> lock(_streamMutex);
 
     if (_stream.is_open())
     {
@@ -26,21 +46,133 @@ Compucolor::Impl::App::Sfml::JsonlDebugSink::~JsonlDebugSink()
     }
 }
 
-void Compucolor::Impl::App::Sfml::JsonlDebugSink::SetEnabled(const bool enabled)
+void Compucolor::Impl::App::JsonlDebugSink::Flush()
+{
+    {
+        std::unique_lock<std::mutex> lock(_queueMutex);
+        _queueCv.wait(lock, [this] {
+            return _queue.empty() && _pending == 0;
+        });
+    }
+
+    std::lock_guard<std::mutex> lock(_streamMutex);
+
+    if (_stream.is_open())
+    {
+        _stream.flush();
+    }
+}
+
+void Compucolor::Impl::App::JsonlDebugSink::WorkerLoop()
+{
+    while (true)
+    {
+        TraceRecord record;
+
+        {
+            std::unique_lock<std::mutex> lock(_queueMutex);
+            _queueCv.wait(lock, [this] {
+                return !_queue.empty() || _stopping;
+            });
+
+            if (_queue.empty() && _stopping)
+            {
+                return;
+            }
+
+            record = std::move(_queue.front());
+            _queue.pop_front();
+        }
+
+        std::visit([this](const auto& value) { ProcessRecord(value); }, record);
+
+        {
+            std::lock_guard<std::mutex> lock(_queueMutex);
+            --_pending;
+        }
+
+        _queueCv.notify_all();
+    }
+}
+
+void Compucolor::Impl::App::JsonlDebugSink::SetEnabled(const bool enabled)
 {
     _enabled.store(enabled, std::memory_order_relaxed);
 }
 
-bool Compucolor::Impl::App::Sfml::JsonlDebugSink::IsEnabled() const
+bool Compucolor::Impl::App::JsonlDebugSink::IsEnabled() const
 {
     return _enabled.load(std::memory_order_relaxed);
 }
 
-void Compucolor::Impl::App::Sfml::JsonlDebugSink::SetCpuState(
+void Compucolor::Impl::App::JsonlDebugSink::SetCpuState(
     const Compucolor::Debug::CpuState& state
 )
 {
+    if (IsEnabled())
+    {
+        Enqueue(state);
+    }
+}
+
+void Compucolor::Impl::App::JsonlDebugSink::SetCurrentPc(const uint16_t pc)
+{
+    _currentPc.store(pc, std::memory_order_relaxed);
+}
+
+uint16_t Compucolor::Impl::App::JsonlDebugSink::GetCurrentPc() const
+{
+    return _currentPc.load(std::memory_order_relaxed);
+}
+
+void Compucolor::Impl::App::JsonlDebugSink::OnInstruction(
+    const Compucolor::Debug::InstructionEvent& event
+)
+{
+    if (IsEnabled())
+    {
+        Enqueue(event);
+    }
+}
+
+void Compucolor::Impl::App::JsonlDebugSink::OnPort(
+    const Compucolor::Debug::PortEvent& event
+)
+{
     if (!IsEnabled())
+    {
+        return;
+    }
+
+    const auto pc = event.pc != 0 ? event.pc : GetCurrentPc();
+    Enqueue(ResolvedPortEvent{event, pc});
+}
+
+void Compucolor::Impl::App::JsonlDebugSink::SetTms5501State(
+    const Compucolor::Debug::Tms5501State& state
+)
+{
+    if (IsEnabled())
+    {
+        Enqueue(state);
+    }
+}
+
+void Compucolor::Impl::App::JsonlDebugSink::SetSmc5027State(
+    const Compucolor::Debug::Smc5027State& state
+)
+{
+    if (IsEnabled())
+    {
+        Enqueue(state);
+    }
+}
+
+void Compucolor::Impl::App::JsonlDebugSink::ProcessRecord(
+    const Compucolor::Debug::CpuState& state
+)
+{
+    if (!_filters.Allows("cpu", state.pc))
     {
         return;
     }
@@ -75,21 +207,21 @@ void Compucolor::Impl::App::Sfml::JsonlDebugSink::SetCpuState(
     WriteLine(std::move(line));
 }
 
-void Compucolor::Impl::App::Sfml::JsonlDebugSink::SetCurrentPc(const uint16_t pc)
-{
-    _currentPc.store(pc, std::memory_order_relaxed);
-}
-
-uint16_t Compucolor::Impl::App::Sfml::JsonlDebugSink::GetCurrentPc() const
-{
-    return _currentPc.load(std::memory_order_relaxed);
-}
-
-void Compucolor::Impl::App::Sfml::JsonlDebugSink::OnInstruction(
+void Compucolor::Impl::App::JsonlDebugSink::ProcessRecord(
     const Compucolor::Debug::InstructionEvent& event
 )
 {
-    if (!IsEnabled())
+    std::string text;
+
+    if (_filters.WantsText("instr"))
+    {
+        text = Compucolor::Impl::App::Disassemble8080(
+            event.bytes.data(),
+            event.before.pc
+        ).text;
+    }
+
+    if (!_filters.Allows("instr", event.before.pc, 0, false, text))
     {
         return;
     }
@@ -110,20 +242,20 @@ void Compucolor::Impl::App::Sfml::JsonlDebugSink::OnInstruction(
     WriteLine(std::move(line));
 }
 
-void Compucolor::Impl::App::Sfml::JsonlDebugSink::OnPort(
-    const Compucolor::Debug::PortEvent& event
+void Compucolor::Impl::App::JsonlDebugSink::ProcessRecord(
+    const ResolvedPortEvent& record
 )
 {
-    if (!IsEnabled())
+    const auto& event = record.event;
+
+    if (!_filters.Allows("port", record.pc, event.port, event.isWrite))
     {
         return;
     }
 
-    const auto pc = event.pc != 0 ? event.pc : GetCurrentPc();
-
     boost::json::object line;
     line["kind"] = "port";
-    line["pc"] = Hex(pc, 4);
+    line["pc"] = Hex(record.pc, 4);
     line["port"] = Hex(event.port, 2);
     line["value"] = Hex(event.value, 2);
     line["isWrite"] = event.isWrite;
@@ -131,11 +263,11 @@ void Compucolor::Impl::App::Sfml::JsonlDebugSink::OnPort(
     WriteLine(std::move(line));
 }
 
-void Compucolor::Impl::App::Sfml::JsonlDebugSink::SetTms5501State(
+void Compucolor::Impl::App::JsonlDebugSink::ProcessRecord(
     const Compucolor::Debug::Tms5501State& state
 )
 {
-    if (!IsEnabled())
+    if (!_filters.Allows("tms5501"))
     {
         return;
     }
@@ -165,15 +297,14 @@ void Compucolor::Impl::App::Sfml::JsonlDebugSink::SetTms5501State(
     }
 
     line["timers"] = std::move(timers);
-
     WriteLine(std::move(line));
 }
 
-void Compucolor::Impl::App::Sfml::JsonlDebugSink::SetSmc5027State(
+void Compucolor::Impl::App::JsonlDebugSink::ProcessRecord(
     const Compucolor::Debug::Smc5027State& state
 )
 {
-    if (!IsEnabled())
+    if (!_filters.Allows("smc5027"))
     {
         return;
     }
@@ -193,9 +324,9 @@ void Compucolor::Impl::App::Sfml::JsonlDebugSink::SetSmc5027State(
     WriteLine(std::move(line));
 }
 
-void Compucolor::Impl::App::Sfml::JsonlDebugSink::WriteLine(boost::json::object line)
+void Compucolor::Impl::App::JsonlDebugSink::WriteLine(boost::json::object line)
 {
-    std::lock_guard<std::mutex> lock(_mutex);
+    std::lock_guard<std::mutex> lock(_streamMutex);
 
     if (!_stream.is_open())
     {
@@ -208,7 +339,7 @@ void Compucolor::Impl::App::Sfml::JsonlDebugSink::WriteLine(boost::json::object 
     _stream << boost::json::serialize(line) << '\n';
 }
 
-boost::json::string Compucolor::Impl::App::Sfml::JsonlDebugSink::Hex(
+boost::json::string Compucolor::Impl::App::JsonlDebugSink::Hex(
     const uint64_t value,
     const int width
 )

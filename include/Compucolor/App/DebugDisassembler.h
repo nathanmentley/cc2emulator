@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <string>
 
-namespace Compucolor::Impl::App::Sfml
+namespace Compucolor::Impl::App
 {
     struct DisassembledInstruction {
         std::string text;

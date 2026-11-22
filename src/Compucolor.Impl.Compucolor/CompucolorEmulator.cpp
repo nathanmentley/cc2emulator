@@ -1,5 +1,7 @@
 #include "CompucolorEmulator.h"
 
+#include <Compucolor/Debug/IReplayTickSink.h>
+
 #include <algorithm>
 #include <chrono>
 #include <memory>
@@ -105,6 +107,22 @@ void Compucolor::Impl::CompucolorII::CompucolorEmulator::Start()
             const uint64_t wallNanoseconds = now - _lastTickNanoseconds;
             _lastTickNanoseconds = now;
 
+            // Replay input is injected before the ROM scans the keyboard. Trace
+            // sinks publish after stepping, so this does not alter JSONL order.
+            const auto notifyTickBoundary = [this] {
+                if (!_debugSink)
+                {
+                    return;
+                }
+
+                if (const auto tickSink = std::dynamic_pointer_cast<
+                    Compucolor::Debug::IReplayTickSink
+                >(_debugSink))
+                {
+                    tickSink->OnTickBoundary(_emulatedNanoseconds);
+                }
+            };
+
             // Time spent paused must not turn into a burst of catch-up work on resume.
             if (_paused.load(std::memory_order_relaxed))
             {
@@ -121,13 +139,36 @@ void Compucolor::Impl::CompucolorII::CompucolorEmulator::Start()
                     MaxBudgetNanoseconds
                 );
 
+                // A stalled trace can make one wall tick cover 50 ms of emulated
+                // time. Split it into 1 ms slices so replayed key contacts are
+                // applied at their true emulated times instead of vanishing
+                // between two coarse boundaries.
                 while (_budgetNanoseconds > 0)
                 {
-                    _budgetNanoseconds -= static_cast<int64_t>(StepOnce() * CycleNanoseconds);
+                    notifyTickBoundary();
+
+                    const uint64_t sliceNanoseconds = std::min<uint64_t>(
+                        static_cast<uint64_t>(_budgetNanoseconds),
+                        TickNanoseconds
+                    );
+                    const uint64_t targetNanoseconds =
+                        _emulatedNanoseconds + sliceNanoseconds;
+
+                    while (
+                        _budgetNanoseconds > 0 &&
+                        _emulatedNanoseconds < targetNanoseconds
+                    )
+                    {
+                        _budgetNanoseconds -= static_cast<int64_t>(
+                            StepOnce() * CycleNanoseconds
+                        );
+                    }
                 }
             }
             else
             {
+                notifyTickBoundary();
+
                 _budgetNanoseconds = 0;
 
                 for (int i = 0; i < UnregulatedBurst; i++)
@@ -239,6 +280,11 @@ void Compucolor::Impl::CompucolorII::CompucolorEmulator::SetSpeedRegulated(const
 bool Compucolor::Impl::CompucolorII::CompucolorEmulator::IsSpeedRegulated() const
 {
     return _speedRegulated.load(std::memory_order_relaxed);
+}
+
+uint64_t Compucolor::Impl::CompucolorII::CompucolorEmulator::GetEmulatedNanoseconds() const
+{
+    return _emulatedNanoseconds;
 }
 
 void Compucolor::Impl::CompucolorII::CompucolorEmulator::SetLowercaseCharset(const bool lowercase)

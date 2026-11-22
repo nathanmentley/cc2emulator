@@ -1,6 +1,6 @@
-#include "DebugMonitor.h"
+#include <Compucolor/App/DebugMonitor.h>
 
-#include "DebugDisassembler.h"
+#include <Compucolor/App/DebugDisassembler.h>
 
 #include <algorithm>
 #include <cctype>
@@ -23,24 +23,34 @@ namespace
     }
 }
 
-Compucolor::Impl::App::Sfml::DebugMonitor::DebugMonitor(
+Compucolor::Impl::App::DebugMonitor::DebugMonitor(
     std::shared_ptr<Compucolor::Memory::IMemory> memory
 ):
     _memory(std::move(memory))
 {
 }
 
-bool Compucolor::Impl::App::Sfml::DebugMonitor::IsEnabled() const
+bool Compucolor::Impl::App::DebugMonitor::IsEnabled() const
 {
     return _enabled.load(std::memory_order_relaxed);
 }
 
-void Compucolor::Impl::App::Sfml::DebugMonitor::SetEnabled(const bool enabled)
+void Compucolor::Impl::App::DebugMonitor::SetEnabled(const bool enabled)
 {
     _enabled.store(enabled, std::memory_order_relaxed);
 }
 
-void Compucolor::Impl::App::Sfml::DebugMonitor::SetCpuState(
+void Compucolor::Impl::App::DebugMonitor::SetCaptureEnabled(const bool enabled)
+{
+    _captureEnabled.store(enabled, std::memory_order_relaxed);
+}
+
+bool Compucolor::Impl::App::DebugMonitor::IsCaptureEnabled() const
+{
+    return _captureEnabled.load(std::memory_order_relaxed);
+}
+
+void Compucolor::Impl::App::DebugMonitor::SetCpuState(
     const Compucolor::Debug::CpuState& state
 )
 {
@@ -48,21 +58,21 @@ void Compucolor::Impl::App::Sfml::DebugMonitor::SetCpuState(
     _cpuState = state;
 }
 
-void Compucolor::Impl::App::Sfml::DebugMonitor::SetCurrentPc(const uint16_t pc)
+void Compucolor::Impl::App::DebugMonitor::SetCurrentPc(const uint16_t pc)
 {
     _currentPc.store(pc, std::memory_order_relaxed);
 }
 
-uint16_t Compucolor::Impl::App::Sfml::DebugMonitor::GetCurrentPc() const
+uint16_t Compucolor::Impl::App::DebugMonitor::GetCurrentPc() const
 {
     return _currentPc.load(std::memory_order_relaxed);
 }
 
-void Compucolor::Impl::App::Sfml::DebugMonitor::OnInstruction(
+void Compucolor::Impl::App::DebugMonitor::OnInstruction(
     const Compucolor::Debug::InstructionEvent& event
 )
 {
-    if (!IsEnabled())
+    if (!IsEnabled() || !IsCaptureEnabled())
     {
         return;
     }
@@ -95,11 +105,11 @@ void Compucolor::Impl::App::Sfml::DebugMonitor::OnInstruction(
     }
 }
 
-void Compucolor::Impl::App::Sfml::DebugMonitor::OnPort(
+void Compucolor::Impl::App::DebugMonitor::OnPort(
     const Compucolor::Debug::PortEvent& event
 )
 {
-    if (!IsEnabled())
+    if (!IsEnabled() || !IsCaptureEnabled())
     {
         return;
     }
@@ -132,7 +142,7 @@ void Compucolor::Impl::App::Sfml::DebugMonitor::OnPort(
     }
 }
 
-void Compucolor::Impl::App::Sfml::DebugMonitor::SetInstructionFilter(
+void Compucolor::Impl::App::DebugMonitor::SetInstructionFilter(
     const DebugFilter& filter
 )
 {
@@ -140,46 +150,46 @@ void Compucolor::Impl::App::Sfml::DebugMonitor::SetInstructionFilter(
     _instructionFilter = filter;
 }
 
-void Compucolor::Impl::App::Sfml::DebugMonitor::SetPortFilter(const DebugFilter& filter)
+void Compucolor::Impl::App::DebugMonitor::SetPortFilter(const DebugFilter& filter)
 {
     std::lock_guard<std::mutex> lock(_mutex);
     _portFilter = filter;
 }
 
-Compucolor::Impl::App::Sfml::DebugFilter
-Compucolor::Impl::App::Sfml::DebugMonitor::GetInstructionFilter() const
+Compucolor::Impl::App::DebugFilter
+Compucolor::Impl::App::DebugMonitor::GetInstructionFilter() const
 {
     std::lock_guard<std::mutex> lock(_mutex);
     return _instructionFilter;
 }
 
-Compucolor::Impl::App::Sfml::DebugFilter
-Compucolor::Impl::App::Sfml::DebugMonitor::GetPortFilter() const
+Compucolor::Impl::App::DebugFilter
+Compucolor::Impl::App::DebugMonitor::GetPortFilter() const
 {
     std::lock_guard<std::mutex> lock(_mutex);
     return _portFilter;
 }
 
-bool Compucolor::Impl::App::Sfml::DebugMonitor::IsInstructionTriggered() const
+bool Compucolor::Impl::App::DebugMonitor::IsInstructionTriggered() const
 {
     std::lock_guard<std::mutex> lock(_mutex);
     return _instructionTriggered;
 }
 
-bool Compucolor::Impl::App::Sfml::DebugMonitor::IsPortTriggered() const
+bool Compucolor::Impl::App::DebugMonitor::IsPortTriggered() const
 {
     std::lock_guard<std::mutex> lock(_mutex);
     return _portTriggered;
 }
 
-void Compucolor::Impl::App::Sfml::DebugMonitor::RearmTriggers()
+void Compucolor::Impl::App::DebugMonitor::RearmTriggers()
 {
     std::lock_guard<std::mutex> lock(_mutex);
     _instructionTriggered = false;
     _portTriggered = false;
 }
 
-void Compucolor::Impl::App::Sfml::DebugMonitor::SetTms5501State(
+void Compucolor::Impl::App::DebugMonitor::SetTms5501State(
     const Compucolor::Debug::Tms5501State& state
 )
 {
@@ -187,7 +197,7 @@ void Compucolor::Impl::App::Sfml::DebugMonitor::SetTms5501State(
     _tms5501State = state;
 }
 
-void Compucolor::Impl::App::Sfml::DebugMonitor::SetSmc5027State(
+void Compucolor::Impl::App::DebugMonitor::SetSmc5027State(
     const Compucolor::Debug::Smc5027State& state
 )
 {
@@ -195,46 +205,46 @@ void Compucolor::Impl::App::Sfml::DebugMonitor::SetSmc5027State(
     _smc5027State = state;
 }
 
-Compucolor::Debug::CpuState Compucolor::Impl::App::Sfml::DebugMonitor::GetCpuState() const
+Compucolor::Debug::CpuState Compucolor::Impl::App::DebugMonitor::GetCpuState() const
 {
     std::lock_guard<std::mutex> lock(_mutex);
     return _cpuState;
 }
 
 Compucolor::Debug::Tms5501State
-Compucolor::Impl::App::Sfml::DebugMonitor::GetTms5501State() const
+Compucolor::Impl::App::DebugMonitor::GetTms5501State() const
 {
     std::lock_guard<std::mutex> lock(_mutex);
     return _tms5501State;
 }
 
 Compucolor::Debug::Smc5027State
-Compucolor::Impl::App::Sfml::DebugMonitor::GetSmc5027State() const
+Compucolor::Impl::App::DebugMonitor::GetSmc5027State() const
 {
     std::lock_guard<std::mutex> lock(_mutex);
     return _smc5027State;
 }
 
 std::vector<Compucolor::Debug::InstructionEvent>
-Compucolor::Impl::App::Sfml::DebugMonitor::GetInstructions() const
+Compucolor::Impl::App::DebugMonitor::GetInstructions() const
 {
     std::lock_guard<std::mutex> lock(_mutex);
     return { _instructions.begin(), _instructions.end() };
 }
 
 std::vector<Compucolor::Debug::PortEvent>
-Compucolor::Impl::App::Sfml::DebugMonitor::GetPorts() const
+Compucolor::Impl::App::DebugMonitor::GetPorts() const
 {
     std::lock_guard<std::mutex> lock(_mutex);
     return { _ports.begin(), _ports.end() };
 }
 
-uint8_t Compucolor::Impl::App::Sfml::DebugMonitor::ReadMemory(const uint16_t address) const
+uint8_t Compucolor::Impl::App::DebugMonitor::ReadMemory(const uint16_t address) const
 {
     return _memory ? _memory->GetByte(address) : 0;
 }
 
-void Compucolor::Impl::App::Sfml::DebugMonitor::WriteMemory(
+void Compucolor::Impl::App::DebugMonitor::WriteMemory(
     const uint16_t address,
     const uint8_t value
 ) const
@@ -245,7 +255,7 @@ void Compucolor::Impl::App::Sfml::DebugMonitor::WriteMemory(
     }
 }
 
-void Compucolor::Impl::App::Sfml::DebugMonitor::Clear()
+void Compucolor::Impl::App::DebugMonitor::Clear()
 {
     std::lock_guard<std::mutex> lock(_mutex);
     _instructions.clear();
@@ -255,7 +265,7 @@ void Compucolor::Impl::App::Sfml::DebugMonitor::Clear()
     _nextSequence = 1;
 }
 
-bool Compucolor::Impl::App::Sfml::DebugMonitor::MatchesInstruction(
+bool Compucolor::Impl::App::DebugMonitor::MatchesInstruction(
     const Compucolor::Debug::InstructionEvent& event,
     const DebugFilter& filter
 )
@@ -289,7 +299,7 @@ bool Compucolor::Impl::App::Sfml::DebugMonitor::MatchesInstruction(
     return true;
 }
 
-bool Compucolor::Impl::App::Sfml::DebugMonitor::MatchesPort(
+bool Compucolor::Impl::App::DebugMonitor::MatchesPort(
     const Compucolor::Debug::PortEvent& event,
     const DebugFilter& filter
 )

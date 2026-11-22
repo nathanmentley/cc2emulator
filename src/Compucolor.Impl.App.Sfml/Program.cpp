@@ -2,6 +2,8 @@
 #include "Program.h"
 
 #include <algorithm>
+#include <cstdlib>
+#include <fstream>
 #include <stdexcept>
 #include <utility>
 
@@ -36,9 +38,9 @@ namespace
     }
 }
 
-Program::Program(std::string traceJsonlPath):
+Program::Program(ProgramArguments arguments):
     _settingsPath(Settings::DefaultPath()),
-    _traceJsonlPath(std::move(traceJsonlPath)),
+    _arguments(std::move(arguments)),
     _settings(LoadSettings(_settingsPath)),
     _window(CreateWindow(*_settings)),
     _loggerProvider(make_shared<ConsoleLoggerProvider>(LogLevel::Debug)),
@@ -65,11 +67,16 @@ Program::Program(std::string traceJsonlPath):
     ),
     _debugMonitor(make_shared<DebugMonitor>(_manager->GetMemory())),
     _jsonlSink(
-        _traceJsonlPath.empty()
+        _arguments.traceJsonlPath.empty()
             ? nullptr
-            : make_shared<JsonlDebugSink>(_traceJsonlPath)
+            : make_shared<JsonlDebugSink>(
+                _arguments.traceJsonlPath,
+                _arguments.traceFilters
+            )
     ),
     _debugHub(make_shared<DebugHub>()),
+    _inputRecorder(make_shared<Compucolor::Impl::App::Replay::InputRecorder>()),
+    _replaySink(make_shared<Compucolor::Impl::App::Replay::ReplayInputSink>()),
     _emulator(make_unique<CompucolorEmulatorProcessor>(
         _manager->GetCompucolor(),
         _debugHub
@@ -86,6 +93,7 @@ Program::Program(std::string traceJsonlPath):
     _keyboardTranslator(make_unique<KeyboardTranslator>())
 {
     _debugHub->AddSink(_debugMonitor);
+    _debugHub->AddSink(_replaySink);
 
     if (_jsonlSink)
     {
@@ -101,6 +109,10 @@ Program::Program(std::string traceJsonlPath):
     _display->SetTheme(ThemeFromInt(_settings->GetInt("theme")));
 
     _gui->SetQuitHandler([window = _window] { window->close(); });
+    _gui->SetReplayHandlers(
+        [this](const std::string& path) { StartReplayRecording(path); },
+        [this] { StopReplayRecording(); }
+    );
 
     (void)_gui->Init();
     _gui->ApplyStartupSettings();
@@ -271,6 +283,11 @@ void Program::PressPhysicalKeys(
         // Only send KeyDown when the first physical source presses this key.
         if (count == 0)
         {
+            _inputRecorder->Record(
+                true,
+                key,
+                _emulator->GetEmulatedNanoseconds()
+            );
             _emulator->OnKeyDown(key);
         }
 
@@ -310,6 +327,11 @@ void Program::ReleasePhysicalKey(const sf::Keyboard::Key physical) const
         else
         {
             // Only send KeyUp when the last physical source releases it.
+            _inputRecorder->Record(
+                false,
+                key,
+                _emulator->GetEmulatedNanoseconds()
+            );
             _emulator->OnKeyUp(key);
             _keyPressCounts.erase(countIt);
         }
@@ -325,6 +347,11 @@ void Program::ReleaseAllKeys() const
     for (const auto& [key, count] : _keyPressCounts)
     {
         (void)count;
+        _inputRecorder->Record(
+            false,
+            key,
+            _emulator->GetEmulatedNanoseconds()
+        );
         _emulator->OnKeyUp(key);
     }
 
@@ -409,6 +436,13 @@ void Program::ProcessEvent(const Event& event) const
             return;
         }
 
+        // Replay is the only source of emulated key events while it is active.
+        // Host hotkeys and GUI navigation above this point still work.
+        if (_replaySink->IsActive())
+        {
+            return;
+        }
+
         // Shift is part of the chord resolved from the typed character below.
         // Forwarding it here as well would double-apply it: PC Shift+Semicolon
         // resolves to ':', but CC2 Shift+Colon is '*'.
@@ -446,6 +480,11 @@ void Program::ProcessEvent(const Event& event) const
 
     if (event.is<Event::KeyReleased>())
     {
+        if (_replaySink->IsActive())
+        {
+            return;
+        }
+
         const auto* released = event.getIf<Event::KeyReleased>();
 
         // Only release keys that we actually forwarded on KeyPressed.
@@ -454,9 +493,160 @@ void Program::ProcessEvent(const Event& event) const
     }
 }
 
-int Program::Run() const
+void Program::ApplyReplayEvent(const Compucolor::Impl::App::Replay::ReplayEvent& event) const
 {
-    _emulator->Start();
+    if (event.down)
+    {
+        _emulator->OnKeyDown(event.key);
+    }
+    else
+    {
+        _emulator->OnKeyUp(event.key);
+    }
+}
+
+void Program::ApplyStartupReplayOptions()
+{
+    if (!_arguments.loadStatePath.empty())
+    {
+        _emulator->LoadState(_arguments.loadStatePath);
+        _gui->ShowMessage("Loaded state from " + _arguments.loadStatePath);
+    }
+
+    if (!_arguments.replayBundlePath.empty())
+    {
+        const auto bundle = Compucolor::Impl::App::Replay::ReplayBundle::ParseFile(
+            _arguments.replayBundlePath
+        );
+
+        // Replay owns the keyboard from here on; don't leave held keys behind.
+        ReleaseAllKeys();
+
+        _emulator->LoadState(bundle.State());
+        _replaySink->Start(
+            bundle,
+            [this](const Compucolor::Impl::App::Replay::ReplayEvent& event) {
+                ApplyReplayEvent(event);
+            }
+        );
+
+        _gui->ShowMessage(
+            "Replaying " + _arguments.replayBundlePath + " - live input paused"
+        );
+    }
+
+    if (!_arguments.recordReplayPath.empty())
+    {
+        StartReplayRecording(_arguments.recordReplayPath);
+    }
+}
+
+void Program::StartReplayRecording(const std::string& path)
+{
+    try
+    {
+        if (path.empty())
+        {
+            throw std::runtime_error("Replay bundle path is empty");
+        }
+
+        if (_inputRecorder->IsRecording())
+        {
+            throw std::runtime_error("Replay recording is already active");
+        }
+
+        if (_replaySink->IsActive())
+        {
+            throw std::runtime_error("Stop the active replay before recording");
+        }
+
+        _inputRecorder->Start(
+            _emulator->GetState(),
+            _emulator->GetEmulatedNanoseconds()
+        );
+
+        _recordingPath = path;
+        _gui->ShowMessage("Recording replay to " + path);
+    }
+    catch (const std::exception& error)
+    {
+        _gui->ReportError(std::string("Unable to start replay recording: ") + error.what());
+    }
+}
+
+void Program::StopReplayRecording()
+{
+    if (!_inputRecorder->IsRecording())
+    {
+        return;
+    }
+
+    // Flush held keys so the bundle does not end mid-chord.
+    ReleaseAllKeys();
+
+    try
+    {
+        const auto bundle = _inputRecorder->BuildBundle(
+            _emulator->GetEmulatedNanoseconds(),
+            "cc2emu"
+        );
+
+        std::ofstream file(_recordingPath, std::ios::out | std::ios::trunc | std::ios::binary);
+
+        if (!file.is_open())
+        {
+            throw std::runtime_error("Unable to open " + _recordingPath + " for writing");
+        }
+
+        file << boost::json::serialize(bundle.ToJson());
+
+        if (!file.good())
+        {
+            throw std::runtime_error("Failed to write " + _recordingPath);
+        }
+
+        const std::string path = _recordingPath;
+
+        _inputRecorder->Stop();
+        _recordingPath.clear();
+        _gui->ShowMessage("Saved replay bundle " + path);
+    }
+    catch (const std::exception& error)
+    {
+        _gui->ReportError(std::string("Unable to save replay bundle: ") + error.what());
+    }
+}
+
+bool Program::IsReplayRecording() const
+{
+    return _inputRecorder->IsRecording();
+}
+
+int Program::Run()
+{
+    try
+    {
+        // The facade keeps its keep-alive thread running until Stop(), but does
+        // not return until the emulator has finished loading the ROM and
+        // starting devices.
+        _emulator->Start();
+    }
+    catch (const std::exception& error)
+    {
+        _gui->ReportError(std::string("Unable to start emulator: ") + error.what());
+        return EXIT_FAILURE;
+    }
+
+    try
+    {
+        // State loads must happen after initialization, otherwise the startup
+        // reset would overwrite the replay state and timing.
+        ApplyStartupReplayOptions();
+    }
+    catch (const std::exception& error)
+    {
+        _gui->ReportError(std::string("Unable to apply startup options: ") + error.what());
+    }
 
     sf::Clock frameClock;
 
@@ -472,6 +662,16 @@ int Program::Run() const
 
         ReleaseStuckOneShotKeys();
 
+        const auto progress = _replaySink->GetProgress();
+
+        if (_wasReplayActive && !progress.active)
+        {
+            _gui->ShowMessage("Replay complete");
+        }
+
+        _wasReplayActive = progress.active;
+        _gui->SetReplayState(_inputRecorder->IsRecording(), progress);
+
         const sf::Time elapsed = frameClock.restart();
 
         _gui->BeginFrame(elapsed);
@@ -483,8 +683,15 @@ int Program::Run() const
         }
     }
 
+    // Release keys before writing the bundle so held keys produce matching KeyUp events.
     ReleaseAllKeys();
 
+    if (_inputRecorder->IsRecording())
+    {
+        StopReplayRecording();
+    }
+
+    _replaySink->Stop();
     _emulator->Stop();
     _display->Close();
     _gui->Shutdown();

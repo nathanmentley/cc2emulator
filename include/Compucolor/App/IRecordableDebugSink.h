@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Compucolor::Impl::App::Sfml
+namespace Compucolor::Impl::App
 {
     // Optional capability for sinks that should follow the hub's master
     // recording switch. IDebugSink deliberately has no setter because the

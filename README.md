@@ -8,7 +8,8 @@ More detail is available in the [user guide](docs/USER_GUIDE.md) and the [archit
 
 - Intel 8080 CPU, TMS5501 timer/serial/I/O chip and SMC5027 CRT controller as runtime plugins; the CRT timing PROM is embedded in the Compucolor plugin and exposed through I/O ports `0x80–0x9F`.
 - Two floppy drives (A and B) using `.ccvf` images. Disks can be mounted, ejected, saved and saved-as while running; unsaved changes are detected. The last mounted disks are restored at startup (`disks/chomp.ccvf` and `disks/life.ccvf` by default).
-- Save/load complete emulator state to `compucolor-state.json` (File → Save State / Load State).
+- Save/load complete emulator state to `compucolor-state.json` (File → Save State / Load State) or to an explicit path via CLI flags.
+- Record and replay live GUI sessions as versioned `.cc2replay.json` bundles with emulated-time `CompucolorIIKey` events. `Compucolor.Impl.App.Headless` remains the deterministic oracle for state hashes and JSONL traces.
 - SFML window with resizable, aspect-correct display, optional smooth scaling and fullscreen. Window scale is 1x–8x (hotkeys and the View menu offer 1x–4x); the default for a fresh configuration is 4x.
 - Full keyboard matrix: cursor keys, Home, Tab, Insert/Delete, function keys, Ctrl and PC symbols produce the matching Compucolor key or character chord (US layout). `Alt` is mapped to REPEAT when it is not part of a hotkey; right Windows/Super is also REPEAT and left Windows/Super is a one-shot AUTO.
 - SoundWare audio from the TMS5501 TXD line, enabled by default at volume 100. Toggle with `Alt`+`A`, the Sound menu or Preferences. Only SoundWare-aware software produces audio.
@@ -40,7 +41,42 @@ cd ../dist
 ./cc2_emu.sh
 ```
 
-`cc2_emu.sh` changes to the `dist/` directory before starting the emulator. This is required: `app.config`, `plugins/`, `disks/` and `compucolor-state.json` are all resolved relative to the current working directory. The launcher forwards arguments to the binary; `--trace-jsonl <path>` and `--trace-jsonl=<path>` start recording debug events to a JSONL file immediately.
+`cc2_emu.sh` changes to the `dist/` directory before starting the emulator. This is required: `app.config`, `plugins/`, `disks/` and `compucolor-state.json` are all resolved relative to the current working directory. The launcher forwards arguments to the binary. Both `--flag <path>` and `--flag=<path>` forms are accepted:
+
+| Flag | Effect |
+| --- | --- |
+| `--trace-jsonl <path>` | Start JSONL debug recording immediately. |
+| `--load-state <path>` | Load a saved state immediately after startup. |
+| `--replay-bundle <path>` | Load a bundle's state and replay its input in the GUI. |
+| `--record-replay <path>` | Capture startup state and record keyboard input until exit. |
+| `--trace-filter <spec>` | Restrict which JSONL records are written. Repeatable; also accepts `--trace-filter=<spec>`. |
+
+`--load-state` and `--replay-bundle` are mutually exclusive, as are `--record-replay` and `--replay-bundle`.
+
+The headless replay CLI does not need a window or `app.config`:
+
+```sh
+./dist/cc2_replay.sh \
+  --bundle replay.cc2replay.json \
+  --trace-jsonl trace.jsonl \
+  --trace-filter 'instr:text=MOV' \
+  --trace-filter 'port:port=0x07,dir=write' \
+  --expected-state-hash <sha256>
+```
+
+It loads the saved state, applies `input` events at their emulated timestamps and prints the final state hash and emulated time. `--trace-jsonl` and `--expected-state-hash` are optional. `--trace-filter` is repeatable and applies only to JSONL output; with no filters, the full stream is written. Filter specs are `kind[:key=value[,key=value...]]`, with kinds `cpu`, `instr`, `port`, `tms5501` and `smc5027`. See [`docs/REPLAY_PLAN.md`](docs/REPLAY_PLAN.md) for the full syntax, per-kind keys and phasing.
+
+### GUI replay bundles
+
+Use **File → Start Replay Recording…** to choose a bundle path. Recording captures the current machine state and every emulated key down/up transition, stamped with emulated time. A `REC` chip appears in the menu bar. **File → Stop Replay Recording** writes the bundle immediately; quitting while still recording writes it on exit.
+
+To watch a bundle in the GUI:
+
+```sh
+./dist/cc2_emu.sh --replay-bundle replay.cc2replay.json
+```
+
+The bundle's state is loaded after startup, and its input events are applied on 1 ms machine-tick boundaries through the existing keyboard path. While replay is active, live keyboard input is ignored so the playback cannot be contaminated; normal input resumes when replay reaches its stop time. **Debug → Replay Status** shows current emulated time, the next input event time and the stop target. GUI replay is for visual confirmation; use `Compucolor.Impl.App.Headless` for deterministic final-state and trace comparisons.
 
 ## Controls
 
@@ -85,7 +121,7 @@ Debug → Record trace turns on bounded CPU-instruction and I/O-port capture (th
 | Plugin paths | `./app.config` (relative paths such as `plugins/libCompucolor.Impl.Floppy`) |
 | Default disks | `./disks/chomp.ccvf` and `./disks/life.ccvf` |
 | ROM images | Source copies in `data/roms/`; both system ROMs and fonts are compiled into `Roms.cpp` / `FontRom.cpp`, so the installed `roms/` directory is informational |
-| Installed app | `dist/bin/Compucolor.Impl.App.Sfml`, `dist/plugins/`, `dist/disks/`, `dist/cc2_emu.sh` |
+| Installed apps | `dist/bin/Compucolor.Impl.App.Sfml`, `dist/bin/Compucolor.Impl.App.Headless`, `dist/plugins/`, `dist/disks/`, `dist/cc2_emu.sh`, `dist/cc2_replay.sh` |
 
 Settings keys and defaults: `window_scale=4`, `fullscreen=false`, `smooth_scaling=false`, `theme=0`, `charset=standard`, `rom_version=v8.79`, `speed_regulated=true`, `disk_a_path=disks/chomp.ccvf`, `disk_b_path=disks/life.ccvf`, `last_disk_dir` empty, `sound_enabled=true`, `sound_volume=100`. `theme` is an index from 0–9: Standard, Synthwave, Gruvbox, WarmRetro, Amber Terminal, Green Phosphor, Commodore 64, CGA, Solarized Dark and Nord; it is applied at startup. `charset=lowercase` selects the alternate font; `rom_version=v6.78` selects the older ROM and its 3-phase floppy stepper. Settings are written on clean exit, not after every change.
 
@@ -100,21 +136,33 @@ The `sound_enabled` and `sound_volume` lines in `data/app.config` are legacy and
 ## Project layout
 
 ```text
-include/Compucolor/       public interfaces and plugin loader/manager
-src/Compucolor.Impl.*/    emulator components and the SFML/ImGui application
+include/Compucolor/       public interfaces, shared app/replay headers and plugin loader/manager
+src/Compucolor.Impl.*/    emulator components plus split GUI/headless app implementations
 test/                     GoogleTest suites and shared fakes/mocks
-data/                     app.config, launcher script, ROMs and disk images
+data/                     app.config, launcher scripts, ROMs and disk images
 scripts/check_imports.py  build-time check that includes do not use ".."
-docs/                     user guide and architecture overview
+docs/                     user guide, architecture overview and replay plan
 ```
 
 Build outputs go to `build/`; `meson install` writes the runnable application to `dist/`. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the component graph, threading model, memory map and I/O port routing.
 
 ## Testing
 
-`meson test` runs nine test executables (Memory, Intel8080, Smc5027, Tms5501, Crt, Floppy, Keyboard, Compucolor and App). A separate build target runs `scripts/check_imports.py`, which rejects `#include` paths containing `..`.
+`meson test` runs ten test executables (Memory, Intel8080, Smc5027, Tms5501, Crt, Floppy, Keyboard, Compucolor, App and Replay). A separate build target runs `scripts/check_imports.py`, which rejects `#include` paths containing `..`.
 
 GitHub Actions runs the same build and test suite, plus `git diff --check`, on pushes and pull requests. The workflow builds the devcontainer image so CI uses the same SFML 3 toolchain as local development (`.github/workflows/ci.yml`).
+
+The deterministic save-state and input-replay workflow is documented in [`docs/REPLAY_PLAN.md`](docs/REPLAY_PLAN.md).
+
+## Credits and references
+
+This project was built using the following reference points and resources:
+
+- [jtbattle/ccemu](https://github.com/jtbattle/ccemu) — Compucolor emulator implementation used as a reference point.
+- [Compucolor.org](https://www.compucolor.org) — documentation and community resources for the Compucolor II.
+- [superzazu/8080](https://github.com/superzazu/8080) — Intel 8080 CPU emulation core used by this project, wrapped by the local Intel8080 plugin.
+
+Thanks to their authors and maintainers for preserving and documenting the platform.
 
 ## Dev container
 

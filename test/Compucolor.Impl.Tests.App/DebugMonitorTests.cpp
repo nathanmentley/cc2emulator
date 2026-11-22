@@ -5,7 +5,7 @@
 
 #include <Compucolor/Memory/IMemory.h>
 
-#include "DebugMonitor.h"
+#include <Compucolor/App/DebugMonitor.h>
 
 namespace
 {
@@ -38,7 +38,7 @@ namespace
 
 TEST(DebugMonitor, BuffersEventsAndCpuStateWhileEnabled)
 {
-    auto monitor = Compucolor::Impl::App::Sfml::DebugMonitor(
+    auto monitor = Compucolor::Impl::App::DebugMonitor(
         std::make_shared<FakeMemory>()
     );
 
@@ -58,6 +58,7 @@ TEST(DebugMonitor, BuffersEventsAndCpuStateWhileEnabled)
     port.isWrite = true;
 
     monitor.SetEnabled(true);
+    monitor.SetCaptureEnabled(true);
     monitor.SetCpuState(state);
     monitor.SetCurrentPc(0x1234);
     monitor.OnInstruction(instruction);
@@ -85,7 +86,7 @@ TEST(DebugMonitor, BuffersEventsAndCpuStateWhileEnabled)
 
 TEST(DebugMonitor, IgnoresEventsWhenDisabledAndClearRemovesBufferedEvents)
 {
-    auto monitor = Compucolor::Impl::App::Sfml::DebugMonitor(
+    auto monitor = Compucolor::Impl::App::DebugMonitor(
         std::make_shared<FakeMemory>()
     );
 
@@ -97,6 +98,7 @@ TEST(DebugMonitor, IgnoresEventsWhenDisabledAndClearRemovesBufferedEvents)
     EXPECT_TRUE(monitor.GetPorts().empty());
 
     monitor.SetEnabled(true);
+    monitor.SetCaptureEnabled(true);
     monitor.OnInstruction(instruction);
     monitor.OnPort(Compucolor::Debug::PortEvent{});
 
@@ -108,10 +110,35 @@ TEST(DebugMonitor, IgnoresEventsWhenDisabledAndClearRemovesBufferedEvents)
     EXPECT_TRUE(monitor.GetPorts().empty());
 }
 
+TEST(DebugMonitor, IgnoresInstructionAndPortBuffersWhenCaptureIsOff)
+{
+    auto monitor = Compucolor::Impl::App::DebugMonitor(
+        std::make_shared<FakeMemory>()
+    );
+
+    Compucolor::Debug::InstructionEvent instruction;
+    instruction.before.pc = 0x1234;
+    instruction.bytes = {0x3E, 0x42, 0x00};
+
+    monitor.SetEnabled(true);
+    monitor.OnInstruction(instruction);
+    monitor.OnPort(Compucolor::Debug::PortEvent{});
+
+    EXPECT_TRUE(monitor.GetInstructions().empty());
+    EXPECT_TRUE(monitor.GetPorts().empty());
+
+    monitor.SetCaptureEnabled(true);
+    monitor.OnInstruction(instruction);
+    monitor.OnPort(Compucolor::Debug::PortEvent{});
+
+    EXPECT_EQ(1U, monitor.GetInstructions().size());
+    EXPECT_EQ(1U, monitor.GetPorts().size());
+}
+
 TEST(DebugMonitor, ReadsAndWritesMemory)
 {
     auto memory = std::make_shared<FakeMemory>();
-    auto monitor = Compucolor::Impl::App::Sfml::DebugMonitor(memory);
+    auto monitor = Compucolor::Impl::App::DebugMonitor(memory);
 
     monitor.WriteMemory(0x4000, 0xC3);
     EXPECT_EQ(0xC3, monitor.ReadMemory(0x4000));
@@ -120,11 +147,11 @@ TEST(DebugMonitor, ReadsAndWritesMemory)
 
 TEST(DebugMonitor, FiltersInstructionsByPcAndMnemonic)
 {
-    auto monitor = Compucolor::Impl::App::Sfml::DebugMonitor(
+    auto monitor = Compucolor::Impl::App::DebugMonitor(
         std::make_shared<FakeMemory>()
     );
 
-    Compucolor::Impl::App::Sfml::DebugFilter filter;
+    Compucolor::Impl::App::DebugFilter filter;
     filter.enabled = true;
     filter.filterByPc = true;
     filter.pcFrom = 0x1000;
@@ -143,6 +170,7 @@ TEST(DebugMonitor, FiltersInstructionsByPcAndMnemonic)
     wrongOpcode.bytes = {0xC3, 0x00, 0x00};
 
     monitor.SetEnabled(true);
+    monitor.SetCaptureEnabled(true);
     monitor.OnInstruction(matching);
     monitor.OnInstruction(outsideRange);
     monitor.OnInstruction(wrongOpcode);
@@ -155,16 +183,16 @@ TEST(DebugMonitor, FiltersInstructionsByPcAndMnemonic)
 
 TEST(DebugMonitor, FiltersPortsByRangeAndDirection)
 {
-    auto monitor = Compucolor::Impl::App::Sfml::DebugMonitor(
+    auto monitor = Compucolor::Impl::App::DebugMonitor(
         std::make_shared<FakeMemory>()
     );
 
-    Compucolor::Impl::App::Sfml::DebugFilter filter;
+    Compucolor::Impl::App::DebugFilter filter;
     filter.enabled = true;
     filter.filterByPort = true;
     filter.portFrom = 0x10;
     filter.portTo = 0x1F;
-    filter.direction = Compucolor::Impl::App::Sfml::DebugPortDirection::Read;
+    filter.direction = Compucolor::Impl::App::DebugPortDirection::Read;
     monitor.SetPortFilter(filter);
 
     Compucolor::Debug::PortEvent matching;
@@ -178,6 +206,7 @@ TEST(DebugMonitor, FiltersPortsByRangeAndDirection)
     outsideRange.port = 0x20;
 
     monitor.SetEnabled(true);
+    monitor.SetCaptureEnabled(true);
     monitor.OnPort(matching);
     monitor.OnPort(wrongDirection);
     monitor.OnPort(outsideRange);
@@ -190,11 +219,11 @@ TEST(DebugMonitor, FiltersPortsByRangeAndDirection)
 
 TEST(DebugMonitor, StopOnMatchFreezesAStreamUntilRearmed)
 {
-    auto monitor = Compucolor::Impl::App::Sfml::DebugMonitor(
+    auto monitor = Compucolor::Impl::App::DebugMonitor(
         std::make_shared<FakeMemory>()
     );
 
-    Compucolor::Impl::App::Sfml::DebugFilter filter;
+    Compucolor::Impl::App::DebugFilter filter;
     filter.enabled = true;
     filter.stopOnMatch = true;
     monitor.SetInstructionFilter(filter);
@@ -204,6 +233,7 @@ TEST(DebugMonitor, StopOnMatchFreezesAStreamUntilRearmed)
     event.bytes = {0x00, 0x00, 0x00};
 
     monitor.SetEnabled(true);
+    monitor.SetCaptureEnabled(true);
     monitor.OnInstruction(event);
     monitor.OnInstruction(event);
     monitor.OnInstruction(event);
@@ -220,7 +250,7 @@ TEST(DebugMonitor, StopOnMatchFreezesAStreamUntilRearmed)
 
 TEST(DebugMonitor, StoresPeripheralSnapshots)
 {
-    auto monitor = Compucolor::Impl::App::Sfml::DebugMonitor(
+    auto monitor = Compucolor::Impl::App::DebugMonitor(
         std::make_shared<FakeMemory>()
     );
 

@@ -13,10 +13,11 @@
 #include <Compucolor/CompucolorEmulatorProcessor.h>
 
 #include "AudioOutput.h"
-#include "DebugFilter.h"
-#include "DebugHub.h"
-#include "DebugMonitor.h"
+#include <Compucolor/App/DebugFilter.h>
+#include <Compucolor/App/DebugHub.h>
+#include <Compucolor/App/DebugMonitor.h>
 #include "Display.h"
+#include <Compucolor/App/Replay/ReplayInputSink.h>
 #include "Settings.h"
 
 namespace Compucolor::Impl::App::Sfml
@@ -40,6 +41,23 @@ namespace Compucolor::Impl::App::Sfml
             void Shutdown();
 
             void SetQuitHandler(std::function<void()> handler);
+
+            // Hooks used by the File menu replay actions. The path is chosen
+            // before recording starts; stopping writes the bundle immediately.
+            void SetReplayHandlers(
+                std::function<void(const std::string&)> startRecording,
+                std::function<void()> stopRecording
+            );
+
+            // Updates replay indicators and the progress window from host-safe
+            // replay state published by Program.
+            void SetReplayState(
+                bool recording,
+                const Compucolor::Impl::App::Replay::ReplayProgress& progress
+            );
+
+            void ReportError(const std::string& message);
+            void ShowMessage(const std::string& message);
 
             // Applies saved machine settings and mounts the saved disks.
             void ApplyStartupSettings();
@@ -73,7 +91,7 @@ namespace Compucolor::Impl::App::Sfml
             bool ConsumeWindowChange();
 
         private:
-            enum class BrowserMode { Mount, SaveAs };
+            enum class BrowserMode { Mount, SaveAs, SaveReplay };
 
             std::shared_ptr<sf::RenderWindow> _window;
             std::shared_ptr<Settings> _settings;
@@ -83,6 +101,8 @@ namespace Compucolor::Impl::App::Sfml
             std::shared_ptr<Display> _display;
             std::shared_ptr<AudioOutput> _audio;
             std::function<void()> _quit;
+            std::function<void(const std::string&)> _startReplayRecording;
+            std::function<void()> _stopReplayRecording;
 
             bool _ready = false;
 
@@ -102,6 +122,9 @@ namespace Compucolor::Impl::App::Sfml
             bool _showTraceDebug = false;
             bool _showTms5501Debug = false;
             bool _showSmc5027Debug = false;
+            bool _showReplayStatus = false;
+            bool _replayRecording = false;
+            Compucolor::Impl::App::Replay::ReplayProgress _replayProgress{};
             bool _debugRecording = false;
 
             DebugFilter _instructionFilter{};
@@ -141,6 +164,7 @@ namespace Compucolor::Impl::App::Sfml
             void DrawTraceDebug();
             void DrawTms5501Debug();
             void DrawSmc5027Debug();
+            void DrawReplayStatus();
             void DrawBrowser();
             void DrawUnsavedPrompt();
             void DrawError();

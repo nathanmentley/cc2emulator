@@ -19,12 +19,16 @@
 #include "Configuration.h"
 #include "AsciiKeyMap.h"
 #include "AudioOutput.h"
-#include "DebugHub.h"
-#include "DebugMonitor.h"
+#include <Compucolor/App/DebugHub.h>
+#include <Compucolor/App/DebugMonitor.h>
 #include "Display.h"
-#include "JsonlDebugSink.h"
+#include <Compucolor/App/JsonlDebugSink.h>
 #include "Gui.h"
+#include <Compucolor/App/Replay/InputRecorder.h>
 #include "KeyboardTranslator.h"
+#include "ProgramArguments.h"
+#include <Compucolor/App/Replay/ReplayEvent.h>
+#include <Compucolor/App/Replay/ReplayInputSink.h>
 #include "Settings.h"
 
 namespace Compucolor::Impl::App::Sfml
@@ -33,17 +37,24 @@ namespace Compucolor::Impl::App::Sfml
     // window and host services, builds the plugin manager and initializes the GUI.
     class Program {
         public:
-            explicit Program(std::string traceJsonlPath = {});
+            explicit Program(ProgramArguments arguments = {});
 
             // Starts the emulator and runs the event/render loop until the window
             // closes, then releases keys, stops emulation and saves settings.
-            [[nodiscard]] int Run() const;
+            int Run();
+
+            // Used by the File menu replay-recording actions.
+            void StartReplayRecording(const std::string& path);
+            void StopReplayRecording();
+            [[nodiscard]] bool IsReplayRecording() const;
 
         private:
             using EmulatedKey = Compucolor::Keyboard::CompucolorIIKey;
 
             std::string _settingsPath;
-            std::string _traceJsonlPath;
+            ProgramArguments _arguments;
+            std::string _recordingPath;
+            bool _wasReplayActive = false;
             std::shared_ptr<Settings> _settings;
             std::shared_ptr<sf::RenderWindow> _window;
             std::shared_ptr<Compucolor::Logger::ConsoleLoggerProvider> _loggerProvider;
@@ -54,6 +65,8 @@ namespace Compucolor::Impl::App::Sfml
             std::shared_ptr<DebugMonitor> _debugMonitor;
             std::shared_ptr<JsonlDebugSink> _jsonlSink;
             std::shared_ptr<DebugHub> _debugHub;
+            std::shared_ptr<Compucolor::Impl::App::Replay::InputRecorder> _inputRecorder;
+            std::shared_ptr<Compucolor::Impl::App::Replay::ReplayInputSink> _replaySink;
             std::unique_ptr<Compucolor::CompucolorEmulatorProcessor> _emulator;
             std::unique_ptr<Gui> _gui;
             std::unique_ptr<KeyboardTranslator> _keyboardTranslator;
@@ -100,5 +113,8 @@ namespace Compucolor::Impl::App::Sfml
                 sf::Keyboard::Key physical,
                 const KeyChord& chord
             ) const;
+
+            void ApplyReplayEvent(const Compucolor::Impl::App::Replay::ReplayEvent& event) const;
+            void ApplyStartupReplayOptions();
     };
 }

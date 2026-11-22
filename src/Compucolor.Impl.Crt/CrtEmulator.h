@@ -24,12 +24,12 @@ namespace Compucolor::Impl::Crt
     class CrtEmulator: public Compucolor::Crt::ICrtEmulator {
         public:
             CrtEmulator(
-                std::shared_ptr<Logger::ILogger> logger,
-                std::shared_ptr<Common::IDisplay> display,
-                std::shared_ptr<Scheduler::IScheduler> scheduler,
-                std::shared_ptr<Memory::IMemory> memory,
-                std::shared_ptr<Smc5027::ISmc5027Emulator> smc5027emulator,
-                std::shared_ptr<Tms5501::ITms5501Emulator> tms5501Emulator
+                std::shared_ptr<Compucolor::Logger::ILogger> logger,
+                std::shared_ptr<Compucolor::Common::IDisplay> display,
+                std::shared_ptr<Compucolor::Scheduler::IScheduler> scheduler,
+                std::shared_ptr<Compucolor::Memory::IMemory> memory,
+                std::shared_ptr<Compucolor::Smc5027::ISmc5027Emulator> smc5027emulator,
+                std::shared_ptr<Compucolor::Tms5501::ITms5501Emulator> tms5501Emulator
             );
 
             // Starts the 10 ms refresh task.
@@ -47,7 +47,7 @@ namespace Compucolor::Impl::Crt
             // Validates phase/charset before applying them.
             void LoadState(std::shared_ptr<boost::json::value>) override;
 
-            static std::shared_ptr<ICrtEmulator> Creator(Common::IPluginManager* manager);
+            static std::shared_ptr<ICrtEmulator> Creator(Compucolor::Common::IPluginManager* manager);
 
         private:
             static constexpr int Columns = 64;
@@ -57,13 +57,13 @@ namespace Compucolor::Impl::Crt
             static constexpr int Width = Columns * CharacterWidth;
             static constexpr int Height = Rows * CharacterHeight;
 
-            std::shared_ptr<Logger::ILogger> _logger;
-            std::shared_ptr<Common::IDisplay> _display;
-            std::shared_ptr<Scheduler::IScheduler> _scheduler;
-            std::shared_ptr<Memory::IMemory> _memory;
-            std::shared_ptr<Smc5027::ISmc5027Emulator> _smc5027emulator;
-            std::shared_ptr<Tms5501::ITms5501Emulator> _tms5501Emulator;
-            std::shared_ptr<Scheduler::IScheduledTask> _loop;
+            std::shared_ptr<Compucolor::Logger::ILogger> _logger;
+            std::shared_ptr<Compucolor::Common::IDisplay> _display;
+            std::shared_ptr<Compucolor::Scheduler::IScheduler> _scheduler;
+            std::shared_ptr<Compucolor::Memory::IMemory> _memory;
+            std::shared_ptr<Compucolor::Smc5027::ISmc5027Emulator> _smc5027emulator;
+            std::shared_ptr<Compucolor::Tms5501::ITms5501Emulator> _tms5501Emulator;
+            std::shared_ptr<Compucolor::Scheduler::IScheduledTask> _loop;
 
 
             int _phase;

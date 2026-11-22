@@ -1,4 +1,4 @@
-#include "DebugDisassembler.h"
+#include <Compucolor/App/DebugDisassembler.h>
 
 #include <array>
 #include <cstddef>
@@ -7,7 +7,7 @@
 #include <string_view>
 #include <utility>
 
-using Compucolor::Impl::App::Sfml::DisassembledInstruction;
+using Compucolor::Impl::App::DisassembledInstruction;
 
 namespace
 {
@@ -53,7 +53,7 @@ namespace
     }
 }
 
-DisassembledInstruction Compucolor::Impl::App::Sfml::Disassemble8080(const std::uint8_t* bytes, std::uint16_t address)
+DisassembledInstruction Compucolor::Impl::App::Disassemble8080(const std::uint8_t* bytes, std::uint16_t address)
 {
     // Every control transfer on the 8080 uses an absolute immediate target, so
     // the PC does not affect the output; the parameter is kept for the debug UI.

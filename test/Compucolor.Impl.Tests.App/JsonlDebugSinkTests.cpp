@@ -13,7 +13,7 @@
 
 #include <Compucolor/Debug/IDebugSink.h>
 
-#include "JsonlDebugSink.h"
+#include <Compucolor/App/JsonlDebugSink.h>
 
 namespace
 {
@@ -46,7 +46,7 @@ TEST(JsonlDebugSink, WritesValidJsonLinesAndFlushesOnDestruction)
     const auto path = MakeTempPath(".jsonl");
 
     {
-        Compucolor::Impl::App::Sfml::JsonlDebugSink sink(path.string());
+        Compucolor::Impl::App::JsonlDebugSink sink(path.string());
         EXPECT_TRUE(sink.IsEnabled());
 
         CpuState cpu;
@@ -129,6 +129,7 @@ TEST(JsonlDebugSink, WritesValidJsonLinesAndFlushesOnDestruction)
 
     const auto& instruction = entries[1].as_object();
     EXPECT_EQ("0x1234", AsString(instruction.at("pc")));
+    EXPECT_EQ(instruction.end(), instruction.find("text"));
 
     const auto& bytes = instruction.at("bytes").as_array();
     ASSERT_EQ(3U, bytes.size());
@@ -157,7 +158,7 @@ TEST(JsonlDebugSink, DisabledSinkDoesNotWriteRecords)
     const auto path = MakeTempPath(".jsonl");
 
     {
-        Compucolor::Impl::App::Sfml::JsonlDebugSink sink(path.string());
+        Compucolor::Impl::App::JsonlDebugSink sink(path.string());
         sink.SetEnabled(false);
         EXPECT_FALSE(sink.IsEnabled());
 
@@ -184,9 +185,148 @@ TEST(JsonlDebugSink, ThrowsWhenFileCannotBeOpened)
 
     EXPECT_THROW(
         {
-            Compucolor::Impl::App::Sfml::JsonlDebugSink sink(missing.string());
+            Compucolor::Impl::App::JsonlDebugSink sink(missing.string());
             (void)sink;
         },
         std::runtime_error
     );
+}
+
+TEST(JsonlDebugSink, FiltersRecordsAndKeepsSequenceDense)
+{
+    using Compucolor::Impl::App::TraceFilterConfig;
+
+    const auto path = MakeTempPath(".jsonl");
+    const auto filters = TraceFilterConfig::Parse({
+        "instr:text=mov",
+        "port:port=0x0010,dir=write"
+    });
+
+    {
+        Compucolor::Impl::App::JsonlDebugSink sink(path.string(), filters);
+
+        CpuState cpu;
+        cpu.pc = 0x1234;
+        sink.SetCpuState(cpu);
+
+        InstructionEvent mov;
+        mov.before.pc = 0x0100;
+        mov.bytes = {0x41, 0x00, 0x00};
+        sink.OnInstruction(mov);
+
+        InstructionEvent nop;
+        nop.before.pc = 0x0101;
+        nop.bytes = {0x00, 0x00, 0x00};
+        sink.OnInstruction(nop);
+
+        PortEvent write;
+        write.pc = 0x0200;
+        write.port = 0x10;
+        write.value = 0xAB;
+        write.isWrite = true;
+        sink.OnPort(write);
+
+        PortEvent read;
+        read.pc = 0x0200;
+        read.port = 0x10;
+        read.value = 0xCD;
+        read.isWrite = false;
+        sink.OnPort(read);
+
+        sink.SetTms5501State(Tms5501State{});
+        sink.SetSmc5027State(Smc5027State{});
+    }
+
+    std::ifstream input(path);
+    ASSERT_TRUE(input.is_open());
+
+    std::vector<boost::json::value> entries;
+    std::string line;
+
+    while (std::getline(input, line))
+    {
+        ASSERT_FALSE(line.empty());
+        entries.push_back(boost::json::parse(line));
+    }
+
+    ASSERT_EQ(2U, entries.size());
+    EXPECT_EQ("instr", AsString(entries[0].as_object().at("kind")));
+    EXPECT_EQ("0x0100", AsString(entries[0].as_object().at("pc")));
+    EXPECT_EQ(1, entries[0].as_object().at("seq").as_int64());
+
+    EXPECT_EQ("port", AsString(entries[1].as_object().at("kind")));
+    EXPECT_EQ("0x10", AsString(entries[1].as_object().at("port")));
+    EXPECT_TRUE(entries[1].as_object().at("isWrite").as_bool());
+    EXPECT_EQ(2, entries[1].as_object().at("seq").as_int64());
+
+    (void)std::filesystem::remove(path);
+}
+
+TEST(JsonlDebugSink, BareKindFilterOmitsOtherKinds)
+{
+    using Compucolor::Impl::App::TraceFilterConfig;
+
+    const auto path = MakeTempPath(".jsonl");
+
+    {
+        Compucolor::Impl::App::JsonlDebugSink sink(
+            path.string(),
+            TraceFilterConfig::Parse({"smc5027"})
+        );
+
+        sink.SetCpuState(CpuState{});
+        sink.OnInstruction(InstructionEvent{});
+        sink.OnPort(PortEvent{});
+        sink.SetTms5501State(Tms5501State{});
+
+        Smc5027State smc;
+        smc.cursorX = 7;
+        sink.SetSmc5027State(smc);
+    }
+
+    std::ifstream input(path);
+    ASSERT_TRUE(input.is_open());
+
+    std::vector<boost::json::value> entries;
+    std::string line;
+
+    while (std::getline(input, line))
+    {
+        entries.push_back(boost::json::parse(line));
+    }
+
+    ASSERT_EQ(1U, entries.size());
+    EXPECT_EQ("smc5027", AsString(entries[0].as_object().at("kind")));
+    EXPECT_EQ(1, entries[0].as_object().at("seq").as_int64());
+
+    (void)std::filesystem::remove(path);
+}
+
+TEST(JsonlDebugSink, FlushWritesBufferedRecordsBeforeClose)
+{
+    const auto path = MakeTempPath(".jsonl");
+
+    Compucolor::Impl::App::JsonlDebugSink sink(path.string());
+
+    CpuState cpu;
+    cpu.pc = 0x1234;
+    sink.SetCpuState(cpu);
+
+    sink.Flush();
+
+    std::ifstream input(path);
+    ASSERT_TRUE(input.is_open());
+
+    std::vector<boost::json::value> entries;
+    std::string line;
+
+    while (std::getline(input, line))
+    {
+        entries.push_back(boost::json::parse(line));
+    }
+
+    ASSERT_EQ(1U, entries.size());
+    EXPECT_EQ("cpu", AsString(entries[0].as_object().at("kind")));
+
+    (void)std::filesystem::remove(path);
 }

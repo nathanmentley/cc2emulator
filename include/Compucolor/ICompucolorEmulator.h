@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <memory>
 
 #include <Compucolor/Common/ISystem.h>
@@ -38,6 +39,10 @@ namespace Compucolor
             // When false the CPU runs in bounded 4096-step bursts per 1 ms tick
             // instead of being paced to roughly 2 MHz.
             virtual void SetSpeedRegulated(bool regulated) = 0;
+
+            // Absolute emulated time consumed by the CPU so far. Replay input is
+            // timestamped against this clock, never host wall-clock time.
+            [[nodiscard]] virtual uint64_t GetEmulatedNanoseconds() const = 0;
 
             [[nodiscard]] virtual bool IsSpeedRegulated() const = 0;
 

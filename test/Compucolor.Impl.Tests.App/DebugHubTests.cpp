@@ -7,7 +7,7 @@
 
 #include <Compucolor/Debug/IDebugSink.h>
 
-#include "DebugHub.h"
+#include <Compucolor/App/DebugHub.h>
 
 namespace
 {
@@ -90,7 +90,7 @@ namespace
     class AddingSink final: public FakeSink {
         public:
             AddingSink(
-                Compucolor::Impl::App::Sfml::DebugHub* hub,
+                Compucolor::Impl::App::DebugHub* hub,
                 std::shared_ptr<IDebugSink> added
             ):
                 _hub(hub),
@@ -105,13 +105,13 @@ namespace
             }
 
         private:
-            Compucolor::Impl::App::Sfml::DebugHub* _hub;
+            Compucolor::Impl::App::DebugHub* _hub;
             std::shared_ptr<IDebugSink> _added;
     };
 
     class RecordableFakeSink final:
         public FakeSink,
-        public Compucolor::Impl::App::Sfml::IRecordableDebugSink {
+        public Compucolor::Impl::App::IRecordableDebugSink {
         public:
             void SetEnabled(const bool enabled) override
             {
@@ -125,7 +125,7 @@ namespace
 
 TEST(DebugHub, ForwardsEventsAndStateWhileEnabled)
 {
-    Compucolor::Impl::App::Sfml::DebugHub hub;
+    Compucolor::Impl::App::DebugHub hub;
     auto sink = std::make_shared<FakeSink>();
     hub.AddSink(sink);
 
@@ -175,7 +175,7 @@ TEST(DebugHub, ForwardsEventsAndStateWhileEnabled)
 
 TEST(DebugHub, IgnoresEventsButKeepsStateAndCurrentPcWhileDisabled)
 {
-    Compucolor::Impl::App::Sfml::DebugHub hub;
+    Compucolor::Impl::App::DebugHub hub;
     auto sink = std::make_shared<FakeSink>(false);
     hub.AddSink(sink);
 
@@ -203,14 +203,14 @@ TEST(DebugHub, IgnoresEventsButKeepsStateAndCurrentPcWhileDisabled)
     hub.SetEnabled(true);
     EXPECT_TRUE(hub.IsEnabled());
 
-    Compucolor::Impl::App::Sfml::DebugHub emptyHub;
+    Compucolor::Impl::App::DebugHub emptyHub;
     emptyHub.SetCurrentPc(0x4321);
     EXPECT_EQ(0x4321, emptyHub.GetCurrentPc());
 }
 
 TEST(DebugHub, FansOutToAllSinksAndIgnoresNullSinks)
 {
-    Compucolor::Impl::App::Sfml::DebugHub hub;
+    Compucolor::Impl::App::DebugHub hub;
     auto first = std::make_shared<FakeSink>();
     auto second = std::make_shared<FakeSink>();
 
@@ -230,7 +230,7 @@ TEST(DebugHub, FansOutToAllSinksAndIgnoresNullSinks)
 
 TEST(DebugHub, ListenersAreCalledOutsideTheSinkListLock)
 {
-    Compucolor::Impl::App::Sfml::DebugHub hub;
+    Compucolor::Impl::App::DebugHub hub;
     auto added = std::make_shared<FakeSink>();
     auto adder = std::make_shared<AddingSink>(&hub, added);
 
@@ -247,7 +247,7 @@ TEST(DebugHub, ListenersAreCalledOutsideTheSinkListLock)
 
 TEST(DebugHub, PropagatesMasterEnableToRecordableSinks)
 {
-    Compucolor::Impl::App::Sfml::DebugHub hub;
+    Compucolor::Impl::App::DebugHub hub;
     auto sink = std::make_shared<RecordableFakeSink>();
 
     hub.AddSink(sink);

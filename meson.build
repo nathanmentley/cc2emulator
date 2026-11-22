@@ -310,7 +310,8 @@ compucolorImplTests = executable(
     [
         'test/Compucolor.Impl.Tests.Compucolor/main.cpp',
         'test/Compucolor.Impl.Tests.Compucolor/CompucolorIntel8080BusTests.cpp',
-        'test/Compucolor.Impl.Tests.Compucolor/CompucolorEmulatorTests.cpp'
+        'test/Compucolor.Impl.Tests.Compucolor/CompucolorEmulatorTests.cpp',
+        'test/Compucolor.Impl.Tests.Compucolor/CompucolorEmulatorProcessorTests.cpp'
     ],
     dependencies: [
         dependency('gtest'),
@@ -323,6 +324,106 @@ compucolorImplTests = executable(
 )
 test('Compucolor.Impl.Tests.Compucolor', compucolorImplTests)
 
+# App support is deliberately SFML-free. The GUI, headless replay CLI and
+# tests share this library; only the headless CLI links appHeadlessDep.
+# Shared/replay headers live under include/Compucolor/App and are reached
+# through publicHeaderLib as <Compucolor/App/...>.
+appIncludeDirs = include_directories(
+    'src/Compucolor.Impl.App.Sfml',
+    'src/Compucolor.Impl.Compucolor',
+    'src/Compucolor.Impl.Crt',
+    'src/Compucolor.Impl.Floppy',
+    'src/Compucolor.Impl.Intel8080',
+    'src/Compucolor.Impl.Keyboard',
+    'src/Compucolor.Impl.Logger',
+    'src/Compucolor.Impl.Memory',
+    'src/Compucolor.Impl.Smc5027',
+    'src/Compucolor.Impl.Tms5501'
+)
+
+appImplDeps = [
+    memoryImplLib,
+    intel8080ImplLib,
+    keyboardImplLib,
+    floppyImplLib,
+    smc5027ImplLib,
+    tms5501ImplLib,
+    crtImplLib,
+    loggerImplLib,
+    compucolorImplLib,
+    dependency('threads')
+]
+
+appSharedLib = static_library(
+    'Compucolor.Impl.App',
+    [
+        'src/Compucolor.Impl.App/DebugDisassembler.cpp',
+        'src/Compucolor.Impl.App/DebugHub.cpp',
+        'src/Compucolor.Impl.App/DebugMonitor.cpp',
+        'src/Compucolor.Impl.App/InputRecorder.cpp',
+        'src/Compucolor.Impl.App/InputTimeline.cpp',
+        'src/Compucolor.Impl.App/JsonlDebugSink.cpp',
+        'src/Compucolor.Impl.App/ReplayBundle.cpp',
+        'src/Compucolor.Impl.App/ReplayInputSink.cpp',
+        'src/Compucolor.Impl.App/ReplayKeyNames.cpp',
+        'src/Compucolor.Impl.App/TraceFilterConfig.cpp'
+    ],
+    dependencies: [publicHeaderLib] + appImplDeps,
+    include_directories: appIncludeDirs
+)
+
+appSharedDep = declare_dependency(
+    link_with: appSharedLib,
+    dependencies: [publicHeaderLib] + appImplDeps,
+    include_directories: appIncludeDirs
+)
+
+appHeadlessLib = static_library(
+    'Compucolor.Impl.App.Headless',
+    [
+        'src/Compucolor.Impl.App.Headless/HeadlessEmulatorFactory.cpp',
+        'src/Compucolor.Impl.App.Headless/ManualScheduler.cpp',
+        'src/Compucolor.Impl.App.Headless/ReplayRunner.cpp',
+        'src/Compucolor.Impl.App.Headless/StateHash.cpp'
+    ],
+    dependencies: [appSharedDep],
+    include_directories: appIncludeDirs
+)
+
+appHeadlessDep = declare_dependency(
+    link_with: appHeadlessLib,
+    dependencies: [appSharedDep],
+    include_directories: appIncludeDirs
+)
+
+replayTests = executable(
+    'Compucolor.Impl.Tests.Replay',
+    [
+        'test/Compucolor.Impl.Tests.Replay/main.cpp',
+        'test/Compucolor.Impl.Tests.Replay/ReplayTypesTests.cpp',
+        'test/Compucolor.Impl.Tests.Replay/ManualSchedulerTests.cpp',
+        'test/Compucolor.Impl.Tests.Replay/ReplayRunnerTests.cpp',
+        'test/Compucolor.Impl.Tests.Replay/InputRecorderTests.cpp',
+        'test/Compucolor.Impl.Tests.Replay/ReplayInputSinkTests.cpp'
+    ],
+    dependencies: [
+        dependency('gtest'),
+        dependency('gmock'),
+
+        appHeadlessDep,
+        testHeaderLib
+    ]
+)
+test('Compucolor.Impl.Tests.Replay', replayTests)
+
+executable(
+    'Compucolor.Impl.App.Headless',
+    ['src/Compucolor.Impl.App.Headless/replay_main.cpp'],
+    dependencies: [appHeadlessDep],
+    install: true,
+    install_dir: install_prefix + '/bin'
+)
+
 appSettingsTests = executable(
     'Compucolor.Impl.Tests.App',
     [
@@ -334,21 +435,21 @@ appSettingsTests = executable(
         'test/Compucolor.Impl.Tests.App/DebugMonitorTests.cpp',
         'test/Compucolor.Impl.Tests.App/DebugHubTests.cpp',
         'test/Compucolor.Impl.Tests.App/JsonlDebugSinkTests.cpp',
+        'test/Compucolor.Impl.Tests.App/ProgramArgumentsTests.cpp',
+        'test/Compucolor.Impl.Tests.App/TraceFilterConfigTests.cpp',
         'src/Compucolor.Impl.App.Sfml/Settings.cpp',
         'src/Compucolor.Impl.App.Sfml/AsciiKeyMap.cpp',
         'src/Compucolor.Impl.App.Sfml/SoundSynth.cpp',
-        'src/Compucolor.Impl.App.Sfml/DebugDisassembler.cpp',
-        'src/Compucolor.Impl.App.Sfml/DebugMonitor.cpp',
-        'src/Compucolor.Impl.App.Sfml/DebugHub.cpp',
-        'src/Compucolor.Impl.App.Sfml/JsonlDebugSink.cpp'
+        'src/Compucolor.Impl.App.Sfml/ProgramArguments.cpp'
     ],
     dependencies: [
         dependency('gtest'),
 
         publicHeaderLib,
+        appSharedDep,
         testHeaderLib
     ],
-    include_directories: 'src/Compucolor.Impl.App.Sfml/'
+    include_directories: appIncludeDirs
 )
 test('Compucolor.Impl.Tests.App', appSettingsTests)
 
@@ -376,16 +477,13 @@ executable(
     [
         'src/Compucolor.Impl.App.Sfml/AudioOutput.cpp',
         'src/Compucolor.Impl.App.Sfml/Configuration.cpp',
-        'src/Compucolor.Impl.App.Sfml/DebugDisassembler.cpp',
-        'src/Compucolor.Impl.App.Sfml/DebugMonitor.cpp',
-        'src/Compucolor.Impl.App.Sfml/DebugHub.cpp',
-        'src/Compucolor.Impl.App.Sfml/JsonlDebugSink.cpp',
         'src/Compucolor.Impl.App.Sfml/Display.cpp',
         'src/Compucolor.Impl.App.Sfml/ErrorHandler.cpp',
         'src/Compucolor.Impl.App.Sfml/Gui.cpp',
         'src/Compucolor.Impl.App.Sfml/KeyboardTranslator.cpp',
         'src/Compucolor.Impl.App.Sfml/main.cpp',
         'src/Compucolor.Impl.App.Sfml/Program.cpp',
+        'src/Compucolor.Impl.App.Sfml/ProgramArguments.cpp',
         'src/Compucolor.Impl.App.Sfml/Settings.cpp',
         'src/Compucolor.Impl.App.Sfml/AsciiKeyMap.cpp',
         'src/Compucolor.Impl.App.Sfml/SoundSynth.cpp'
@@ -400,7 +498,8 @@ executable(
         imguiSfmlDep,
         dependency('threads'),
 
-        publicHeaderLib
+        publicHeaderLib,
+        appSharedDep
     ],
     install: true,
     install_dir: install_prefix + '/bin'
@@ -418,8 +517,15 @@ configure_file(
     copy : true
 )
 
+configure_file(
+    input : 'data/cc2_replay.sh',
+    output : 'cc2_replay.sh',
+    copy : true
+)
+
 install_data('data/app.config', install_dir: install_prefix)
 install_data('data/cc2_emu.sh', install_dir: install_prefix, install_mode: 'rwxr--r--')
+install_data('data/cc2_replay.sh', install_dir: install_prefix, install_mode: 'rwxr--r--')
 
 install_subdir('include', install_dir: install_prefix)
 install_subdir('data/roms', install_dir: install_prefix)

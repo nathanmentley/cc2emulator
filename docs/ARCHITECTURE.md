@@ -4,7 +4,7 @@ This document describes the emulator as implemented in this repository. User-fac
 
 ## Big picture
 
-The application is split into a host layer and an emulator layer connected through interfaces in `include/Compucolor/`. Most emulator components live in shared libraries loaded at startup.
+The application is split into a host layer and an emulator layer connected through interfaces in `include/Compucolor/`. The GUI loads most emulator components as plugins from `app.config`; the headless replay runner links the same implementations directly so it can run without SFML or a plugin configuration.
 
 ```text
 SFML events
@@ -22,26 +22,36 @@ Scheduler tick (1 ms)
        -> CRT timing PROM ports 0x80-0x9F (reads)
   -> VectorMemory
   -> one CPU/TMS5501/SMC5027 snapshot per tick -> IDebugSink
-  -> DebugHub fan-out -> DebugMonitor (UI) and JsonlDebugSink (CLI)
+  -> DebugHub fan-out -> DebugMonitor (UI) and JsonlDebugSink (CLI, filtered by TraceFilterConfig)
   -> CRT refresh thread (10 ms) -> IDisplay -> SFML texture
   -> ImGui overlay / window / monitor snapshots
+
+Replay tick boundary (1 ms)
+  -> IReplayTickSink -> ReplayInputSink -> emulated key press/release
 
 TMS5501 serial/floppy path
   -> FloppyEmulator A/B
   -> timestamped TXD edges -> AudioOutput / SoundSynth
 ```
 
+The CPU instruction core in `src/Compucolor.Impl.Intel8080/Intel8080.{h,cpp}` comes from [superzazu/8080](https://github.com/superzazu/8080). `Intel8080Emulator` wraps it with the plugin's memory/port callbacks, cycle accounting, interrupts, save/load state and debug events.
+
 ## Source layout
 
 | Path | Contents |
 | --- | --- |
 | `include/Compucolor/` | Public interfaces (`IMemory`, `IIntel8080Emulator`, `ITms5501Emulator`, `ICrtEmulator`, ...), `IEmulatable`, plugin loader/manager and `CompucolorEmulatorProcessor`. |
-| `src/Compucolor.Impl.App.Sfml/` | Host application: `main`, `Program`, SFML `Display` and `AudioOutput`, `SoundSynth`, `KeyboardTranslator`, `AsciiKeyMap`, `Gui`, `Settings`, `Configuration`, `DebugMonitor`, `DebugFilter`, `DebugHub`, `IRecordableDebugSink`, `JsonlDebugSink` and `DebugDisassembler`. |
+| `include/Compucolor/App/` | Headers for SFML-free shared app code and, under `Replay/`, replay types. Included as `<Compucolor/App/...>`. |
+| `src/Compucolor.Impl.App/` | Implementations for `DebugHub`, `DebugMonitor`, `JsonlDebugSink`, `TraceFilterConfig` and replay bundle/input types. |
+| `src/Compucolor.Impl.App.Sfml/` | SFML GUI application: `main`, `Program`, `Display`, `AudioOutput`, `SoundSynth`, `KeyboardTranslator`, `AsciiKeyMap`, `Gui`, `Settings` and `Configuration`. |
+| `src/Compucolor.Impl.App.Headless/` | Headless replay CLI implementations: manual scheduler, emulator factory, `ReplayRunner`, `StateHash` and `replay_main.cpp`. |
 | `src/Compucolor.Impl.Compucolor/` | Top-level machine, 8080 bus, embedded ROMs and plugin factory. |
 | `src/Compucolor.Impl.{Intel8080,Memory,Crt,Smc5027,Tms5501,Floppy,Keyboard,Scheduler,Logger}/` | Hardware and service implementations; each has a `PluginFactory.cpp` exporting `create`. |
-| `test/` | Nine GoogleTest executables plus shared fakes/mocks in `Compucolor.Tests.Core/`. |
-| `data/` | `app.config`, `cc2_emu.sh`, ROM files and bundled disk images. |
+| `test/` | Ten GoogleTest executables plus shared fakes/mocks in `Compucolor.Tests.Core/`. |
+| `data/` | `app.config`, `cc2_emu.sh`, `cc2_replay.sh`, ROM files and bundled disk images. |
 | `scripts/` | `check_imports.py`, run at build time to reject `#include` paths containing `..`. |
+
+Namespaces follow the source split: SFML-free shared app code uses `Compucolor::Impl::App`, replay code uses `Compucolor::Impl::App::Replay`, and GUI-only code uses `Compucolor::Impl::App::Sfml`.
 
 ## Plugin system
 
@@ -53,7 +63,7 @@ The ten plugins are: Logger, Memory, Intel8080, Scheduler, Smc5027, Tms5501, Crt
 
 ## Startup and the main loop
 
-`main.cpp` installs a SIGSEGV backtrace handler, parses the optional `--trace-jsonl` argument and calls `Program::Run()`.
+`main.cpp` installs a SIGSEGV backtrace handler and calls `Program::Run()`. `ProgramArguments` parses the GUI CLI flags; the headless CLI parses its own replay-specific flags in `replay_main.cpp`.
 
 `Program`'s constructor, in order: resolve the settings path and load `settings.config`, create the SFML window (384×256 scaled 1–8), create the console logger provider (Debug level), load `app.config`, create the display and audio host services, build the `PluginManager`, create the `DebugMonitor`, optional `JsonlDebugSink` and `DebugHub`, subscribe those sinks to the hub, wrap the machine in `CompucolorEmulatorProcessor` with the hub as its debug sink, initialize the ImGui `Gui` with the monitor and hub, apply startup settings and mount the saved disks.
 
@@ -91,9 +101,9 @@ Once per 1 ms tick, both while stepping and while paused, the machine publishes 
 
 `DebugMonitor` gates its own recording on `IsEnabled()`, which the Debug menu toggles together with the hub. Instruction and port events go into separate 512-entry ring buffers guarded by a mutex; CPU and peripheral snapshots share that mutex and the current PC is atomic. ImGui only reads copied snapshots/vectors, so it never touches live emulator state while scheduler threads run. Memory edits from the editor also go through `DebugMonitor`; the UI disables them unless the machine is paused.
 
-Each event stream has a `DebugFilter`. Filters are applied when the monitor records an event: instruction filters can match a PC range and a case-insensitive substring of the disassembled mnemonic; port filters can match a port range and read/write direction. With `stopOnMatch`, the first matching event is buffered and the stream freezes until `RearmTriggers()` or `Clear()`. Filters affect only the in-memory windows; the JSONL file receives the unfiltered stream.
+Each event stream has a `DebugFilter`. Filters are applied when the monitor records an event: instruction filters can match a PC range and a case-insensitive substring of the disassembled mnemonic; port filters can match a port range and read/write direction. With `stopOnMatch`, the first matching event is buffered and the stream freezes until `RearmTriggers()` or `Clear()`. These filters affect only the in-memory windows; JSONL output is controlled separately by `--trace-filter`.
 
-`JsonlDebugSink` writes one JSON object per line with a version field and its own increasing sequence number. `kind` is `cpu`, `instr`, `port`, `tms5501` or `smc5027`; byte and register fields are uppercase `0x`-prefixed strings. Writes are mutex-serialized and the stream is flushed on destruction, which makes the file suitable for offline analysis or a future CLI/AI consumer.
+`JsonlDebugSink` writes one JSON object per line with a version field and its own increasing sequence number. `kind` is `cpu`, `instr`, `port`, `tms5501` or `smc5027`; byte and register fields are uppercase `0x`-prefixed strings. Debug callbacks only copy small snapshots onto a queue; `TraceFilterConfig` matching, formatting and file I/O run on a background writer thread, and `Flush()` drains the queue. This keeps tracing from skewing GUI replay pacing and makes the file suitable for offline analysis.
 
 `DebugDisassembler` decodes all 256 8080 opcodes into uppercase mnemonics with `$XX`/`$XXXX` immediates and instruction lengths. It has no dependency on the CPU core or SFML, so the same decoder is used by the Trace window, instruction filters and its tests. Execution control is limited to the existing `Pause()`, `Resume()`, `Reset(false)` and `Reset(true)` calls; single-step, step-N, run-to-address and breakpoints are not implemented.
 
@@ -130,4 +140,4 @@ Floppy bytes deliberately do **not** raise the serial receive interrupt: the ROM
 
 ## Build and test
 
-`meson.build` defines the project (version 0.0.2), the ten plugin shared libraries installed under `dist/plugins`, the SFML executable under `dist/bin`, and nine test executables. It overrides the `sfml` dependency and forces ImGui subprojects to static libraries so the installed app does not need a separate `libimgui.so`. `meson install --skip-subprojects` also installs `app.config`, `cc2_emu.sh`, `include/`, `data/roms/` and `data/disks/`.
+`meson.build` defines the project (version 0.0.2), the ten plugin shared libraries installed under `dist/plugins`, the static libraries `libCompucolor.Impl.App.a` and `libCompucolor.Impl.App.Headless.a`, the GUI and headless executables under `dist/bin`, and ten test executables. The GUI links the shared app library; the headless CLI links both app libraries. Meson overrides the `sfml` dependency and forces ImGui subprojects to static libraries so the installed app does not need a separate `libimgui.so`. `meson install --skip-subprojects` also installs `app.config`, `cc2_emu.sh`, `cc2_replay.sh`, `include/`, `data/roms/` and `data/disks/`.

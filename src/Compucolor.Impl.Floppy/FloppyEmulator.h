@@ -19,7 +19,7 @@ namespace Compucolor::Impl::Floppy
     class FloppyEmulator : public Compucolor::Floppy::IFloppyEmulator
     {
     public:
-        FloppyEmulator(std::shared_ptr<Logger::ILogger> logger);
+        FloppyEmulator(std::shared_ptr<Compucolor::Logger::ILogger> logger);
 
         void Start() override;
         void Stop() override;
@@ -60,7 +60,7 @@ namespace Compucolor::Impl::Floppy
         bool SaveAs(const std::string& path, std::string& error) override;
 
         static std::shared_ptr<Compucolor::Floppy::IFloppyEmulator>
-        Creator(Common::IPluginManager* manager);
+        Creator(Compucolor::Common::IPluginManager* manager);
 
     private:
         static constexpr int TRACKS = 41;
@@ -69,7 +69,7 @@ namespace Compucolor::Impl::Floppy
         static constexpr int TRACK_SIZE = SECTORS * SECTOR_SIZE;
         static constexpr int DISK_SIZE = TRACKS * TRACK_SIZE;
 
-        std::shared_ptr<Logger::ILogger> _logger;
+        std::shared_ptr<Compucolor::Logger::ILogger> _logger;
 
         // The UI thread mounts and ejects while the emulator thread steps the drive.
         mutable std::recursive_mutex _mutex;

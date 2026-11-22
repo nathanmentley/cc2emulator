@@ -11,9 +11,9 @@
 #include <Compucolor/Debug/IDebugSink.h>
 #include <Compucolor/Memory/IMemory.h>
 
-#include "DebugFilter.h"
+#include <Compucolor/App/DebugFilter.h>
 
-namespace Compucolor::Impl::App::Sfml
+namespace Compucolor::Impl::App
 {
     // Host-side debug recorder. Emulator threads append to bounded ring buffers;
     // the UI thread reads immutable copies through the snapshot getters.
@@ -23,6 +23,12 @@ namespace Compucolor::Impl::App::Sfml
 
             [[nodiscard]] bool IsEnabled() const override;
             void SetEnabled(bool enabled);
+
+            // Bounded instruction/port buffers are only useful when a Debug
+            // window is open. Gate them separately from the master switch so a
+            // JSONL trace does not pay for UI-only recording.
+            void SetCaptureEnabled(bool enabled);
+            [[nodiscard]] bool IsCaptureEnabled() const;
 
             void SetCpuState(const Compucolor::Debug::CpuState& state) override;
 
@@ -70,6 +76,7 @@ namespace Compucolor::Impl::App::Sfml
 
             std::shared_ptr<Compucolor::Memory::IMemory> _memory;
             std::atomic<bool> _enabled{false};
+            std::atomic<bool> _captureEnabled{false};
             std::atomic<uint16_t> _currentPc{0};
 
             mutable std::mutex _mutex;

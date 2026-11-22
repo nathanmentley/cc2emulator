@@ -1,6 +1,6 @@
 #include "Gui.h"
 
-#include "DebugDisassembler.h"
+#include <Compucolor/App/DebugDisassembler.h>
 
 #include <algorithm>
 #include <array>
@@ -29,6 +29,8 @@ namespace
     constexpr const char* UnsavedPopup = "Unsaved Changes";
     constexpr const char* ErrorPopup = "Error";
     constexpr const char* DiskExtension = ".ccvf";
+    constexpr const char* ReplayExtension = ".json";
+    constexpr const char* ReplayFileNameSuffix = ".cc2replay.json";
     constexpr const char* StateFileName = "compucolor-state.json";
 }
 
@@ -223,6 +225,34 @@ void Gui::Shutdown()
 void Gui::SetQuitHandler(std::function<void()> handler)
 {
     _quit = std::move(handler);
+}
+
+void Gui::SetReplayHandlers(
+    std::function<void(const std::string&)> startRecording,
+    std::function<void()> stopRecording
+)
+{
+    _startReplayRecording = std::move(startRecording);
+    _stopReplayRecording = std::move(stopRecording);
+}
+
+void Gui::SetReplayState(
+    const bool recording,
+    const Compucolor::Impl::App::Replay::ReplayProgress& progress
+)
+{
+    _replayRecording = recording;
+    _replayProgress = progress;
+}
+
+void Gui::ReportError(const std::string& message)
+{
+    _errorMessage = message;
+}
+
+void Gui::ShowMessage(const std::string& message)
+{
+    ShowStatus(message);
 }
 
 void Gui::ApplyStartupSettings()
@@ -460,6 +490,16 @@ void Gui::DrawMenuStatus()
         chips.push_back({"SOUND OFF", ImVec4(0.75f, 0.75f, 0.82f, 1.0f)});
     }
 
+    if (_replayRecording)
+    {
+        chips.push_back({"REC", ImVec4(1.0f, 0.42f, 0.42f, 1.0f)});
+    }
+
+    if (_replayProgress.active)
+    {
+        chips.push_back({"REPLAY", ImVec4(0.45f, 0.95f, 0.65f, 1.0f)});
+    }
+
     for (int drive = 0; drive < 2; drive++)
     {
         if (IsModified(drive))
@@ -583,6 +623,28 @@ void Gui::DrawMenu()
 
         ImGui::Separator();
 
+        if (ImGui::MenuItem(
+                "Start Replay Recording...",
+                nullptr,
+                false,
+                !_replayRecording && static_cast<bool>(_startReplayRecording)
+            ))
+        {
+            OpenBrowser(BrowserMode::SaveReplay, 0);
+        }
+
+        if (ImGui::MenuItem(
+                "Stop Replay Recording",
+                nullptr,
+                false,
+                _replayRecording && static_cast<bool>(_stopReplayRecording)
+            ))
+        {
+            _stopReplayRecording();
+        }
+
+        ImGui::Separator();
+
         for (int drive = 0; drive < 2; drive++)
         {
             ImGui::PushID(drive);
@@ -694,6 +756,7 @@ void Gui::DrawMenu()
         ImGui::MenuItem("Trace", nullptr, &_showTraceDebug);
         ImGui::MenuItem("TMS5501", nullptr, &_showTms5501Debug);
         ImGui::MenuItem("SMC5027", nullptr, &_showSmc5027Debug);
+        ImGui::MenuItem("Replay Status", nullptr, &_showReplayStatus);
 
         ImGui::Separator();
 
@@ -1023,12 +1086,20 @@ void Gui::DrawAbout()
 
 void Gui::DrawDebugWindows()
 {
+    if (_debug)
+    {
+        // UI-only ring buffers are expensive at instruction frequency. Only
+        // fill them while the windows that read them are visible.
+        _debug->SetCaptureEnabled(_showTraceDebug || _showPortDebug);
+    }
+
     DrawCpuDebug();
     DrawMemoryDebug();
     DrawPortDebug();
     DrawTraceDebug();
     DrawTms5501Debug();
     DrawSmc5027Debug();
+    DrawReplayStatus();
 }
 
 void Gui::DrawCpuDebug()
@@ -1718,6 +1789,61 @@ void Gui::DrawSmc5027Debug()
     ImGui::End();
 }
 
+void Gui::DrawReplayStatus()
+{
+    const bool active = _replayRecording || _replayProgress.active;
+
+    if (!_showReplayStatus && !active)
+    {
+        return;
+    }
+
+    const auto formatTime = [](const uint64_t nanoseconds) {
+        if (nanoseconds == std::numeric_limits<uint64_t>::max())
+        {
+            return std::string("none");
+        }
+
+        std::ostringstream out;
+        out << (nanoseconds / 1000) << " us";
+        return out.str();
+    };
+
+    if (ImGui::Begin("Replay Status", &_showReplayStatus, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::Text("Recording  %s", _replayRecording ? "active" : "off");
+        ImGui::Text("Replay     %s", _replayProgress.active ? "active" : "idle");
+
+        ImGui::Separator();
+
+        ImGui::Text(
+            "Now        %s",
+            formatTime(_replayProgress.currentNanoseconds).c_str()
+        );
+        ImGui::Text(
+            "Next input %s",
+            formatTime(_replayProgress.nextEventNanoseconds).c_str()
+        );
+        ImGui::Text(
+            "Stop       %s",
+            _replayProgress.active
+                ? formatTime(_replayProgress.stopNanoseconds).c_str()
+                : "n/a"
+        );
+        ImGui::Text(
+            "Input      %llu / %llu",
+            static_cast<unsigned long long>(_replayProgress.appliedEvents),
+            static_cast<unsigned long long>(_replayProgress.totalEvents)
+        );
+
+        ImGui::Separator();
+        ImGui::TextDisabled("Times are in emulated machine time, not wall clock time.");
+        ImGui::TextDisabled("Live keyboard input is ignored during replay.");
+    }
+
+    ImGui::End();
+}
+
 const char* Gui::MemoryRegion(const uint16_t address)
 {
     if (address < 0x4000)
@@ -1840,6 +1966,10 @@ void Gui::OpenBrowser(const BrowserMode mode, const int drive)
         const std::string name = floppy ? fs::path(floppy->GetMountedPath()).filename().string() : std::string();
         std::strncpy(_fileName, name.c_str(), sizeof(_fileName) - 1);
     }
+    else if (mode == BrowserMode::SaveReplay)
+    {
+        std::strncpy(_fileName, "replay.cc2replay.json", sizeof(_fileName) - 1);
+    }
 
     _openBrowser = true;
 }
@@ -1855,9 +1985,24 @@ void Gui::DrawBrowser()
         return;
     }
 
-    const bool saving = _browserMode == BrowserMode::SaveAs;
+    const bool saving = _browserMode != BrowserMode::Mount;
+    const char* extension = _browserMode == BrowserMode::SaveReplay
+        ? ReplayExtension
+        : DiskExtension;
 
-    ImGui::Text("%s Drive %s", saving ? "Save disk from" : "Mount into", DriveLabel(_browserDrive));
+    if (_browserMode == BrowserMode::SaveReplay)
+    {
+        ImGui::TextUnformatted("Save replay bundle to");
+    }
+    else
+    {
+        ImGui::Text(
+            "%s Drive %s",
+            saving ? "Save disk from" : "Mount into",
+            DriveLabel(_browserDrive)
+        );
+    }
+
     ImGui::TextWrapped("%s", _browserDir.string().c_str());
 
     if (ImGui::Button("Up") && _browserDir.has_parent_path())
@@ -1879,7 +2024,7 @@ void Gui::DrawBrowser()
         {
             directories.push_back(it->path());
         }
-        else if (it->path().extension() == DiskExtension)
+        else if (it->path().extension() == extension)
         {
             files.push_back(it->path());
         }
@@ -1965,6 +2110,23 @@ void Gui::AcceptBrowser()
     if (_browserMode == BrowserMode::SaveAs && target.extension().empty())
     {
         target += DiskExtension;
+    }
+
+    if (_browserMode == BrowserMode::SaveReplay)
+    {
+        if (target.extension().empty())
+        {
+            target += ReplayFileNameSuffix;
+        }
+
+        _settings->SetString("last_disk_dir", _browserDir.string());
+
+        if (_startReplayRecording)
+        {
+            _startReplayRecording(target.string());
+        }
+
+        return;
     }
 
     if (_browserMode == BrowserMode::SaveAs)

@@ -15,7 +15,7 @@ namespace Compucolor::Impl::Smc5027 {
     class Smc5027Emulator: public Compucolor::Smc5027::ISmc5027Emulator {
         public:
             Smc5027Emulator(
-                std::shared_ptr<Logger::ILogger> logger
+                std::shared_ptr<Compucolor::Logger::ILogger> logger
             );
 
             // Resets the controller before emulation starts.
@@ -56,12 +56,12 @@ namespace Compucolor::Impl::Smc5027 {
             // host-safe snapshot.
             [[nodiscard]] Compucolor::Debug::Smc5027State GetDebugState() override;
 
-            static std::shared_ptr<Compucolor::Smc5027::ISmc5027Emulator> Creator(Common::IPluginManager* manager);
+            static std::shared_ptr<Compucolor::Smc5027::ISmc5027Emulator> Creator(Compucolor::Common::IPluginManager* manager);
         private:
             static constexpr uint8_t REGISTER_COUNT = 16;
             static constexpr uint8_t ROW_COUNT = 32;
 
-            std::shared_ptr<Logger::ILogger> _logger;
+            std::shared_ptr<Compucolor::Logger::ILogger> _logger;
             std::array<std::atomic<uint8_t>, REGISTER_COUNT> _registers{};
 
             // The bus exposes the SMC at 0x60-0x7F; only the low nibble selects

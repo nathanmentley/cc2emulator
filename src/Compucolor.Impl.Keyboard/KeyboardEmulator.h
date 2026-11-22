@@ -19,7 +19,7 @@ namespace Compucolor::Impl::Keyboard
     class KeyboardEmulator: public Compucolor::Keyboard::IKeyboardEmulator {
         public:
             KeyboardEmulator(
-                std::shared_ptr<Logger::ILogger> logger
+                std::shared_ptr<Compucolor::Logger::ILogger> logger
             );
 
             void Start() override;
@@ -41,10 +41,10 @@ namespace Compucolor::Impl::Keyboard
             // Presses a matrix contact; modifiers in row 16 release immediately.
             void OnKeyDown(Compucolor::Keyboard::CompucolorIIKey key) override;
 
-            static std::shared_ptr<Compucolor::Keyboard::IKeyboardEmulator> Creator(Common::IPluginManager* manager);
+            static std::shared_ptr<Compucolor::Keyboard::IKeyboardEmulator> Creator(Compucolor::Common::IPluginManager* manager);
 
         private:
-            std::shared_ptr<Logger::ILogger> _logger;
+            std::shared_ptr<Compucolor::Logger::ILogger> _logger;
             std::array<std::atomic<uint8_t>, 17> _kbMatrix{};
 
             // A host tap can begin and end between two keyboard scans. Keep

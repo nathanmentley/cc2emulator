@@ -23,12 +23,12 @@ namespace Compucolor::Impl::Tms5501 {
     class Tms5501Emulator: public Compucolor::Tms5501::ITms5501Emulator {
         public:
             Tms5501Emulator(
-                std::shared_ptr<Logger::ILogger> logger,
-                std::shared_ptr<Intel8080::IIntel8080Emulator> intel8080,
-                std::shared_ptr<Keyboard::IKeyboardEmulator> keyboard,
-                std::shared_ptr<Floppy::IFloppyEmulator> floppy1,
-                std::shared_ptr<Floppy::IFloppyEmulator> floppy2,
-                std::shared_ptr<Common::IAudioOutput> audio
+                std::shared_ptr<Compucolor::Logger::ILogger> logger,
+                std::shared_ptr<Compucolor::Intel8080::IIntel8080Emulator> intel8080,
+                std::shared_ptr<Compucolor::Keyboard::IKeyboardEmulator> keyboard,
+                std::shared_ptr<Compucolor::Floppy::IFloppyEmulator> floppy1,
+                std::shared_ptr<Compucolor::Floppy::IFloppyEmulator> floppy2,
+                std::shared_ptr<Compucolor::Common::IAudioOutput> audio
             );
 
             void Start() override;
@@ -62,15 +62,15 @@ namespace Compucolor::Impl::Tms5501 {
             // the host; timers are copied up to the size of the snapshot array.
             [[nodiscard]] Compucolor::Debug::Tms5501State GetDebugState() const override;
 
-            static std::shared_ptr<ITms5501Emulator> Creator(Common::IPluginManager* manager);
+            static std::shared_ptr<ITms5501Emulator> Creator(Compucolor::Common::IPluginManager* manager);
         private:
-            std::shared_ptr<Logger::ILogger> _logger;
+            std::shared_ptr<Compucolor::Logger::ILogger> _logger;
             std::unique_ptr<Tms5501EmulatorContext> _context;
-            std::shared_ptr<Intel8080::IIntel8080Emulator> _intel8080;
-            std::shared_ptr<Keyboard::IKeyboardEmulator> _keyboard;
-            std::shared_ptr<Floppy::IFloppyEmulator> _floppy1;
-            std::shared_ptr<Floppy::IFloppyEmulator> _floppy2;
-            std::shared_ptr<Common::IAudioOutput> _audio;
+            std::shared_ptr<Compucolor::Intel8080::IIntel8080Emulator> _intel8080;
+            std::shared_ptr<Compucolor::Keyboard::IKeyboardEmulator> _keyboard;
+            std::shared_ptr<Compucolor::Floppy::IFloppyEmulator> _floppy1;
+            std::shared_ptr<Compucolor::Floppy::IFloppyEmulator> _floppy2;
+            std::shared_ptr<Compucolor::Common::IAudioOutput> _audio;
             uint64_t _emulatedNanoseconds = 0;
             bool _audioLevel = false;
 

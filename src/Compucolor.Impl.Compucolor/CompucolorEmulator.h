@@ -25,7 +25,7 @@
 namespace Compucolor::Impl::CompucolorII
 {
     // Copies length bytes of ROM into memory starting at startPosition.
-    void LoadRom(Memory::IMemory* memory, const uint8_t* rom, uint16_t startPosition, uint16_t length);
+    void LoadRom(Compucolor::Memory::IMemory* memory, const uint8_t* rom, uint16_t startPosition, uint16_t length);
 
     // Top-level machine: composes the 8080, its bus, memory, CRT, timer/I/O chip,
     // keyboard, floppies and scheduler. CPU work runs on a 1 ms scheduler task;
@@ -35,15 +35,15 @@ namespace Compucolor::Impl::CompucolorII
             // The optional clock returns a monotonically increasing nanosecond count;
             // tests inject a fake clock to control pacing deterministically.
             CompucolorEmulator(
-                std::shared_ptr<Crt::ICrtEmulator> crt,
-                std::shared_ptr<Floppy::IFloppyEmulator> floppyA,
-                std::shared_ptr<Floppy::IFloppyEmulator> floppyB,
-                std::shared_ptr<Intel8080::IIntel8080Emulator> intel8080,
-                std::shared_ptr<Keyboard::IKeyboardEmulator> keyboard,
-                std::shared_ptr<Memory::IMemory> memory,
-                std::shared_ptr<Scheduler::IScheduler> scheduler,
-                std::shared_ptr<Smc5027::ISmc5027Emulator> smc5027,
-                std::shared_ptr<Tms5501::ITms5501Emulator> tms5501,
+                std::shared_ptr<Compucolor::Crt::ICrtEmulator> crt,
+                std::shared_ptr<Compucolor::Floppy::IFloppyEmulator> floppyA,
+                std::shared_ptr<Compucolor::Floppy::IFloppyEmulator> floppyB,
+                std::shared_ptr<Compucolor::Intel8080::IIntel8080Emulator> intel8080,
+                std::shared_ptr<Compucolor::Keyboard::IKeyboardEmulator> keyboard,
+                std::shared_ptr<Compucolor::Memory::IMemory> memory,
+                std::shared_ptr<Compucolor::Scheduler::IScheduler> scheduler,
+                std::shared_ptr<Compucolor::Smc5027::ISmc5027Emulator> smc5027,
+                std::shared_ptr<Compucolor::Tms5501::ITms5501Emulator> tms5501,
                 std::function<uint64_t()> clock = nullptr
             );
 
@@ -63,6 +63,7 @@ namespace Compucolor::Impl::CompucolorII
             [[nodiscard]] bool IsPaused() const override;
             void SetSpeedRegulated(bool regulated) override;
             [[nodiscard]] bool IsSpeedRegulated() const override;
+            [[nodiscard]] uint64_t GetEmulatedNanoseconds() const override;
             void SetLowercaseCharset(bool lowercase) override;
             void SetRomVersion(RomVersion version) override;
 
@@ -73,26 +74,26 @@ namespace Compucolor::Impl::CompucolorII
             // Validates state, restores memory first and then the other components.
             void LoadState(std::shared_ptr<boost::json::value>) override;
 
-            [[nodiscard]] std::shared_ptr<Floppy::IFloppyEmulator> GetFloppy(int drive) const override;
+            [[nodiscard]] std::shared_ptr<Compucolor::Floppy::IFloppyEmulator> GetFloppy(int drive) const override;
 
-            void SetDebugSink(std::shared_ptr<Debug::IDebugSink> sink) override;
+            void SetDebugSink(std::shared_ptr<Compucolor::Debug::IDebugSink> sink) override;
 
             // Plugin factory: resolves all components through the plugin manager.
-            static std::shared_ptr<ICompucolorEmulator> Creator(Common::IPluginManager* manager);
+            static std::shared_ptr<ICompucolorEmulator> Creator(Compucolor::Common::IPluginManager* manager);
 
         private:
-            std::shared_ptr<Crt::ICrtEmulator> _crt;
-            std::shared_ptr<Floppy::IFloppyEmulator> _floppyA;
-            std::shared_ptr<Floppy::IFloppyEmulator> _floppyB;
-            std::shared_ptr<Intel8080::IIntel8080Emulator> _intel8080;
-            std::shared_ptr<Keyboard::IKeyboardEmulator> _keyboard;
-            std::shared_ptr<Memory::IMemory> _memory;
-            std::shared_ptr<Scheduler::IScheduler> _scheduler;
-            std::shared_ptr<Smc5027::ISmc5027Emulator> _smc5027;
-            std::shared_ptr<Tms5501::ITms5501Emulator> _tms5501;
+            std::shared_ptr<Compucolor::Crt::ICrtEmulator> _crt;
+            std::shared_ptr<Compucolor::Floppy::IFloppyEmulator> _floppyA;
+            std::shared_ptr<Compucolor::Floppy::IFloppyEmulator> _floppyB;
+            std::shared_ptr<Compucolor::Intel8080::IIntel8080Emulator> _intel8080;
+            std::shared_ptr<Compucolor::Keyboard::IKeyboardEmulator> _keyboard;
+            std::shared_ptr<Compucolor::Memory::IMemory> _memory;
+            std::shared_ptr<Compucolor::Scheduler::IScheduler> _scheduler;
+            std::shared_ptr<Compucolor::Smc5027::ISmc5027Emulator> _smc5027;
+            std::shared_ptr<Compucolor::Tms5501::ITms5501Emulator> _tms5501;
             std::shared_ptr<CompucolorIntel8080Bus> _bus;
-            std::shared_ptr<Debug::IDebugSink> _debugSink;
-            std::shared_ptr<Scheduler::IScheduledTask> _loop;
+            std::shared_ptr<Compucolor::Debug::IDebugSink> _debugSink;
+            std::shared_ptr<Compucolor::Scheduler::IScheduledTask> _loop;
             int _loopInterval = 0;
             uint64_t _floppyCycleRemainder = 0;
 
