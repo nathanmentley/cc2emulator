@@ -7,6 +7,8 @@
 #include <Compucolor/Common/IResetable.h>
 #include <Compucolor/Common/IPlugin.h>
 
+#include <Compucolor/Debug/IDebugSink.h>
+
 #include <Compucolor/Intel8080/IIntel8080Bus.h>
 
 namespace Compucolor::Intel8080
@@ -20,6 +22,13 @@ namespace Compucolor::Intel8080
 
             // Installs the I/O bus. Called by the machine when it is constructed.
             virtual void SetBus(std::shared_ptr<IIntel8080Bus> intel8080Bus) = 0;
+
+            // Installs an optional instruction recorder.
+            virtual void SetDebugSink(std::shared_ptr<Debug::IDebugSink> sink) = 0;
+
+            // Returns the live CPU state. Call from the emulator thread only;
+            // the host publishes a snapshot through IDebugSink for the UI.
+            [[nodiscard]] virtual Debug::CpuState GetState() const = 0;
 
             // Latches an RST opcode (0xC7..0xFF) to present to the CPU on its next step.
             // The TMS5501 is the only production source of interrupt opcodes.

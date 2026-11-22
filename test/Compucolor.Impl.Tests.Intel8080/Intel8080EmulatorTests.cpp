@@ -7,11 +7,14 @@
 
 #include "Intel8080Emulator.h"
 
+#include <Compucolor.Tests.Core/MockDebugSink.h>
 #include <Compucolor.Tests.Core/MockMemory.h>
 
 using Compucolor::Impl::Intel8080::Intel8080Emulator;
 
 using ::testing::NiceMock;
+using ::testing::Return;
+using ::testing::Truly;
 using ::testing::_;
 
 namespace
@@ -109,4 +112,30 @@ TEST_F(Intel8080EmulatorTest, FetchesInstructionsFromTheRom) {
 
     //Assert
     EXPECT_EQ(0x7E, ram[0x9000]);
+}
+
+TEST_F(Intel8080EmulatorTest, RecordsInstructionTraceWhenEnabled) {
+    //Arrange: a NOP at 0x0000 with a recording sink installed
+    auto sink = std::make_shared<NiceMock<MockDebugSink>>();
+    ON_CALL(*sink, IsEnabled()).WillByDefault(Return(true));
+
+    EXPECT_CALL(*sink, SetCurrentPc(0x0000)).Times(1);
+    EXPECT_CALL(
+        *sink,
+        OnInstruction(Truly([](const Compucolor::Debug::InstructionEvent& event) {
+            return event.before.pc == 0x0000 &&
+                event.bytes[0] == 0x00 &&
+                event.cycles == 4;
+        }))
+    ).Times(1);
+
+    cpu->SetDebugSink(sink);
+    cpu->Start();
+
+    //Act
+    cpu->Step();
+
+    //Assert
+    const auto state = cpu->GetState();
+    EXPECT_EQ(0x0001, state.pc);
 }

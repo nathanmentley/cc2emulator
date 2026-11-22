@@ -46,10 +46,9 @@ void SoundSynth::SetVolume(const float volume)
 
 float SoundSynth::Scale(const double filtered) const
 {
-    // Centre the 0..1 signal on zero and keep it quiet, as ccemu does.
-    return static_cast<float>(
-        (0.5 * filtered - 0.25) * _volume.load(std::memory_order_relaxed)
-    );
+    // Centre the 0..1 signal on zero before DC blocking. Volume is applied
+    // afterwards so changing it cannot inject a step into the high-pass filter.
+    return static_cast<float>(0.5 * filtered - 0.25);
 }
 
 void SoundSynth::StepFilter(const double timeNanoseconds)
@@ -171,7 +170,9 @@ void SoundSynth::Render(float* const output, const std::size_t count)
         _dcOutput = input - _dcPreviousInput + alpha * _dcOutput;
         _dcPreviousInput = input;
 
-        _lastSample = static_cast<float>(_dcOutput);
+        _lastSample = static_cast<float>(
+            _dcOutput * _volume.load(std::memory_order_relaxed)
+        );
         output[i] = _lastSample;
     }
 }

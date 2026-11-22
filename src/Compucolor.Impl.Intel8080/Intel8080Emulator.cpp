@@ -1,5 +1,8 @@
 #include "Intel8080Emulator.h"
 
+#include <cstddef>
+#include <utility>
+
 
 Compucolor::Impl::Intel8080::Intel8080Emulator::Intel8080Emulator(
     std::shared_ptr<Compucolor::Memory::IMemory> memory
@@ -34,9 +37,37 @@ void Compucolor::Impl::Intel8080::Intel8080Emulator::Start()
 
 uint64_t Compucolor::Impl::Intel8080::Intel8080Emulator::Step()
 {
+    const bool recording = _debugSink && _debugSink->IsEnabled();
+
+    Compucolor::Debug::InstructionEvent event;
+
+    if (recording)
+    {
+        event.before = GetState();
+
+        // Capture the whole instruction window before it executes. The
+        // disassembler decides how many of these bytes are actually used.
+        for (std::size_t i = 0; i < event.bytes.size(); i++)
+        {
+            event.bytes[i] = ReadByte(
+                _context.get(),
+                static_cast<uint16_t>(event.before.pc + i)
+            );
+        }
+
+        _debugSink->SetCurrentPc(event.before.pc);
+    }
+
     const unsigned long previousCycles = _cpu->cyc;
     Compucolor::Impl::Intel8080::i8080_step(_cpu.get());
     const unsigned long elapsedCycles = _cpu->cyc - previousCycles;
+
+    if (recording)
+    {
+        event.cycles = elapsedCycles ? elapsedCycles : 4;
+        _debugSink->OnInstruction(event);
+    }
+
     return elapsedCycles ? elapsedCycles : 4;
 }
 
@@ -214,6 +245,44 @@ void Compucolor::Impl::Intel8080::Intel8080Emulator::Reset()
 void Compucolor::Impl::Intel8080::Intel8080Emulator::SetBus(std::shared_ptr<Compucolor::Intel8080::IIntel8080Bus> intel8080Bus)
 {
     _context->SetBus(intel8080Bus);
+}
+
+void Compucolor::Impl::Intel8080::Intel8080Emulator::SetDebugSink(
+    std::shared_ptr<Compucolor::Debug::IDebugSink> sink
+)
+{
+    _debugSink = std::move(sink);
+}
+
+Compucolor::Debug::CpuState Compucolor::Impl::Intel8080::Intel8080Emulator::GetState() const
+{
+    Compucolor::Debug::CpuState state;
+
+    state.cycles = _cpu->cyc;
+    state.pc = _cpu->pc;
+    state.sp = _cpu->sp;
+
+    state.a = _cpu->a;
+    state.b = _cpu->b;
+    state.c = _cpu->c;
+    state.d = _cpu->d;
+    state.e = _cpu->e;
+    state.h = _cpu->h;
+    state.l = _cpu->l;
+
+    state.interruptVector = _cpu->interrupt_vector;
+    state.interruptDelay = _cpu->interrupt_delay;
+
+    state.sf = _cpu->sf;
+    state.zf = _cpu->zf;
+    state.hf = _cpu->hf;
+    state.pf = _cpu->pf;
+    state.cf = _cpu->cf;
+    state.iff = _cpu->iff;
+    state.halted = _cpu->halted;
+    state.interruptPending = _cpu->interrupt_pending;
+
+    return state;
 }
 
 void Compucolor::Impl::Intel8080::Intel8080Emulator::RegisterInterrupt(uint8_t opcode)

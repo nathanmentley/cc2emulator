@@ -61,6 +61,39 @@ void Tms5501Emulator::SetEmulatedTime(const uint64_t nanoseconds)
     _emulatedNanoseconds = nanoseconds;
 }
 
+Compucolor::Debug::Tms5501State Tms5501Emulator::GetDebugState() const
+{
+    Compucolor::Debug::Tms5501State state;
+
+    state.status = _context->sstatus;
+    state.intMask = _context->intMask;
+    state.intStatus = _context->intStatus;
+    state.outport = _outport;
+    state.rate = _context->rate;
+    state.dscCmd = _context->dscCmd;
+    state.rxData = _context->rxdata;
+    state.txData = _context->txdata;
+    state.txDataCount = _context->txdataCount;
+
+    // The context holds five counters today; bound the copy by both sizes so
+    // the snapshot stays safe if either side changes.
+    for (std::size_t i = 0;
+         i < state.timers.size() && i < _context->count.size();
+         i++)
+    {
+        state.timers[i] = _context->count[i];
+    }
+
+    state.audioLevel = _audioLevel;
+    state.serialSelected = IsSerialSelected();
+    state.floppy1Selected = IsFloppy1Selected();
+    state.floppy2Selected = IsFloppy2Selected();
+    // Zero when no unmasked source is pending; otherwise the RST opcode.
+    state.pendingInterrupt = GetIntAddr();
+
+    return state;
+}
+
 void Tms5501Emulator::StepFloppy(uint64_t elapsedNanoseconds)
 {
     if (_audio)

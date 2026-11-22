@@ -58,6 +58,10 @@ namespace Compucolor::Impl::Tms5501 {
 
             void SetEmulatedTime(uint64_t nanoseconds) override;
 
+            // Captures the register file and decoded select/interrupt lines for
+            // the host; timers are copied up to the size of the snapshot array.
+            [[nodiscard]] Compucolor::Debug::Tms5501State GetDebugState() const override;
+
             static std::shared_ptr<ITms5501Emulator> Creator(Common::IPluginManager* manager);
         private:
             std::shared_ptr<Logger::ILogger> _logger;

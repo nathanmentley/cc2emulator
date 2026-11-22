@@ -207,6 +207,17 @@ uint8_t Smc5027Emulator::FirstDisplayRow() {
     return (curEnd + 1) % (rows + 1);
 }
 
+Compucolor::Debug::Smc5027State Smc5027Emulator::GetDebugState()
+{
+    Compucolor::Debug::Smc5027State state;
+
+    state.cursorX = GetCursorX();
+    state.cursorY = GetCursorY();
+    state.firstDisplayRow = FirstDisplayRow();
+
+    return state;
+}
+
 uint8_t Smc5027Emulator::ConvertPort(uint8_t port)
 {
     return port & 0x0F;

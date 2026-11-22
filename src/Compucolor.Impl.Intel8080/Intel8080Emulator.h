@@ -36,6 +36,10 @@ namespace Compucolor::Impl::Intel8080
 
             void SetBus(std::shared_ptr<Compucolor::Intel8080::IIntel8080Bus> intel8080Bus) override;
 
+            void SetDebugSink(std::shared_ptr<Compucolor::Debug::IDebugSink> sink) override;
+
+            [[nodiscard]] Compucolor::Debug::CpuState GetState() const override;
+
             void RegisterInterrupt(uint8_t opcode) override;
 
             bool IsInterruptPending() override;
@@ -52,6 +56,7 @@ namespace Compucolor::Impl::Intel8080
             std::unique_ptr<Compucolor::Impl::Intel8080::Intel8080EmulatorContext> _context;
             std::unique_ptr<Compucolor::Impl::Intel8080::i8080> _cpu;
             std::shared_ptr<Compucolor::Memory::IMemory> _memory;
+            std::shared_ptr<Compucolor::Debug::IDebugSink> _debugSink;
 
             static uint8_t ReadByte(void* userdata, uint16_t addr);
             static void WriteByte(void* userdata, uint16_t addr, uint8_t data);

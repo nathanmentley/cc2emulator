@@ -36,8 +36,9 @@ namespace
     }
 }
 
-Program::Program():
+Program::Program(std::string traceJsonlPath):
     _settingsPath(Settings::DefaultPath()),
+    _traceJsonlPath(std::move(traceJsonlPath)),
     _settings(LoadSettings(_settingsPath)),
     _window(CreateWindow(*_settings)),
     _loggerProvider(make_shared<ConsoleLoggerProvider>(LogLevel::Debug)),
@@ -62,10 +63,40 @@ Program::Program():
             RequireSetting("compucolor_impl")
         )
     ),
-    _emulator(make_unique<CompucolorEmulatorProcessor>(_manager->GetCompucolor())),
-    _gui(make_unique<Gui>(_window, _settings, *_emulator, _display, _audio)),
+    _debugMonitor(make_shared<DebugMonitor>(_manager->GetMemory())),
+    _jsonlSink(
+        _traceJsonlPath.empty()
+            ? nullptr
+            : make_shared<JsonlDebugSink>(_traceJsonlPath)
+    ),
+    _debugHub(make_shared<DebugHub>()),
+    _emulator(make_unique<CompucolorEmulatorProcessor>(
+        _manager->GetCompucolor(),
+        _debugHub
+    )),
+    _gui(make_unique<Gui>(
+        _window,
+        _settings,
+        *_emulator,
+        _debugMonitor,
+        _debugHub,
+        _display,
+        _audio
+    )),
     _keyboardTranslator(make_unique<KeyboardTranslator>())
 {
+    _debugHub->AddSink(_debugMonitor);
+
+    if (_jsonlSink)
+    {
+        _debugHub->AddSink(_jsonlSink);
+    }
+
+    // A CLI trace request starts recording immediately; otherwise recording
+    // stays off until the Debug menu enables it.
+    _debugHub->SetEnabled(_jsonlSink != nullptr);
+    _debugMonitor->SetEnabled(_jsonlSink != nullptr);
+
     _display->SetSmooth(_settings->GetBool("smooth_scaling"));
     _display->SetTheme(ThemeFromInt(_settings->GetInt("theme")));
 

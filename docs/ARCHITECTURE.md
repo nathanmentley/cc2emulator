@@ -15,14 +15,16 @@ SFML events
 
 Scheduler tick (1 ms)
   -> CompucolorEmulator::StepOnce()
-  -> Intel8080Emulator::Step()
-  -> CompucolorIntel8080Bus
+  -> Intel8080Emulator::Step() -> optional IDebugSink instruction events
+  -> CompucolorIntel8080Bus -> optional IDebugSink port events
        -> TMS5501     ports 0x00-0x1F
        -> SMC5027     ports 0x60-0x7F (writes)
        -> CRT timing PROM ports 0x80-0x9F (reads)
   -> VectorMemory
+  -> one CPU/TMS5501/SMC5027 snapshot per tick -> IDebugSink
+  -> DebugHub fan-out -> DebugMonitor (UI) and JsonlDebugSink (CLI)
   -> CRT refresh thread (10 ms) -> IDisplay -> SFML texture
-  -> ImGui overlay / window
+  -> ImGui overlay / window / monitor snapshots
 
 TMS5501 serial/floppy path
   -> FloppyEmulator A/B
@@ -34,7 +36,7 @@ TMS5501 serial/floppy path
 | Path | Contents |
 | --- | --- |
 | `include/Compucolor/` | Public interfaces (`IMemory`, `IIntel8080Emulator`, `ITms5501Emulator`, `ICrtEmulator`, ...), `IEmulatable`, plugin loader/manager and `CompucolorEmulatorProcessor`. |
-| `src/Compucolor.Impl.App.Sfml/` | Host application: `main`, `Program`, SFML `Display` and `AudioOutput`, `SoundSynth`, `KeyboardTranslator`, `AsciiKeyMap`, `Gui`, `Settings` and `Configuration`. |
+| `src/Compucolor.Impl.App.Sfml/` | Host application: `main`, `Program`, SFML `Display` and `AudioOutput`, `SoundSynth`, `KeyboardTranslator`, `AsciiKeyMap`, `Gui`, `Settings`, `Configuration`, `DebugMonitor`, `DebugFilter`, `DebugHub`, `IRecordableDebugSink`, `JsonlDebugSink` and `DebugDisassembler`. |
 | `src/Compucolor.Impl.Compucolor/` | Top-level machine, 8080 bus, embedded ROMs and plugin factory. |
 | `src/Compucolor.Impl.{Intel8080,Memory,Crt,Smc5027,Tms5501,Floppy,Keyboard,Scheduler,Logger}/` | Hardware and service implementations; each has a `PluginFactory.cpp` exporting `create`. |
 | `test/` | Nine GoogleTest executables plus shared fakes/mocks in `Compucolor.Tests.Core/`. |
@@ -51,9 +53,9 @@ The ten plugins are: Logger, Memory, Intel8080, Scheduler, Smc5027, Tms5501, Crt
 
 ## Startup and the main loop
 
-`main.cpp` installs a SIGSEGV backtrace handler and calls `Program::Run()`.
+`main.cpp` installs a SIGSEGV backtrace handler, parses the optional `--trace-jsonl` argument and calls `Program::Run()`.
 
-`Program`'s constructor, in order: resolve the settings path and load `settings.config`, create the SFML window (384×256 scaled 1–8), create the console logger provider (Debug level), load `app.config`, create the display and audio host services, build the `PluginManager`, wrap the machine in `CompucolorEmulatorProcessor`, initialize the ImGui `Gui`, apply startup settings and mount the saved disks.
+`Program`'s constructor, in order: resolve the settings path and load `settings.config`, create the SFML window (384×256 scaled 1–8), create the console logger provider (Debug level), load `app.config`, create the display and audio host services, build the `PluginManager`, create the `DebugMonitor`, optional `JsonlDebugSink` and `DebugHub`, subscribe those sinks to the hub, wrap the machine in `CompucolorEmulatorProcessor` with the hub as its debug sink, initialize the ImGui `Gui` with the monitor and hub, apply startup settings and mount the saved disks.
 
 `Program::Run()` starts the emulator, then loops:
 
@@ -78,6 +80,22 @@ The ten plugins are: Logger, Memory, Intel8080, Scheduler, Smc5027, Tms5501, Crt
 `CompucolorEmulator` uses a 502 ns CPU cycle (~1.99 MHz). In regulated mode each 1 ms tick consumes wall-clock time from a budget capped at 50 ms to avoid catch-up spirals; in unregulated mode it executes a 4,096-step burst per tick. `StepOnce()` stamps the TMS5501 with emulated time before the CPU instruction, advances the emulated clock by elapsed cycles, clears acknowledged interrupts, calls `StepFloppy()` every 8 instructions and the TMS5501 timers every 128 instructions. Reset requests are applied at tick boundaries so they never race with a CPU step.
 
 A `ScheduledTask` runs its callback immediately, then waits against a `steady_clock` deadline; a long callback therefore delays the next run. `Stop()` is idempotent and wakes the condition variable; `Join()` blocks; the destructor stops and joins.
+
+## Debug instrumentation
+
+`Debug::IDebugSink` is an optional observer installed by the host. `Program` constructs a `DebugHub` and passes it to `CompucolorEmulatorProcessor`; the machine forwards it to the CPU and its bus. `Intel8080Emulator::Step()` captures the pre-step CPU state and the next three opcode bytes, calls `SetCurrentPc()`, steps the core, then emits an `InstructionEvent` with the elapsed cycles. `CompucolorIntel8080Bus::Read()`/`Write()` emit `PortEvent`s attributed to that PC.
+
+Once per 1 ms tick, both while stepping and while paused, the machine publishes a `CpuState` snapshot with emulated time plus `Tms5501State` and `Smc5027State` snapshots obtained from the device interfaces. Those snapshots are forwarded even while recording is off so the CPU/TMS5501/SMC5027 panels stay live. Snapshots are copies taken on the scheduler thread; ImGui never reads device internals directly.
+
+`DebugHub` is a fan-out sink with a master enable gate. Its subscriber list is mutex-protected and copied before callbacks, so a listener can be added without blocking event delivery. State snapshots and the current PC are always forwarded; `OnInstruction`/`OnPort` are forwarded only while the hub is enabled. The hub stores the current PC atomically, so bus events can be attributed even when no listener records them. Two listeners are installed by the host: `DebugMonitor` for ImGui and, when `--trace-jsonl` is supplied, `JsonlDebugSink` for a CLI/AI-consumable file. `IRecordableDebugSink` is an optional capability implemented by the JSONL sink so the hub's master switch also pauses snapshot lines; the monitor intentionally does not implement it, because its panels need live snapshots while recording is off.
+
+`DebugMonitor` gates its own recording on `IsEnabled()`, which the Debug menu toggles together with the hub. Instruction and port events go into separate 512-entry ring buffers guarded by a mutex; CPU and peripheral snapshots share that mutex and the current PC is atomic. ImGui only reads copied snapshots/vectors, so it never touches live emulator state while scheduler threads run. Memory edits from the editor also go through `DebugMonitor`; the UI disables them unless the machine is paused.
+
+Each event stream has a `DebugFilter`. Filters are applied when the monitor records an event: instruction filters can match a PC range and a case-insensitive substring of the disassembled mnemonic; port filters can match a port range and read/write direction. With `stopOnMatch`, the first matching event is buffered and the stream freezes until `RearmTriggers()` or `Clear()`. Filters affect only the in-memory windows; the JSONL file receives the unfiltered stream.
+
+`JsonlDebugSink` writes one JSON object per line with a version field and its own increasing sequence number. `kind` is `cpu`, `instr`, `port`, `tms5501` or `smc5027`; byte and register fields are uppercase `0x`-prefixed strings. Writes are mutex-serialized and the stream is flushed on destruction, which makes the file suitable for offline analysis or a future CLI/AI consumer.
+
+`DebugDisassembler` decodes all 256 8080 opcodes into uppercase mnemonics with `$XX`/`$XXXX` immediates and instruction lengths. It has no dependency on the CPU core or SFML, so the same decoder is used by the Trace window, instruction filters and its tests. Execution control is limited to the existing `Pause()`, `Resume()`, `Reset(false)` and `Reset(true)` calls; single-step, step-N, run-to-address and breakpoints are not implemented.
 
 ## Memory and I/O
 

@@ -13,18 +13,24 @@
 #include <Compucolor/CompucolorEmulatorProcessor.h>
 
 #include "AudioOutput.h"
+#include "DebugFilter.h"
+#include "DebugHub.h"
+#include "DebugMonitor.h"
 #include "Display.h"
 #include "Settings.h"
 
 namespace Compucolor::Impl::App::Sfml
 {
-    // Menu bar, disk panel and settings windows drawn over the emulator screen with Dear ImGui.
+    // Menu bar, disk panel, settings and debug windows drawn over the emulator
+    // screen with Dear ImGui.
     class Gui {
         public:
             Gui(
                 std::shared_ptr<sf::RenderWindow> window,
                 std::shared_ptr<Settings> settings,
                 Compucolor::CompucolorEmulatorProcessor& emulator,
+                std::shared_ptr<DebugMonitor> debug,
+                std::shared_ptr<DebugHub> debugHub,
                 std::shared_ptr<Display> display,
                 std::shared_ptr<AudioOutput> audio
             );
@@ -72,6 +78,8 @@ namespace Compucolor::Impl::App::Sfml
             std::shared_ptr<sf::RenderWindow> _window;
             std::shared_ptr<Settings> _settings;
             Compucolor::CompucolorEmulatorProcessor& _emulator;
+            std::shared_ptr<DebugMonitor> _debug;
+            std::shared_ptr<DebugHub> _debugHub;
             std::shared_ptr<Display> _display;
             std::shared_ptr<AudioOutput> _audio;
             std::function<void()> _quit;
@@ -87,6 +95,21 @@ namespace Compucolor::Impl::App::Sfml
             bool _showAbout = false;
             bool _windowChanged = false;
             float _uiScale = 0.f;
+
+            bool _showCpuDebug = false;
+            bool _showMemoryDebug = false;
+            bool _showPortDebug = false;
+            bool _showTraceDebug = false;
+            bool _showTms5501Debug = false;
+            bool _showSmc5027Debug = false;
+            bool _debugRecording = false;
+
+            DebugFilter _instructionFilter{};
+            DebugFilter _portFilter{};
+            char _instructionFilterText[64] = {};
+
+            uint16_t _memoryViewAddress = 0x4000;
+            char _memoryAddressText[5] = "4000";
 
             bool _openBrowser = false;
             bool _openUnsaved = false;
@@ -111,6 +134,13 @@ namespace Compucolor::Impl::App::Sfml
             void DrawSettings();
             void DrawKeyHelp();
             void DrawAbout();
+            void DrawDebugWindows();
+            void DrawCpuDebug();
+            void DrawMemoryDebug();
+            void DrawPortDebug();
+            void DrawTraceDebug();
+            void DrawTms5501Debug();
+            void DrawSmc5027Debug();
             void DrawBrowser();
             void DrawUnsavedPrompt();
             void DrawError();
@@ -142,6 +172,10 @@ namespace Compucolor::Impl::App::Sfml
 
             static const char* DriveLabel(int drive);
             static const char* DiskSettingKey(int drive);
+            static const char* MemoryRegion(uint16_t address);
+            static const char* PortDevice(uint8_t port);
+            static std::string ByteBits(uint8_t value);
+            static bool ParseHexAddress(const char* text, uint16_t& address);
             static void HelpMarker(const char* text);
     };
 }

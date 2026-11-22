@@ -7,6 +7,7 @@
 #include <Compucolor/Common/IOutputDevice.h>
 #include <Compucolor/Common/IResetable.h>
 #include <Compucolor/Common/IPlugin.h>
+#include <Compucolor/Debug/IDebugSink.h>
 
 namespace Compucolor::Tms5501
 {
@@ -35,5 +36,9 @@ namespace Compucolor::Tms5501
 
             // Emulated time at the start of the CPU instruction about to run; stamps audio edges.
             virtual void SetEmulatedTime(uint64_t nanoseconds) = 0;
+
+            // Host-safe snapshot of the registers and decoded line state, taken
+            // once per machine tick for debug instrumentation.
+            [[nodiscard]] virtual Compucolor::Debug::Tms5501State GetDebugState() const = 0;
     };
 }

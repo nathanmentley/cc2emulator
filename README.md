@@ -12,7 +12,8 @@ More detail is available in the [user guide](docs/USER_GUIDE.md) and the [archit
 - SFML window with resizable, aspect-correct display, optional smooth scaling and fullscreen. Window scale is 1x–8x (hotkeys and the View menu offer 1x–4x); the default for a fresh configuration is 4x.
 - Full keyboard matrix: cursor keys, Home, Tab, Insert/Delete, function keys, Ctrl and PC symbols produce the matching Compucolor key or character chord (US layout). `Alt` is mapped to REPEAT when it is not part of a hotkey; right Windows/Super is also REPEAT and left Windows/Super is a one-shot AUTO.
 - SoundWare audio from the TMS5501 TXD line, enabled by default at volume 100. Toggle with `Alt`+`A`, the Sound menu or Preferences. Only SoundWare-aware software produces audio.
-- ImGui menu bar that scales with the window, a floating disk panel, status messages, a built-in `.ccvf` file browser, keyboard help and About dialogs. The menu overlays the top of the window, is excluded from screenshots and can be hidden with `Alt`+`M`.
+- ImGui menu bar that scales with the window, ten display themes, a floating disk panel, status messages, a built-in `.ccvf` file browser, keyboard help and About dialogs. The menu overlays the top of the window, is excluded from screenshots and can be hidden with `Alt`+`M`.
+- Debug windows for CPU state, memory, I/O ports, a rolling instruction trace and TMS5501/SMC5027 status panels. Trace recording is off by default; filters and stop-on-match triggers can tame noisy streams, and traces can be recorded to newline-delimited JSON. Memory edits are enabled only while the machine is paused.
 - PNG screenshots of the raw 384×256 emulated frame (no menu overlay or letterboxing), saved to `<config-dir>/screenshots/`.
 - Modular design: CPU, memory, scheduler, CRT, keyboard, floppy, SMC5027, TMS5501 and the whole machine are loaded from shared libraries listed in `app.config`.
 
@@ -39,7 +40,7 @@ cd ../dist
 ./cc2_emu.sh
 ```
 
-`cc2_emu.sh` changes to the `dist/` directory before starting the emulator. This is required: `app.config`, `plugins/`, `disks/` and `compucolor-state.json` are all resolved relative to the current working directory. Command-line arguments are forwarded to the binary but are currently ignored.
+`cc2_emu.sh` changes to the `dist/` directory before starting the emulator. This is required: `app.config`, `plugins/`, `disks/` and `compucolor-state.json` are all resolved relative to the current working directory. The launcher forwards arguments to the binary; `--trace-jsonl <path>` and `--trace-jsonl=<path>` start recording debug events to a JSONL file immediately.
 
 ## Controls
 
@@ -62,12 +63,17 @@ Help → Keyboard lists the emulated key mappings. In short: letters and punctua
 | --- | --- |
 | File | Save/Load State; Mount/Eject/Save/Save As for disks A and B; Save Screenshot; Quit |
 | Machine | Reset (warm), Hard Reset, Pause, Real Speed |
+| Debug | Record trace; CPU, Memory, Ports, Trace, TMS5501 and SMC5027 windows; Clear traces |
 | Sound | Enable Sound, Volume slider, SoundWare tooltip |
 | View | Scale 1x–4x, Fullscreen, Smooth Scaling, Disk Panel, Hide Menu |
-| Settings | Preferences… (display, sound, character set, ROM version and speed) |
+| Settings | Preferences… (display, theme, sound, character set, ROM version and speed) |
 | Help | Keyboard reference, About |
 
 Mount, Eject and Quit prompt before discarding unsaved disk changes. Save writes immediately; Save As writes to a new path and makes it the mounted path. Changing the system ROM in Preferences performs a hard reset. Unchecking Real Speed runs the CPU in bounded fast-forward bursts rather than at real-time speed.
+
+Debug → Record trace turns on bounded CPU-instruction and I/O-port capture (the last 512 entries of each). The CPU window shows registers, flags, the next decoded instruction and Pause/Resume/Reset buttons; Memory shows a hex view with editable bytes when paused; Ports and Trace show the most recent events first. Both event windows have a Filters section: the Trace window can match a PC range and a disassembled mnemonic substring, and the Ports window can match a port range and read/write direction. With **Stop on match** enabled, the matching event is recorded and that stream freezes until **Rearm** or **Clear traces**. TMS5501 shows status, interrupts, timers and decoded I/O lines; SMC5027 shows cursor and scroll registers. No single-step, run-to-address or breakpoints are implemented yet.
+
+`./cc2_emu.sh --trace-jsonl trace.jsonl` (or `--trace-jsonl=trace.jsonl`) writes one JSON object per line with `kind` values `cpu`, `instr`, `port`, `tms5501` and `smc5027`. Each line includes `v: 1` and a local increasing `seq`. The Debug → Record trace checkbox pauses/resumes both the in-memory buffers and the JSONL sink.
 
 ## Files and settings
 
@@ -81,7 +87,7 @@ Mount, Eject and Quit prompt before discarding unsaved disk changes. Save writes
 | ROM images | Source copies in `data/roms/`; both system ROMs and fonts are compiled into `Roms.cpp` / `FontRom.cpp`, so the installed `roms/` directory is informational |
 | Installed app | `dist/bin/Compucolor.Impl.App.Sfml`, `dist/plugins/`, `dist/disks/`, `dist/cc2_emu.sh` |
 
-Settings keys and defaults: `window_scale=4`, `fullscreen=false`, `smooth_scaling=false`, `charset=standard`, `rom_version=v8.79`, `speed_regulated=true`, `disk_a_path=disks/chomp.ccvf`, `disk_b_path=disks/life.ccvf`, `last_disk_dir` empty, `sound_enabled=true`, `sound_volume=100`. `charset=lowercase` selects the alternate font; `rom_version=v6.78` selects the older ROM and its 3-phase floppy stepper. Settings are written on clean exit, not after every change.
+Settings keys and defaults: `window_scale=4`, `fullscreen=false`, `smooth_scaling=false`, `theme=0`, `charset=standard`, `rom_version=v8.79`, `speed_regulated=true`, `disk_a_path=disks/chomp.ccvf`, `disk_b_path=disks/life.ccvf`, `last_disk_dir` empty, `sound_enabled=true`, `sound_volume=100`. `theme` is an index from 0–9: Standard, Synthwave, Gruvbox, WarmRetro, Amber Terminal, Green Phosphor, Commodore 64, CGA, Solarized Dark and Nord; it is applied at startup. `charset=lowercase` selects the alternate font; `rom_version=v6.78` selects the older ROM and its 3-phase floppy stepper. Settings are written on clean exit, not after every change.
 
 The `sound_enabled` and `sound_volume` lines in `data/app.config` are legacy and unused; use the Sound menu, Preferences or `settings.config`.
 

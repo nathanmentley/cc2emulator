@@ -17,6 +17,9 @@ namespace
     // 10 ms of audio at 48 kHz.
     constexpr std::size_t TenMilliseconds = 480;
 
+    // The DC-blocking filter centres steady silence at zero. Low/High remain
+    // the pre-DC-blocked levels used by the RC-filter test.
+    constexpr float Silence = 0.0f;
     constexpr float Low = -0.25f;
     constexpr float High = 0.25f;
 
@@ -40,7 +43,7 @@ TEST(SoundSynth, WithoutEdgesTheOutputIsSteadySilence) {
     //Assert
     for (const float sample : samples)
     {
-        EXPECT_FLOAT_EQ(Low, sample);
+        EXPECT_FLOAT_EQ(Silence, sample);
     }
 }
 
@@ -55,7 +58,7 @@ TEST(SoundSynth, NothingIsPlayedUntilEnoughEmulatedTimeHasPassed) {
     //Assert
     for (const float sample : samples)
     {
-        EXPECT_FLOAT_EQ(Low, sample);
+        EXPECT_FLOAT_EQ(Silence, sample);
     }
 }
 
@@ -68,9 +71,9 @@ TEST(SoundSynth, EdgeIsHeardAtItsTimestamp) {
     //Act
     const auto samples = Render(synth, TenMilliseconds);
 
-    //Assert
-    EXPECT_NEAR(Low, samples[100], 0.001f);
-    EXPECT_NEAR(High, samples[400], 0.001f);
+    //Assert: silence before the edge, then the DC-blocked rising transient.
+    EXPECT_FLOAT_EQ(Silence, samples[200]);
+    EXPECT_GT(samples[300], 0.2f);
 }
 
 TEST(SoundSynth, SquareWaveKeepsItsFrequency) {
@@ -116,29 +119,44 @@ TEST(SoundSynth, TheRcFilterRoundsOffEdges) {
 
 TEST(SoundSynth, VolumeScalesTheOutput) {
     //Arrange
-    SoundSynth synth(SampleRate, Latency);
-    synth.SetVolume(0.5f);
-    synth.PushEdge(Second, true);
-    synth.Advance(Second + Latency);
+    SoundSynth full(SampleRate, Latency);
+    SoundSynth half(SampleRate, Latency);
+    half.SetVolume(0.5f);
+
+    full.PushEdge(Second, true);
+    half.PushEdge(Second, true);
+    full.Advance(Second + Latency);
+    half.Advance(Second + Latency);
 
     //Act
-    const auto samples = Render(synth, TenMilliseconds);
+    const auto fullSamples = Render(full, TenMilliseconds);
+    const auto halfSamples = Render(half, TenMilliseconds);
 
-    //Assert
-    EXPECT_NEAR(High * 0.5f, samples.back(), 0.001f);
+    //Assert: volume is applied after DC blocking, so the whole waveform scales.
+    EXPECT_NEAR(0.5f * fullSamples[0], halfSamples[0], 0.001f);
+    EXPECT_NEAR(0.5f * fullSamples[100], halfSamples[100], 0.001f);
 }
 
 TEST(SoundSynth, VolumeIsClampedToOne) {
     //Arrange
-    SoundSynth synth(SampleRate, Latency);
-    synth.SetVolume(5.0f);
-    synth.Advance(Second);
+    SoundSynth normal(SampleRate, Latency);
+    SoundSynth clamped(SampleRate, Latency);
+    clamped.SetVolume(5.0f);
+
+    normal.PushEdge(Second, true);
+    clamped.PushEdge(Second, true);
+    normal.Advance(Second + Latency);
+    clamped.Advance(Second + Latency);
 
     //Act
-    const auto samples = Render(synth, 16);
+    const auto normalSamples = Render(normal, 16);
+    const auto clampedSamples = Render(clamped, 16);
 
     //Assert
-    EXPECT_FLOAT_EQ(Low, samples[0]);
+    for (std::size_t i = 0; i < normalSamples.size(); i++)
+    {
+        EXPECT_FLOAT_EQ(normalSamples[i], clampedSamples[i]);
+    }
 }
 
 TEST(SoundSynth, RunningOutOfEmulatedTimeRepeatsTheLastSample) {
@@ -160,17 +178,25 @@ TEST(SoundSynth, RunningOutOfEmulatedTimeRepeatsTheLastSample) {
 
 TEST(SoundSynth, ALongStallIsSkippedInsteadOfReplayed) {
     //Arrange
-    SoundSynth synth(SampleRate, Latency);
-    synth.Advance(Second);
-    Render(synth, TenMilliseconds);
+    SoundSynth stalled(SampleRate, Latency);
+    SoundSynth control(SampleRate, Latency);
+    stalled.Advance(Second);
+    control.Advance(Second);
+    Render(stalled, TenMilliseconds);
+    Render(control, TenMilliseconds);
 
     //Act: emulation races ahead by half a minute and the line goes high meanwhile
-    synth.PushEdge(30 * Second - 500'000'000, true);
-    synth.Advance(30 * Second);
-    const auto samples = Render(synth, TenMilliseconds);
+    stalled.PushEdge(30 * Second - 500'000'000, true);
+    stalled.Advance(30 * Second);
+    control.Advance(30 * Second);
+    const auto stalledSamples = Render(stalled, TenMilliseconds);
+    const auto controlSamples = Render(control, TenMilliseconds);
 
-    //Assert: audio jumped to the present, so the output already reflects the high level
-    EXPECT_NEAR(High, samples.back(), 0.001f);
+    //Assert: audio jumped to the present and picked up the new line level.
+    // The DC blocker still centres a steady level at zero.
+    EXPECT_GT(stalledSamples.front(), 0.1f);
+    EXPECT_FLOAT_EQ(Silence, controlSamples.front());
+    EXPECT_FLOAT_EQ(Silence, controlSamples.back());
 }
 
 TEST(SoundSynth, AFullQueueDropsEdgesWithoutBreakingPlayback) {
@@ -185,10 +211,14 @@ TEST(SoundSynth, AFullQueueDropsEdgesWithoutBreakingPlayback) {
     //Act
     const auto samples = Render(synth, 1024);
 
-    //Assert
+    //Assert: the DC blocker can overshoot the +/-0.25 input range on a step,
+    // but the generated audio stays finite and bounded.
+    float maxAbs = 0.0f;
     for (const float sample : samples)
     {
         EXPECT_TRUE(std::isfinite(sample));
-        EXPECT_LE(std::abs(sample), 0.26f);
+        maxAbs = std::max(maxAbs, std::abs(sample));
     }
+    EXPECT_GT(maxAbs, 0.0f);
+    EXPECT_LE(maxAbs, 0.6f);
 }

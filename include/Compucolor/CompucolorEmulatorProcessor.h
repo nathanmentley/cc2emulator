@@ -20,11 +20,17 @@ namespace Compucolor
     class CompucolorEmulatorProcessor {
         public:
             CompucolorEmulatorProcessor(
-                std::shared_ptr<ICompucolorEmulator> emulator
+                std::shared_ptr<ICompucolorEmulator> emulator,
+                std::shared_ptr<Debug::IDebugSink> debugSink = nullptr
             ):
                 _emulator(std::move(emulator)),
+                _debugSink(std::move(debugSink)),
                 _thread({})
             {
+                if (_debugSink)
+                {
+                    _emulator->SetDebugSink(_debugSink);
+                }
             };
 
             // Stops the emulator if still running.
@@ -82,6 +88,12 @@ namespace Compucolor
             void SetSpeedRegulated(bool regulated) { _emulator->SetSpeedRegulated(regulated); }
 
             [[nodiscard]] bool IsSpeedRegulated() const { return _emulator->IsSpeedRegulated(); }
+
+            void SetDebugSink(std::shared_ptr<Debug::IDebugSink> sink)
+            {
+                _debugSink = std::move(sink);
+                _emulator->SetDebugSink(_debugSink);
+            }
 
             void SetLowercaseCharset(bool lowercase) { _emulator->SetLowercaseCharset(lowercase); }
 
@@ -147,6 +159,7 @@ namespace Compucolor
 
         private:
             std::shared_ptr<ICompucolorEmulator> _emulator;
+            std::shared_ptr<Debug::IDebugSink> _debugSink;
             std::optional<std::thread> _thread;
     };
 }

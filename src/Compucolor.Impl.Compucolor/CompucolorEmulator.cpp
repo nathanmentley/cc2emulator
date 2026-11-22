@@ -43,6 +43,8 @@ Compucolor::Impl::CompucolorII::CompucolorEmulator::CompucolorEmulator(
     _scheduler(std::move(scheduler)),
     _smc5027(std::move(smc5027)),
     _tms5501(std::move(tms5501)),
+    _bus({}),
+    _debugSink({}),
     _loop({}),
     _clock(std::move(clock))
 {
@@ -57,7 +59,8 @@ Compucolor::Impl::CompucolorII::CompucolorEmulator::CompucolorEmulator(
         };
     }
 
-    _intel8080->SetBus(std::make_shared<CompucolorIntel8080Bus>(_smc5027, _tms5501));
+    _bus = std::make_shared<CompucolorIntel8080Bus>(_smc5027, _tms5501);
+    _intel8080->SetBus(_bus);
 }
 
 void Compucolor::Impl::CompucolorII::CompucolorEmulator::Start()
@@ -84,6 +87,20 @@ void Compucolor::Impl::CompucolorII::CompucolorEmulator::Start()
                 ApplyReset(request == ResetHard);
             }
 
+            // The UI reads snapshots from the sink, never live device state.
+            auto publishDebugState = [this] {
+                if (!_debugSink)
+                {
+                    return;
+                }
+
+                auto state = _intel8080->GetState();
+                state.emulatedNanoseconds = _emulatedNanoseconds;
+                _debugSink->SetCpuState(state);
+                _debugSink->SetTms5501State(_tms5501->GetDebugState());
+                _debugSink->SetSmc5027State(_smc5027->GetDebugState());
+            };
+
             const uint64_t now = _clock();
             const uint64_t wallNanoseconds = now - _lastTickNanoseconds;
             _lastTickNanoseconds = now;
@@ -92,6 +109,7 @@ void Compucolor::Impl::CompucolorII::CompucolorEmulator::Start()
             if (_paused.load(std::memory_order_relaxed))
             {
                 _budgetNanoseconds = 0;
+                publishDebugState();
                 return 0;
             }
 
@@ -117,6 +135,8 @@ void Compucolor::Impl::CompucolorII::CompucolorEmulator::Start()
                     StepOnce();
                 }
             }
+
+            publishDebugState();
 
             return 0;
         }
@@ -456,6 +476,16 @@ std::shared_ptr<Compucolor::Floppy::IFloppyEmulator> Compucolor::Impl::Compucolo
         case 1: return _floppyB;
         default: return nullptr;
     }
+}
+
+void Compucolor::Impl::CompucolorII::CompucolorEmulator::SetDebugSink(
+    std::shared_ptr<Compucolor::Debug::IDebugSink> sink
+)
+{
+    _debugSink = std::move(sink);
+
+    _intel8080->SetDebugSink(_debugSink);
+    _bus->SetDebugSink(_debugSink);
 }
 
 void Compucolor::Impl::CompucolorII::CompucolorEmulator::Stop()

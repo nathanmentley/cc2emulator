@@ -8,6 +8,7 @@
 #include <thread>
 
 #include <Compucolor/Common/IPluginManager.h>
+#include <Compucolor/Debug/IDebugSink.h>
 #include <Compucolor/Memory/IMemory.h>
 #include <Compucolor/Crt/ICrtEmulator.h>
 #include <Compucolor/Intel8080/IIntel8080Emulator.h>
@@ -74,6 +75,8 @@ namespace Compucolor::Impl::CompucolorII
 
             [[nodiscard]] std::shared_ptr<Floppy::IFloppyEmulator> GetFloppy(int drive) const override;
 
+            void SetDebugSink(std::shared_ptr<Debug::IDebugSink> sink) override;
+
             // Plugin factory: resolves all components through the plugin manager.
             static std::shared_ptr<ICompucolorEmulator> Creator(Common::IPluginManager* manager);
 
@@ -87,6 +90,8 @@ namespace Compucolor::Impl::CompucolorII
             std::shared_ptr<Scheduler::IScheduler> _scheduler;
             std::shared_ptr<Smc5027::ISmc5027Emulator> _smc5027;
             std::shared_ptr<Tms5501::ITms5501Emulator> _tms5501;
+            std::shared_ptr<CompucolorIntel8080Bus> _bus;
+            std::shared_ptr<Debug::IDebugSink> _debugSink;
             std::shared_ptr<Scheduler::IScheduledTask> _loop;
             int _loopInterval = 0;
             uint64_t _floppyCycleRemainder = 0;

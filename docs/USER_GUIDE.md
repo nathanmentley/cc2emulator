@@ -11,7 +11,7 @@ cd dist
 ./cc2_emu.sh
 ```
 
-The launcher changes to `dist/` because `app.config`, plugin libraries, disk images and the saved emulator state are resolved relative to the current working directory. Running the binary directly from another directory produces a "Missing setting ... in app.config" error. There are no command-line options; arguments are forwarded but ignored.
+The launcher changes to `dist/` because `app.config`, plugin libraries, disk images and the saved emulator state are resolved relative to the current working directory. Running the binary directly from another directory produces a "Missing setting ... in app.config" error. The only command-line option is `--trace-jsonl <path>` (also accepted as `--trace-jsonl=<path>`), which starts recording debug events to that file as soon as the emulator starts.
 
 The window title is "Compucolor II Emulator". On first launch the default disks are `chomp.ccvf` in drive A and `life.ccvf` in drive B; the fresh default window scale is 4x (384×256 scaled to 1536×1024). Existing settings files are unchanged by code updates.
 
@@ -61,6 +61,31 @@ The disk browser starts in the last used disk directory, otherwise `disks/`, oth
 - **Pause** — stops CPU stepping; pending resets are still applied.
 - **Real Speed** — when enabled (default), the CPU is paced to roughly 2 MHz with a 50 ms catch-up cap. When disabled, it runs in fast-forward bursts.
 
+### Debug
+
+- **Record trace** — toggles the master recording gate for CPU instructions, I/O-port accesses and the optional JSONL sink. Recording is off by default unless `--trace-jsonl` was supplied; each in-memory buffer keeps the most recent 512 events.
+- **CPU** — shows the current register/flag snapshot, emulated time, the decoded instruction at PC, and Pause/Resume/Reset and Hard Reset buttons.
+- **Memory** — a compact hexadecimal viewer/editor showing 64 bytes at a time. Enter a hexadecimal address (or use the ±64 buttons) to move the view; byte cells are editable only while the machine is paused. `0x0000–0x3FFF` is ROM, `0x6000–0x6FFF` aliases video RAM at `0x7000–0x7FFF`.
+- **Ports** — shows recorded reads and writes with PC, port number, value, bit pattern and decoded device (TMS5501, SMC5027, CRT timing PROM or unmapped). Its **Filters** section can limit events by port range and to reads or writes.
+- **Trace** — shows recorded instruction events with sequence number, PC, raw opcode bytes, decoded mnemonic, cycle count and flags. Its **Filters** section can limit events by PC range and by a case-insensitive substring of the mnemonic (for example `MVI` or `CALL`).
+- **TMS5501** — shows the chip status byte, interrupt mask/pending bits, the next RST vector, five timer counters, serial data registers, decoded select lines, audio TXD level and the discrete outport.
+- **SMC5027** — shows cursor X/Y, the first visible display row and a 32-row scroll-origin ruler.
+- **Clear traces** — empties both event buffers; CPU and memory state are unaffected.
+
+Both the Ports and Trace windows also have a Record checkbox and Clear button. In either Filters section, **Enabled** turns filtering on; when it is off, all events of that kind are recorded. **Stop on match** records the first matching event and then freezes that stream until **Rearm** (or **Clear traces**). The other stream keeps recording independently. There are no single-step, step-N, run-to-address or breakpoint controls yet; use Machine → Pause (or the CPU window) to inspect memory safely.
+
+### Recording to JSONL
+
+Start the launcher with `--trace-jsonl trace.jsonl` or `--trace-jsonl=trace.jsonl` to write a newline-delimited JSON record for every CPU snapshot, instruction, port access and peripheral snapshot. The file is truncated when opened. Every line contains `v: 1` and a local increasing `seq`; `kind` is one of:
+
+- `cpu` — register/flag snapshot with `emulatedNanoseconds`
+- `instr` — `pc`, opcode `bytes` and `cycles`
+- `port` — `pc`, `port`, `value` and `isWrite`
+- `tms5501` — status/interrupt/timer/serial fields and decoded line flags
+- `smc5027` — cursor and first display row (hex strings)
+
+Hex fields are uppercase `0x`-prefixed strings. The Debug → Record trace checkbox pauses and resumes JSONL recording as well as the in-memory buffers; when a CLI trace is requested, recording starts enabled. Filters configured in the GUI apply only to the in-memory windows, so the JSONL file always contains the unfiltered stream.
+
 ### Sound
 
 SoundWare is an optional hardware add-on that produces audio by toggling a serial line. The emulator emulates that line, so only SoundWare-aware disks (for example `life.ccvf` / "Life with Sound" and `action_soundware.ccvf`) make sound. Use **Enable Sound** (`Alt`+`A`) and the **Volume** slider (0–100%), or set them in Preferences. The settings are stored in `settings.config` as `sound_enabled` and `sound_volume`.
@@ -71,19 +96,20 @@ Scale 1x–4x, Fullscreen, Smooth Scaling, Disk Panel and Hide Menu. The Disk Pa
 
 ### Settings → Preferences
 
-- **Display**: fullscreen, window scale 1–8 and smooth scaling. The wider scale range is only available here or by editing `settings.config`.
+- **Display**: fullscreen, window scale 1–8, smooth scaling and a Theme combo (10 palettes for the eight hardware colors). The wider scale range is only available here or by editing `settings.config`. The saved theme is applied at startup.
 - **Sound**: enable sound and volume, disabled when sound is off.
 - **Machine**: character set (Standard or Lowercase), system ROM (v6.78 or v8.79) and Real Speed. Lowercase changes the font; the ROM choice also changes the floppy stepper geometry and triggers a hard reset.
 
 ## Settings file
 
-Settings live in `$XDG_CONFIG_HOME/cc2emu/settings.config`, otherwise `$HOME/.config/cc2emu/settings.config`, otherwise `./settings.config`. The file is plain `key=value` lines; unknown keys are preserved. It is read at startup and written only on clean exit, so a crash can lose changes made during a session.
+Settings live in `$XDG_CONFIG_HOME/cc2emu/settings.config`, otherwise `$HOME/.config/cc2emu/settings.config`, otherwise `./settings.config`. The file is plain `key=value` lines; unknown keys are preserved. It is read at startup (including `theme`, which selects the display palette) and written only on clean exit, so a crash can lose changes made during a session.
 
 | Key | Default | Effect |
 | --- | --- | --- |
 | `window_scale` | `4` | 384×256 × scale, clamped to 1–8 |
 | `fullscreen` | `false` | Use the desktop video mode |
 | `smooth_scaling` | `false` | Texture smoothing for the emulated frame |
+| `theme` | `0` | Palette index 0–9: Standard, Synthwave, Gruvbox, WarmRetro, Amber Terminal, Green Phosphor, Commodore 64, CGA, Solarized Dark, Nord |
 | `charset` | `standard` | `lowercase` selects the alternate font ROM |
 | `rom_version` | `v8.79` | `v6.78` is the other supported value |
 | `speed_regulated` | `true` | Real-speed pacing |

@@ -5,6 +5,7 @@
 #include <Compucolor/Common/IOutputDevice.h>
 #include <Compucolor/Common/IResetable.h>
 #include <Compucolor/Common/IPlugin.h>
+#include <Compucolor/Debug/IDebugSink.h>
 
 namespace Compucolor::Smc5027
 {
@@ -23,5 +24,8 @@ namespace Compucolor::Smc5027
             // First visible video row: (register 6 & 0x1F) + 1, modulo 32.
             // Port 0x0B increments this register modulo 32 for hardware scrolling.
             virtual uint8_t FirstDisplayRow() = 0;
+
+            // Host-safe snapshot of the CRT registers exposed to the debugger.
+            [[nodiscard]] virtual Compucolor::Debug::Smc5027State GetDebugState() = 0;
     };
 }

@@ -17,4 +17,5 @@ class MockSmc5027Emulator: public Compucolor::Smc5027::ISmc5027Emulator
         MOCK_METHOD(uint8_t, GetCursorX, (), (override));
         MOCK_METHOD(uint8_t, GetCursorY, (), (override));
         MOCK_METHOD(uint8_t, FirstDisplayRow, (), (override));
+        MOCK_METHOD(Compucolor::Debug::Smc5027State, GetDebugState, (), (override));
 };

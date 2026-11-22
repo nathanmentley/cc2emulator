@@ -19,7 +19,7 @@ TEST(Settings, DefaultsAreProvided) {
     const Settings settings;
 
     //Assert
-    EXPECT_EQ(2, settings.GetInt("window_scale"));
+    EXPECT_EQ(4, settings.GetInt("window_scale"));
     EXPECT_FALSE(settings.GetBool("fullscreen"));
     EXPECT_TRUE(settings.GetBool("speed_regulated"));
     EXPECT_EQ("standard", settings.GetString("charset"));
@@ -63,7 +63,7 @@ TEST(Settings, LoadMissingFileKeepsDefaults) {
 
     //Assert
     EXPECT_FALSE(loaded);
-    EXPECT_EQ(2, settings.GetInt("window_scale"));
+    EXPECT_EQ(4, settings.GetInt("window_scale"));
 }
 
 TEST(Settings, ValueMayContainEqualsSign) {

@@ -1,13 +1,18 @@
 #include "Gui.h"
 
+#include "DebugDisassembler.h"
+
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cmath>
+#include <cstdio>
 #include <cstring>
 #include <ctime>
 #include <exception>
 #include <iomanip>
 #include <iostream>
+#include <iterator>
 #include <sstream>
 #include <system_error>
 
@@ -161,14 +166,19 @@ Gui::Gui(
     std::shared_ptr<sf::RenderWindow> window,
     std::shared_ptr<Settings> settings,
     Compucolor::CompucolorEmulatorProcessor& emulator,
+    std::shared_ptr<DebugMonitor> debug,
+    std::shared_ptr<DebugHub> debugHub,
     std::shared_ptr<Display> display,
     std::shared_ptr<AudioOutput> audio
 ):
     _window(std::move(window)),
     _settings(std::move(settings)),
     _emulator(emulator),
+    _debug(std::move(debug)),
+    _debugHub(std::move(debugHub)),
     _display(std::move(display)),
-    _audio(std::move(audio))
+    _audio(std::move(audio)),
+    _debugRecording(_debugHub && _debugHub->IsEnabled())
 {
 }
 
@@ -368,6 +378,7 @@ void Gui::BeginFrame(const sf::Time elapsed)
     DrawSettings();
     DrawKeyHelp();
     DrawAbout();
+    DrawDebugWindows();
 
     if (_openBrowser)
     {
@@ -656,6 +667,40 @@ void Gui::DrawMenu()
         {
             _emulator.SetSpeedRegulated(regulated);
             _settings->SetBool("speed_regulated", regulated);
+        }
+
+        ImGui::EndMenu();
+    }
+
+    if (ImGui::BeginMenu("Debug"))
+    {
+        if (ImGui::MenuItem("Record trace", nullptr, &_debugRecording))
+        {
+            if (_debugHub)
+            {
+                _debugHub->SetEnabled(_debugRecording);
+            }
+
+            if (_debug)
+            {
+                _debug->SetEnabled(_debugRecording);
+            }
+        }
+
+        ImGui::Separator();
+
+        ImGui::MenuItem("CPU", nullptr, &_showCpuDebug);
+        ImGui::MenuItem("Memory", nullptr, &_showMemoryDebug);
+        ImGui::MenuItem("Ports", nullptr, &_showPortDebug);
+        ImGui::MenuItem("Trace", nullptr, &_showTraceDebug);
+        ImGui::MenuItem("TMS5501", nullptr, &_showTms5501Debug);
+        ImGui::MenuItem("SMC5027", nullptr, &_showSmc5027Debug);
+
+        ImGui::Separator();
+
+        if (ImGui::MenuItem("Clear traces") && _debug)
+        {
+            _debug->Clear();
         }
 
         ImGui::EndMenu();
@@ -975,6 +1020,802 @@ void Gui::DrawAbout()
     }
 
     ImGui::End();
+}
+
+void Gui::DrawDebugWindows()
+{
+    DrawCpuDebug();
+    DrawMemoryDebug();
+    DrawPortDebug();
+    DrawTraceDebug();
+    DrawTms5501Debug();
+    DrawSmc5027Debug();
+}
+
+void Gui::DrawCpuDebug()
+{
+    if (!_showCpuDebug || !_debug)
+    {
+        return;
+    }
+
+    if (ImGui::Begin("CPU - Debug", &_showCpuDebug, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        const auto cpu = _debug->GetCpuState();
+
+        ImGui::SeparatorText("State");
+        ImGui::Text(
+            "PC %04X    SP %04X    CYC %llu",
+            cpu.pc,
+            cpu.sp,
+            static_cast<unsigned long long>(cpu.cycles)
+        );
+        ImGui::Text(
+            "Emulated time %llu us",
+            static_cast<unsigned long long>(cpu.emulatedNanoseconds / 1000)
+        );
+        ImGui::Text(
+            "Interrupt %s    RST %02X    IFF %s",
+            cpu.interruptPending ? "pending" : "none",
+            static_cast<unsigned int>(cpu.interruptVector),
+            cpu.iff ? "set" : "clear"
+        );
+
+        ImGui::SeparatorText("Registers");
+        ImGui::Text(
+            "A %02X   B %02X   C %02X   D %02X",
+            static_cast<unsigned int>(cpu.a),
+            static_cast<unsigned int>(cpu.b),
+            static_cast<unsigned int>(cpu.c),
+            static_cast<unsigned int>(cpu.d)
+        );
+        ImGui::Text(
+            "E %02X   H %02X   L %02X   HL %04X",
+            static_cast<unsigned int>(cpu.e),
+            static_cast<unsigned int>(cpu.h),
+            static_cast<unsigned int>(cpu.l),
+            static_cast<unsigned int>(cpu.h) << 8 | static_cast<unsigned int>(cpu.l)
+        );
+
+        ImGui::SeparatorText("Flags");
+        struct Flag {
+            const char* name;
+            bool value;
+        };
+
+        const Flag flags[] = {
+            {"S", cpu.sf}, {"Z", cpu.zf}, {"H", cpu.hf}, {"P", cpu.pf},
+            {"C", cpu.cf}, {"I", cpu.iff}, {"HALT", cpu.halted}
+        };
+
+        for (std::size_t i = 0; i < std::size(flags); i++)
+        {
+            if (i != 0)
+            {
+                ImGui::SameLine();
+            }
+
+            ImGui::TextColored(
+                flags[i].value
+                    ? ImVec4(0.98f, 0.80f, 0.44f, 1.f)
+                    : ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled),
+                "%s",
+                flags[i].name
+            );
+        }
+
+        ImGui::SeparatorText("Next instruction");
+        std::array<uint8_t, 3> bytes = {
+            _debug->ReadMemory(cpu.pc),
+            _debug->ReadMemory(static_cast<uint16_t>(cpu.pc + 1)),
+            _debug->ReadMemory(static_cast<uint16_t>(cpu.pc + 2))
+        };
+
+        const auto instruction = Disassemble8080(bytes.data(), cpu.pc);
+
+        ImGui::Text("%04X: %s", cpu.pc, instruction.text.c_str());
+        ImGui::TextDisabled(
+            "Bytes: %02X %02X %02X",
+            static_cast<unsigned int>(bytes[0]),
+            static_cast<unsigned int>(bytes[1]),
+            static_cast<unsigned int>(bytes[2])
+        );
+
+        ImGui::SeparatorText("Control");
+        const bool paused = _emulator.IsPaused();
+
+        if (ImGui::Button(paused ? "Resume" : "Pause"))
+        {
+            if (paused)
+            {
+                _emulator.Resume();
+            }
+            else
+            {
+                _emulator.Pause();
+            }
+        }
+
+        ImGui::SameLine();
+        if (ImGui::Button("Reset"))
+        {
+            _emulator.Reset(false);
+        }
+
+        ImGui::SameLine();
+        if (ImGui::Button("Hard Reset"))
+        {
+            _emulator.Reset(true);
+        }
+
+        ImGui::TextDisabled("Pause the machine before editing memory.");
+    }
+
+    ImGui::End();
+}
+
+void Gui::DrawMemoryDebug()
+{
+    if (!_showMemoryDebug || !_debug)
+    {
+        return;
+    }
+
+    ImGui::SetNextWindowSize(
+        ImVec2(520.f * _uiScale, 340.f * _uiScale),
+        ImGuiCond_FirstUseEver
+    );
+
+    if (ImGui::Begin("Memory - Debug", &_showMemoryDebug))
+    {
+        ImGui::SetNextItemWidth(90.f * _uiScale);
+
+        bool gotoAddress = ImGui::InputText(
+            "Address",
+            _memoryAddressText,
+            sizeof(_memoryAddressText),
+            ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_EnterReturnsTrue
+        );
+
+        ImGui::SameLine();
+        gotoAddress = ImGui::Button("Goto") || gotoAddress;
+
+        if (gotoAddress)
+        {
+            uint16_t parsed = 0;
+            if (ParseHexAddress(_memoryAddressText, parsed))
+            {
+                _memoryViewAddress = static_cast<uint16_t>(parsed & 0xFFC0);
+                std::snprintf(
+                    _memoryAddressText,
+                    sizeof(_memoryAddressText),
+                    "%04X",
+                    _memoryViewAddress
+                );
+            }
+            else
+            {
+                ShowStatus("Enter a hexadecimal address (0000-FFFF)");
+            }
+        }
+
+        ImGui::SameLine();
+        if (ImGui::Button("-64"))
+        {
+            _memoryViewAddress = static_cast<uint16_t>(_memoryViewAddress - 64);
+        }
+
+        ImGui::SameLine();
+        if (ImGui::Button("+64"))
+        {
+            _memoryViewAddress = static_cast<uint16_t>(_memoryViewAddress + 64);
+        }
+
+        ImGui::TextDisabled(
+            "Region: %s%s",
+            MemoryRegion(_memoryViewAddress),
+            _emulator.IsPaused() ? "" : "  -  running (edits disabled)"
+        );
+
+        ImGui::BeginDisabled(!_emulator.IsPaused());
+
+        if (ImGui::BeginTable(
+            "debug-memory",
+            10,
+            ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
+                ImGuiTableFlags_ScrollY | ImGuiTableFlags_Hideable
+        ))
+        {
+            ImGui::TableSetupColumn("Addr", ImGuiTableColumnFlags_WidthFixed, 48.f * _uiScale);
+
+            for (int column = 0; column < 8; column++)
+            {
+                char label[8];
+                std::snprintf(label, sizeof(label), "%X", column);
+                ImGui::TableSetupColumn(label, ImGuiTableColumnFlags_WidthFixed, 32.f * _uiScale);
+            }
+
+            ImGui::TableSetupColumn("ASCII", ImGuiTableColumnFlags_WidthFixed, 110.f * _uiScale);
+            ImGui::TableHeadersRow();
+
+            constexpr int RowCount = 8;
+
+            for (int row = 0; row < RowCount; row++)
+            {
+                const uint16_t rowAddress = static_cast<uint16_t>(
+                    _memoryViewAddress + row * 8
+                );
+
+                std::array<char, 9> ascii{};
+                ascii[8] = '\0';
+
+                ImGui::TableNextRow();
+
+                ImGui::TableNextColumn();
+                ImGui::Text("%04X", rowAddress);
+
+                for (int column = 0; column < 8; column++)
+                {
+                    const uint16_t address = static_cast<uint16_t>(rowAddress + column);
+                    uint8_t byte = _debug->ReadMemory(address);
+
+                    ImGui::TableNextColumn();
+                    ImGui::PushID(static_cast<int>(address));
+
+                    // Tighter padding lets both hex digits fit without widening
+                    // the table or the window.
+                    ImGui::PushStyleVar(
+                        ImGuiStyleVar_FramePadding,
+                        ImVec2(2.f * _uiScale, 2.f * _uiScale)
+                    );
+                    ImGui::SetNextItemWidth(-1.f);
+
+                    if (ImGui::InputScalar(
+                        "##byte",
+                        ImGuiDataType_U8,
+                        &byte,
+                        nullptr,
+                        nullptr,
+                        "%02X",
+                        ImGuiInputTextFlags_CharsHexadecimal
+                    ))
+                    {
+                        _debug->WriteMemory(address, byte);
+                    }
+
+                    ImGui::PopStyleVar();
+                    ImGui::PopID();
+
+                    ascii[static_cast<std::size_t>(column)] =
+                        byte >= 0x20 && byte <= 0x7E
+                            ? static_cast<char>(byte)
+                            : '.';
+                }
+
+                ImGui::TableNextColumn();
+                ImGui::TextUnformatted(ascii.data());
+            }
+
+            ImGui::EndTable();
+        }
+
+        ImGui::EndDisabled();
+    }
+
+    ImGui::End();
+}
+
+void Gui::DrawPortDebug()
+{
+    if (!_showPortDebug || !_debug)
+    {
+        return;
+    }
+
+    ImGui::SetNextWindowSize(
+        ImVec2(660.f * _uiScale, 420.f * _uiScale),
+        ImGuiCond_FirstUseEver
+    );
+
+    if (ImGui::Begin("Ports - Debug", &_showPortDebug))
+    {
+        if (ImGui::Checkbox("Record trace", &_debugRecording))
+        {
+            if (_debugHub)
+            {
+                _debugHub->SetEnabled(_debugRecording);
+            }
+
+            if (_debug)
+            {
+                _debug->SetEnabled(_debugRecording);
+            }
+        }
+
+        ImGui::SameLine();
+        if (ImGui::Button("Clear"))
+        {
+            _debug->Clear();
+        }
+
+        if (ImGui::CollapsingHeader("Filters"))
+        {
+            ImGui::Checkbox("Enabled", &_portFilter.enabled);
+            ImGui::SameLine();
+            ImGui::Checkbox("Stop on match", &_portFilter.stopOnMatch);
+
+            ImGui::Checkbox("Port range", &_portFilter.filterByPort);
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(60.f * _uiScale);
+            ImGui::InputScalar(
+                "From##port-from",
+                ImGuiDataType_U8,
+                &_portFilter.portFrom,
+                nullptr,
+                nullptr,
+                "%02X",
+                ImGuiInputTextFlags_CharsHexadecimal
+            );
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(60.f * _uiScale);
+            ImGui::InputScalar(
+                "To##port-to",
+                ImGuiDataType_U8,
+                &_portFilter.portTo,
+                nullptr,
+                nullptr,
+                "%02X",
+                ImGuiInputTextFlags_CharsHexadecimal
+            );
+
+            int direction = static_cast<int>(_portFilter.direction);
+            ImGui::RadioButton("Any##port-direction", &direction, 0);
+            ImGui::SameLine();
+            ImGui::RadioButton("Read##port-direction", &direction, 1);
+            ImGui::SameLine();
+            ImGui::RadioButton("Write##port-direction", &direction, 2);
+            _portFilter.direction = static_cast<DebugPortDirection>(direction);
+
+            if (ImGui::Button("Rearm##ports"))
+            {
+                _debug->RearmTriggers();
+            }
+
+            ImGui::SameLine();
+            ImGui::Text(
+                "Triggered: %s",
+                _debug->IsPortTriggered() ? "yes" : "no"
+            );
+        }
+
+        _debug->SetPortFilter(_portFilter);
+
+        ImGui::TextDisabled("Newest first - %d entries buffered", 512);
+
+        if (ImGui::BeginTable(
+            "debug-ports",
+            7,
+            ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
+                ImGuiTableFlags_ScrollY | ImGuiTableFlags_ScrollX
+        ))
+        {
+            ImGui::TableSetupColumn("#", ImGuiTableColumnFlags_WidthFixed, 60.f * _uiScale);
+            ImGui::TableSetupColumn("PC", ImGuiTableColumnFlags_WidthFixed, 60.f * _uiScale);
+            ImGui::TableSetupColumn("R/W", ImGuiTableColumnFlags_WidthFixed, 45.f * _uiScale);
+            ImGui::TableSetupColumn("Port", ImGuiTableColumnFlags_WidthFixed, 55.f * _uiScale);
+            ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed, 65.f * _uiScale);
+            ImGui::TableSetupColumn("Bits", ImGuiTableColumnFlags_WidthFixed, 95.f * _uiScale);
+            ImGui::TableSetupColumn("Device");
+            ImGui::TableHeadersRow();
+
+            const auto ports = _debug->GetPorts();
+
+            for (auto it = ports.rbegin(); it != ports.rend(); ++it)
+            {
+                ImGui::TableNextRow();
+
+                ImGui::TableNextColumn();
+                ImGui::Text("%llu", static_cast<unsigned long long>(it->sequence));
+
+                ImGui::TableNextColumn();
+                ImGui::Text("%04X", it->pc);
+
+                ImGui::TableNextColumn();
+                ImGui::TextColored(
+                    it->isWrite
+                        ? ImVec4(0.98f, 0.80f, 0.44f, 1.f)
+                        : ImVec4(0.47f, 0.79f, 0.69f, 1.f),
+                    "%s",
+                    it->isWrite ? "OUT" : "IN"
+                );
+
+                ImGui::TableNextColumn();
+                ImGui::Text("%02X", static_cast<unsigned int>(it->port));
+
+                ImGui::TableNextColumn();
+                ImGui::Text("%02X", static_cast<unsigned int>(it->value));
+
+                ImGui::TableNextColumn();
+                const std::string bits = ByteBits(it->value);
+                ImGui::TextUnformatted(bits.c_str());
+
+                ImGui::TableNextColumn();
+                ImGui::Text("%s", PortDevice(it->port));
+            }
+
+            ImGui::EndTable();
+        }
+    }
+
+    ImGui::End();
+}
+
+void Gui::DrawTraceDebug()
+{
+    if (!_showTraceDebug || !_debug)
+    {
+        return;
+    }
+
+    ImGui::SetNextWindowSize(
+        ImVec2(760.f * _uiScale, 460.f * _uiScale),
+        ImGuiCond_FirstUseEver
+    );
+
+    if (ImGui::Begin("Trace - Debug", &_showTraceDebug))
+    {
+        if (ImGui::Checkbox("Record trace", &_debugRecording))
+        {
+            if (_debugHub)
+            {
+                _debugHub->SetEnabled(_debugRecording);
+            }
+
+            if (_debug)
+            {
+                _debug->SetEnabled(_debugRecording);
+            }
+        }
+
+        ImGui::SameLine();
+        if (ImGui::Button("Clear"))
+        {
+            _debug->Clear();
+        }
+
+        if (ImGui::CollapsingHeader("Filters"))
+        {
+            ImGui::Checkbox("Enabled", &_instructionFilter.enabled);
+            ImGui::SameLine();
+            ImGui::Checkbox("Stop on match", &_instructionFilter.stopOnMatch);
+
+            ImGui::Checkbox("PC range", &_instructionFilter.filterByPc);
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(70.f * _uiScale);
+            ImGui::InputScalar(
+                "From##pc-from",
+                ImGuiDataType_U16,
+                &_instructionFilter.pcFrom,
+                nullptr,
+                nullptr,
+                "%04X",
+                ImGuiInputTextFlags_CharsHexadecimal
+            );
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(70.f * _uiScale);
+            ImGui::InputScalar(
+                "To##pc-to",
+                ImGuiDataType_U16,
+                &_instructionFilter.pcTo,
+                nullptr,
+                nullptr,
+                "%04X",
+                ImGuiInputTextFlags_CharsHexadecimal
+            );
+
+            ImGui::SetNextItemWidth(220.f * _uiScale);
+            ImGui::InputText(
+                "Mnemonic contains",
+                _instructionFilterText,
+                sizeof(_instructionFilterText),
+                ImGuiInputTextFlags_CharsUppercase
+            );
+            _instructionFilter.text = _instructionFilterText;
+
+            if (ImGui::Button("Rearm##trace"))
+            {
+                _debug->RearmTriggers();
+            }
+
+            ImGui::SameLine();
+            ImGui::Text(
+                "Triggered: %s",
+                _debug->IsInstructionTriggered() ? "yes" : "no"
+            );
+        }
+
+        _debug->SetInstructionFilter(_instructionFilter);
+
+        ImGui::TextDisabled("Newest first - shows the last 512 instructions");
+
+        if (ImGui::BeginTable(
+            "debug-trace",
+            6,
+            ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
+                ImGuiTableFlags_ScrollY | ImGuiTableFlags_ScrollX
+        ))
+        {
+            ImGui::TableSetupColumn("#", ImGuiTableColumnFlags_WidthFixed, 60.f * _uiScale);
+            ImGui::TableSetupColumn("PC", ImGuiTableColumnFlags_WidthFixed, 60.f * _uiScale);
+            ImGui::TableSetupColumn("Bytes", ImGuiTableColumnFlags_WidthFixed, 95.f * _uiScale);
+            ImGui::TableSetupColumn("Instruction");
+            ImGui::TableSetupColumn("Cycles", ImGuiTableColumnFlags_WidthFixed, 60.f * _uiScale);
+            ImGui::TableSetupColumn("Flags", ImGuiTableColumnFlags_WidthFixed, 95.f * _uiScale);
+            ImGui::TableHeadersRow();
+
+            const auto instructions = _debug->GetInstructions();
+
+            for (auto it = instructions.rbegin(); it != instructions.rend(); ++it)
+            {
+                const auto instruction = Disassemble8080(
+                    it->bytes.data(),
+                    it->before.pc
+                );
+
+                std::string flags;
+                flags += it->before.sf ? 'S' : '-';
+                flags += it->before.zf ? 'Z' : '-';
+                flags += it->before.hf ? 'H' : '-';
+                flags += it->before.pf ? 'P' : '-';
+                flags += it->before.cf ? 'C' : '-';
+                flags += it->before.iff ? 'I' : '-';
+
+                ImGui::TableNextRow();
+
+                ImGui::TableNextColumn();
+                ImGui::Text("%llu", static_cast<unsigned long long>(it->sequence));
+
+                ImGui::TableNextColumn();
+                ImGui::Text("%04X", it->before.pc);
+
+                ImGui::TableNextColumn();
+                ImGui::Text(
+                    "%02X %02X %02X",
+                    static_cast<unsigned int>(it->bytes[0]),
+                    static_cast<unsigned int>(it->bytes[1]),
+                    static_cast<unsigned int>(it->bytes[2])
+                );
+
+                ImGui::TableNextColumn();
+                ImGui::TextUnformatted(instruction.text.c_str());
+
+                ImGui::TableNextColumn();
+                ImGui::Text("%llu", static_cast<unsigned long long>(it->cycles));
+
+                ImGui::TableNextColumn();
+                ImGui::TextUnformatted(flags.c_str());
+            }
+
+            ImGui::EndTable();
+        }
+    }
+
+    ImGui::End();
+}
+
+void Gui::DrawTms5501Debug()
+{
+    if (!_showTms5501Debug || !_debug)
+    {
+        return;
+    }
+
+    if (ImGui::Begin(
+        "TMS5501 - Debug",
+        &_showTms5501Debug,
+        ImGuiWindowFlags_AlwaysAutoResize
+    ))
+    {
+        const auto state = _debug->GetTms5501State();
+        const std::string statusBits = ByteBits(state.status);
+        const std::string maskBits = ByteBits(state.intMask);
+        const std::string pendingBits = ByteBits(state.intStatus);
+        const std::string outportBits = ByteBits(state.outport);
+
+        ImGui::SeparatorText("Status");
+        ImGui::Text("SSTATUS %02X  %s", static_cast<unsigned int>(state.status), statusBits.c_str());
+        ImGui::TextDisabled("FE OVR RCV RBL XBE INT FBD SBD (bit 7 first)");
+
+        ImGui::SeparatorText("Interrupts");
+        ImGui::Text("Mask    %02X  %s", static_cast<unsigned int>(state.intMask), maskBits.c_str());
+        ImGui::Text("Pending %02X  %s", static_cast<unsigned int>(state.intStatus), pendingBits.c_str());
+        ImGui::Text("RST vector: %02X", static_cast<unsigned int>(state.pendingInterrupt));
+        ImGui::TextDisabled("INT7..INT0: timer5, timer4, TX, RX, timer3, sensor, timer2, timer1");
+
+        ImGui::SeparatorText("Timers");
+        ImGui::Text(
+            "1 %02X   2 %02X   3 %02X   4 %02X   5 %02X",
+            static_cast<unsigned int>(state.timers[0]),
+            static_cast<unsigned int>(state.timers[1]),
+            static_cast<unsigned int>(state.timers[2]),
+            static_cast<unsigned int>(state.timers[3]),
+            static_cast<unsigned int>(state.timers[4])
+        );
+
+        ImGui::SeparatorText("Serial and I/O");
+        ImGui::Text(
+            "Rate %02X   DSC %02X   RX %02X   TX %02X   depth %u",
+            static_cast<unsigned int>(state.rate),
+            static_cast<unsigned int>(state.dscCmd),
+            static_cast<unsigned int>(state.rxData),
+            static_cast<unsigned int>(state.txData),
+            static_cast<unsigned int>(state.txDataCount)
+        );
+        ImGui::Text(
+            "Serial %s   Audio TXD %s",
+            state.serialSelected ? "selected" : "idle",
+            state.audioLevel ? "high" : "low"
+        );
+        ImGui::Text("Outport %02X  %s", static_cast<unsigned int>(state.outport), outportBits.c_str());
+        ImGui::TextDisabled(
+            "FDD1 %s   FDD2 %s",
+            state.floppy1Selected ? "selected" : "idle",
+            state.floppy2Selected ? "selected" : "idle"
+        );
+    }
+
+    ImGui::End();
+}
+
+void Gui::DrawSmc5027Debug()
+{
+    if (!_showSmc5027Debug || !_debug)
+    {
+        return;
+    }
+
+    if (ImGui::Begin(
+        "SMC5027 - Debug",
+        &_showSmc5027Debug,
+        ImGuiWindowFlags_AlwaysAutoResize
+    ))
+    {
+        const auto state = _debug->GetSmc5027State();
+
+        ImGui::SeparatorText("Registers");
+        ImGui::Text(
+            "Cursor X %u   Cursor Y %u",
+            static_cast<unsigned int>(state.cursorX),
+            static_cast<unsigned int>(state.cursorY)
+        );
+        ImGui::Text(
+            "First display row %u of 32",
+            static_cast<unsigned int>(state.firstDisplayRow)
+        );
+
+        ImGui::SeparatorText("Viewport");
+        for (int row = 0; row < 32; row++)
+        {
+            if (row != 0 && row % 16 == 0)
+            {
+                ImGui::NewLine();
+            }
+
+            const bool visible = row == state.firstDisplayRow;
+            ImGui::TextColored(
+                visible
+                    ? ImVec4(0.98f, 0.80f, 0.44f, 1.f)
+                    : ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled),
+                "%02X ",
+                row
+            );
+            ImGui::SameLine();
+        }
+
+        ImGui::NewLine();
+        ImGui::TextDisabled("Highlighted row is the current scroll origin.");
+    }
+
+    ImGui::End();
+}
+
+const char* Gui::MemoryRegion(const uint16_t address)
+{
+    if (address < 0x4000)
+    {
+        return "ROM";
+    }
+
+    if (address < 0x6000)
+    {
+        return "RAM";
+    }
+
+    if (address < 0x7000)
+    {
+        return "Video RAM alias";
+    }
+
+    if (address < 0x8000)
+    {
+        return "Video RAM";
+    }
+
+    return "RAM";
+}
+
+const char* Gui::PortDevice(const uint8_t port)
+{
+    if (port <= 0x1F)
+    {
+        return "TMS5501";
+    }
+
+    if (port >= 0x60 && port <= 0x7F)
+    {
+        return "SMC5027";
+    }
+
+    if (port >= 0x80 && port <= 0x9F)
+    {
+        return "CRT timing PROM";
+    }
+
+    return "unmapped";
+}
+
+std::string Gui::ByteBits(const uint8_t value)
+{
+    std::string bits(8, '0');
+
+    for (std::size_t i = 0; i < bits.size(); i++)
+    {
+        bits[7 - i] = (value & (1U << i)) ? '1' : '0';
+    }
+
+    return bits;
+}
+
+bool Gui::ParseHexAddress(const char* text, uint16_t& address)
+{
+    if (!text || *text == '\0')
+    {
+        return false;
+    }
+
+    uint32_t value = 0;
+
+    for (const char* cursor = text; *cursor != '\0'; ++cursor)
+    {
+        uint32_t digit = 0;
+
+        if (*cursor >= '0' && *cursor <= '9')
+        {
+            digit = static_cast<uint32_t>(*cursor - '0');
+        }
+        else if (*cursor >= 'a' && *cursor <= 'f')
+        {
+            digit = static_cast<uint32_t>(*cursor - 'a') + 10;
+        }
+        else if (*cursor >= 'A' && *cursor <= 'F')
+        {
+            digit = static_cast<uint32_t>(*cursor - 'A') + 10;
+        }
+        else
+        {
+            return false;
+        }
+
+        value = value * 16 + digit;
+
+        if (value > UINT16_MAX)
+        {
+            return false;
+        }
+    }
+
+    address = static_cast<uint16_t>(value);
+    return true;
 }
 
 void Gui::OpenBrowser(const BrowserMode mode, const int drive)

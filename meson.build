@@ -329,9 +329,17 @@ appSettingsTests = executable(
         'test/Compucolor.Impl.Tests.App/SettingsTests.cpp',
         'test/Compucolor.Impl.Tests.App/AsciiKeyMapTests.cpp',
         'test/Compucolor.Impl.Tests.App/SoundSynthTests.cpp',
+        'test/Compucolor.Impl.Tests.App/DebugDisassemblerTests.cpp',
+        'test/Compucolor.Impl.Tests.App/DebugMonitorTests.cpp',
+        'test/Compucolor.Impl.Tests.App/DebugHubTests.cpp',
+        'test/Compucolor.Impl.Tests.App/JsonlDebugSinkTests.cpp',
         'src/Compucolor.Impl.App.Sfml/Settings.cpp',
         'src/Compucolor.Impl.App.Sfml/AsciiKeyMap.cpp',
-        'src/Compucolor.Impl.App.Sfml/SoundSynth.cpp'
+        'src/Compucolor.Impl.App.Sfml/SoundSynth.cpp',
+        'src/Compucolor.Impl.App.Sfml/DebugDisassembler.cpp',
+        'src/Compucolor.Impl.App.Sfml/DebugMonitor.cpp',
+        'src/Compucolor.Impl.App.Sfml/DebugHub.cpp',
+        'src/Compucolor.Impl.App.Sfml/JsonlDebugSink.cpp'
     ],
     dependencies: [
         dependency('gtest'),
@@ -367,6 +375,10 @@ executable(
     [
         'src/Compucolor.Impl.App.Sfml/AudioOutput.cpp',
         'src/Compucolor.Impl.App.Sfml/Configuration.cpp',
+        'src/Compucolor.Impl.App.Sfml/DebugDisassembler.cpp',
+        'src/Compucolor.Impl.App.Sfml/DebugMonitor.cpp',
+        'src/Compucolor.Impl.App.Sfml/DebugHub.cpp',
+        'src/Compucolor.Impl.App.Sfml/JsonlDebugSink.cpp',
         'src/Compucolor.Impl.App.Sfml/Display.cpp',
         'src/Compucolor.Impl.App.Sfml/ErrorHandler.cpp',
         'src/Compucolor.Impl.App.Sfml/Gui.cpp',

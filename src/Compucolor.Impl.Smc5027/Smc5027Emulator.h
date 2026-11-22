@@ -52,6 +52,10 @@ namespace Compucolor::Impl::Smc5027 {
             // First display row, one past the scroll register with 32-row wrap.
             virtual uint8_t FirstDisplayRow() override;
 
+            // Captures the same cursor/scroll values exposed on the bus into a
+            // host-safe snapshot.
+            [[nodiscard]] Compucolor::Debug::Smc5027State GetDebugState() override;
+
             static std::shared_ptr<Compucolor::Smc5027::ISmc5027Emulator> Creator(Common::IPluginManager* manager);
         private:
             static constexpr uint8_t REGISTER_COUNT = 16;

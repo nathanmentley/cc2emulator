@@ -16,7 +16,8 @@
 namespace Compucolor::Impl::App::Sfml
 {
     // Palettes for the eight hardware colors. This X-macro is the single source
-    // of truth for enum values, ImGui combo labels and the theme count.
+    // of truth for theme enum values, ImGui combo labels and the theme count.
+    // Append new themes only: the saved `theme` setting stores the enum index.
 #define CC2_THEMES(X)                       \
     X(Standard,       "Standard")           \
     X(Synthwave,      "Synthwave")          \

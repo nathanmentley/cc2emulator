@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <memory>
 
 #include <Compucolor/Intel8080/IIntel8080Bus.h>
@@ -20,11 +21,14 @@ namespace Compucolor::Impl::CompucolorII
             );
     
             uint8_t Read(uint8_t port) override;
-    
+
             void Write(uint8_t port, uint8_t data) override;
-    
+
+            void SetDebugSink(std::shared_ptr<Debug::IDebugSink> sink) override;
+
         private:
             std::shared_ptr<Smc5027::ISmc5027Emulator> _smc5027;
             std::shared_ptr<Tms5501::ITms5501Emulator> _tms5501;
+            std::shared_ptr<Debug::IDebugSink> _debugSink;
     };
 }

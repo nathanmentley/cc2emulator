@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <map>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include <SFML/Graphics.hpp>
@@ -18,7 +19,10 @@
 #include "Configuration.h"
 #include "AsciiKeyMap.h"
 #include "AudioOutput.h"
+#include "DebugHub.h"
+#include "DebugMonitor.h"
 #include "Display.h"
+#include "JsonlDebugSink.h"
 #include "Gui.h"
 #include "KeyboardTranslator.h"
 #include "Settings.h"
@@ -29,7 +33,7 @@ namespace Compucolor::Impl::App::Sfml
     // window and host services, builds the plugin manager and initializes the GUI.
     class Program {
         public:
-            Program();
+            explicit Program(std::string traceJsonlPath = {});
 
             // Starts the emulator and runs the event/render loop until the window
             // closes, then releases keys, stops emulation and saves settings.
@@ -39,6 +43,7 @@ namespace Compucolor::Impl::App::Sfml
             using EmulatedKey = Compucolor::Keyboard::CompucolorIIKey;
 
             std::string _settingsPath;
+            std::string _traceJsonlPath;
             std::shared_ptr<Settings> _settings;
             std::shared_ptr<sf::RenderWindow> _window;
             std::shared_ptr<Compucolor::Logger::ConsoleLoggerProvider> _loggerProvider;
@@ -46,6 +51,9 @@ namespace Compucolor::Impl::App::Sfml
             std::shared_ptr<Display> _display;
             std::shared_ptr<AudioOutput> _audio;
             std::shared_ptr<Compucolor::Common::IPluginManager> _manager;
+            std::shared_ptr<DebugMonitor> _debugMonitor;
+            std::shared_ptr<JsonlDebugSink> _jsonlSink;
+            std::shared_ptr<DebugHub> _debugHub;
             std::unique_ptr<Compucolor::CompucolorEmulatorProcessor> _emulator;
             std::unique_ptr<Gui> _gui;
             std::unique_ptr<KeyboardTranslator> _keyboardTranslator;

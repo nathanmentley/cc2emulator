@@ -4,6 +4,8 @@
 
 #include <Compucolor/Common/ISystem.h>
 
+#include <Compucolor/Debug/IDebugSink.h>
+
 #include <Compucolor/Floppy/IFloppyEmulator.h>
 #include <Compucolor/Keyboard/CompucolorIIKey.h>
 #include <Compucolor/RomVersion.h>
@@ -47,5 +49,9 @@ namespace Compucolor
 
             // Drive 0 is A, drive 1 is B; returns null for any other index.
             [[nodiscard]] virtual std::shared_ptr<Floppy::IFloppyEmulator> GetFloppy(int drive) const = 0;
+
+            // Installs an optional debug recorder. The machine forwards it to
+            // the CPU and its bus; passing null disables instrumentation.
+            virtual void SetDebugSink(std::shared_ptr<Debug::IDebugSink> sink) = 0;
     };
 }
