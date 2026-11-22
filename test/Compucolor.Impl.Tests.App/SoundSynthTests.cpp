@@ -159,6 +159,33 @@ TEST(SoundSynth, VolumeIsClampedToOne) {
     }
 }
 
+TEST(SoundSynth, ChangingVolumeDoesNotInjectAClick) {
+    //Arrange
+    SoundSynth reference(SampleRate, Latency);
+    SoundSynth changing(SampleRate, Latency);
+
+    reference.PushEdge(Second, true);
+    changing.PushEdge(Second, true);
+    reference.Advance(Second + Latency);
+    changing.Advance(Second + Latency);
+
+    // Warm both DC blockers up to the same point in the same waveform.
+    (void)Render(reference, 100);
+    (void)Render(changing, 100);
+
+    //Act
+    changing.SetVolume(0.5f);
+    const auto referenceSamples = Render(reference, 100);
+    const auto changingSamples = Render(changing, 100);
+
+    //Assert: volume is a pure output gain, so no volume change can shift the
+    // high-pass filter state and add a click.
+    for (std::size_t i = 0; i < referenceSamples.size(); i++)
+    {
+        EXPECT_NEAR(0.5f * referenceSamples[i], changingSamples[i], 0.001f);
+    }
+}
+
 TEST(SoundSynth, RunningOutOfEmulatedTimeRepeatsTheLastSample) {
     //Arrange: only 10 ms of emulation is available for a 20 ms request
     SoundSynth synth(SampleRate, Latency);

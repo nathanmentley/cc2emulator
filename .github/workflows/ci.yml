@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      # Reuse the devcontainer image so CI sees the same SFML 3 toolchain as
+      # local development. Fedora's packaged SFML is still 2.6.x.
+      - name: Build devcontainer image
+        run: docker build --file .devcontainer/Dockerfile --tag cc2emulator-ci .
+
+      - name: Build and test
+        run: |
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            --env HOME=/tmp \
+            --workdir /workspace \
+            --volume "${GITHUB_WORKSPACE}:/workspace" \
+            cc2emulator-ci \
+            bash -lc '
+              set -euxo pipefail
+              meson setup build
+              meson compile -C build
+              meson test -C build --print-errorlogs
+              git diff --check
+              python3 scripts/check_imports.py .
+            '

@@ -83,7 +83,6 @@ void ApplyCompucolorTheme(ImGuiStyle& style)
     const Color amber            = Color(0.914f, 0.725f, 0.357f, 1.00f);
     const Color amberHover       = Color(0.980f, 0.796f, 0.435f, 1.00f);
     const Color green            = Color(0.467f, 0.788f, 0.690f, 1.00f);
-    const Color red              = Color(0.843f, 0.482f, 0.412f, 1.00f);
 
     ImVec4* colors = style.Colors;
 

@@ -2,10 +2,11 @@ project(
     'compucolor2 emulator',
     'cpp',
     version: '0.0.2',
+    meson_version: '>=0.56.0',
     default_options : ['c_std=c2a', 'cpp_std=c++2a']
 )
 
-project_root = meson.source_root()  # absolute path to project root
+project_root = meson.project_source_root()  # absolute path to project root
 
 install_prefix = join_paths(project_root, 'dist')  # install inside project dir
 
@@ -389,6 +390,10 @@ executable(
         'src/Compucolor.Impl.App.Sfml/AsciiKeyMap.cpp',
         'src/Compucolor.Impl.App.Sfml/SoundSynth.cpp'
     ],
+    # The static imgui-sfml subproject exports an IMGUI_API define that its
+    # vendored header redefines. Undefine it for host sources so the header's
+    # local definition is used without a macro-redefinition warning.
+    cpp_args: ['-UIMGUI_API'],
     dependencies: [
         sfmlGraphicsDep,
         dependency('sfml-audio'),

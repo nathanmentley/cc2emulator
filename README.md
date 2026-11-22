@@ -114,6 +114,8 @@ Build outputs go to `build/`; `meson install` writes the runnable application to
 
 `meson test` runs nine test executables (Memory, Intel8080, Smc5027, Tms5501, Crt, Floppy, Keyboard, Compucolor and App). A separate build target runs `scripts/check_imports.py`, which rejects `#include` paths containing `..`.
 
+GitHub Actions runs the same build and test suite, plus `git diff --check`, on pushes and pull requests. The workflow builds the devcontainer image so CI uses the same SFML 3 toolchain as local development (`.github/workflows/ci.yml`).
+
 ## Dev container
 
 ```sh
