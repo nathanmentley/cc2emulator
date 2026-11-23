@@ -429,7 +429,10 @@ appSettingsTests = executable(
     [
         'test/Compucolor.Impl.Tests.App/main.cpp',
         'test/Compucolor.Impl.Tests.App/SettingsTests.cpp',
+        'test/Compucolor.Impl.Tests.App/HotkeysTests.cpp',
+        'test/Compucolor.Impl.Tests.App/CrtEffectsTests.cpp',
         'test/Compucolor.Impl.Tests.App/AsciiKeyMapTests.cpp',
+        'test/Compucolor.Impl.Tests.App/OnScreenKeyMapTests.cpp',
         'test/Compucolor.Impl.Tests.App/SoundSynthTests.cpp',
         'test/Compucolor.Impl.Tests.App/DebugDisassemblerTests.cpp',
         'test/Compucolor.Impl.Tests.App/DebugMonitorTests.cpp',
@@ -439,8 +442,10 @@ appSettingsTests = executable(
         'test/Compucolor.Impl.Tests.App/TraceFilterConfigTests.cpp',
         'src/Compucolor.Impl.App.Sfml/Settings.cpp',
         'src/Compucolor.Impl.App.Sfml/AsciiKeyMap.cpp',
+        'src/Compucolor.Impl.App.Sfml/OnScreenKeyMap.cpp',
         'src/Compucolor.Impl.App.Sfml/SoundSynth.cpp',
-        'src/Compucolor.Impl.App.Sfml/ProgramArguments.cpp'
+        'src/Compucolor.Impl.App.Sfml/ProgramArguments.cpp',
+        'src/Compucolor.Impl.App.Sfml/CrtEffects.cpp'
     ],
     dependencies: [
         dependency('gtest'),
@@ -486,7 +491,9 @@ executable(
         'src/Compucolor.Impl.App.Sfml/ProgramArguments.cpp',
         'src/Compucolor.Impl.App.Sfml/Settings.cpp',
         'src/Compucolor.Impl.App.Sfml/AsciiKeyMap.cpp',
-        'src/Compucolor.Impl.App.Sfml/SoundSynth.cpp'
+        'src/Compucolor.Impl.App.Sfml/OnScreenKeyMap.cpp',
+        'src/Compucolor.Impl.App.Sfml/SoundSynth.cpp',
+        'src/Compucolor.Impl.App.Sfml/CrtEffects.cpp'
     ],
     # The static imgui-sfml subproject exports an IMGUI_API define that its
     # vendored header redefines. Undefine it for host sources so the header's

@@ -75,7 +75,7 @@ The ten plugins are: Logger, Memory, Intel8080, Scheduler, Smc5027, Tms5501, Crt
 4. Apply any pending window change (fullscreen or scale) by shutting down ImGui, recreating the window and reinitializing ImGui.
 5. On exit: release all keys, stop the emulator, close the display, shut down the GUI and save settings.
 
-`CompucolorEmulatorProcessor` is a thin host-side façade. `Start()` launches one `std::thread` that calls `ICompucolorEmulator::Start()`; that call returns after scheduling work, so the actual emulation runs on scheduler threads. `Stop()` joins the thread and stops the machine. `SaveState()`/`LoadState()` serialize to/from `./compucolor-state.json`.
+`CompucolorEmulatorProcessor` is a thin host-side façade. `Start()` launches one `std::thread` that calls `ICompucolorEmulator::Start()`; that call returns after scheduling work, so the actual emulation runs on scheduler threads. `Stop()` joins the thread and stops the machine. `SaveState(path)`/`LoadState(path)` serialize to/from an explicit file. The GUI always asks for a path through the file browser and remembers the last choice in `state_path`.
 
 ## Threads and timing
 
@@ -111,7 +111,7 @@ Each event stream has a `DebugFilter`. Filters are applied when the monitor reco
 
 `IMemory` is a 64 KiB byte-addressed array (`VectorMemory` uses atomics). Addresses `0x6000–0x6FFF` alias video RAM at `0x7000–0x7FFF`. ROM writes below `0x4000` are ignored by the CPU wrapper.
 
-System ROMs (v6.78 and v8.79), the CRT timing PROM and the UF6 fonts are compiled into `Roms.cpp` and `FontRom.cpp`; files under `data/roms/` are installed but not read at runtime.
+System ROMs (v6.78 and v8.79), the CRT timing PROM and the UF6 fonts are compiled into `Roms.cpp` and `FontRom.cpp`; files under `data/roms/` are installed but not read at runtime. The Compucolor ROM code is copyrighted; see the notice at the top of `src/Compucolor.Impl.Compucolor/Roms.cpp`.
 
 | Port range | Direction | Device |
 | --- | --- | --- |
@@ -136,7 +136,7 @@ Floppy bytes deliberately do **not** raise the serial receive interrupt: the ROM
 
 ## Save state
 
-`IEmulatable` defines `Start`, `Stop`, `SaveState()` (an owned JSON snapshot) and `LoadState(shared_ptr<json>)`. `CompucolorEmulator::SaveState()` pauses the machine, aggregates state from CRT, both floppies, CPU, keyboard, memory, SMC5027 and TMS5501, adds scheduling/config fields (`loopInterval`, `floppyCycleRemainder`, `emulatedNanoseconds`, `romVersion`, `speedRegulated`, pending `resetRequest`), and restores the previous pause state. `LoadState()` validates fields before mutating component state, restores memory first, then the other components, and restarts wall-clock pacing. `CompucolorEmulatorProcessor` reads/writes the whole document as `compucolor-state.json` in the current working directory.
+`IEmulatable` defines `Start`, `Stop`, `SaveState()` (an owned JSON snapshot) and `LoadState(shared_ptr<json>)`. `CompucolorEmulator::SaveState()` pauses the machine, aggregates state from CRT, both floppies, CPU, keyboard, memory, SMC5027 and TMS5501, adds scheduling/config fields (`loopInterval`, `floppyCycleRemainder`, `emulatedNanoseconds`, `romVersion`, `speedRegulated`, pending `resetRequest`), and restores the previous pause state. `LoadState()` validates fields before mutating component state, restores memory first, then the other components, and restarts wall-clock pacing. `CompucolorEmulatorProcessor` requires a caller-supplied path for file I/O. The GUI uses the file browser and remembers the last chosen path in `state_path`.
 
 ## Build and test
 

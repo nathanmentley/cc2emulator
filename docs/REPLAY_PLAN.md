@@ -30,7 +30,7 @@ The project already has most of the hard infrastructure:
     TMS5501, emulated time, and configuration.
   - `LoadState()` intentionally resets wall-clock pacing state on restore.
 - `CompucolorEmulatorProcessor`
-  - Currently saves/loads a fixed `compucolor-state.json` in the current directory.
+  - No fixed-path overload remains; the GUI and CLI always pass explicit paths.
 - `DebugHub`, `DebugMonitor`, and `JsonlDebugSink`
   - Can capture CPU, instruction, port, TMS5501, and SMC5027 records without the GUI.
 - `FakeScheduler` and injected clock in `Compucolor.Impl.Tests.Compucolor`
@@ -338,7 +338,7 @@ Phase 2 is implemented. Notes on the delivered shape:
 
 - `InputRecorder` lives in the SFML-free shared app library. It captures the startup/current state as a JSON value, records `CompucolorIIKey` down/up transitions with emulated timestamps, clamps timestamps to be non-decreasing, and builds a version 1 bundle with `createdBy = "cc2emu"`. A zero-length GUI recording gets `stop = state.time + 1` so the bundle stays valid.
 - `Program` records at the existing emulated-key transition points, including `ReleaseAllKeys()` on focus loss and shutdown. Live input forwarding is unchanged.
-- `CompucolorEmulatorProcessor` now exposes `GetState()`, `SaveState(path)`, `LoadState(path)` and `LoadState(value)`. The fixed `compucolor-state.json` methods delegate to the named-path versions.
+- `CompucolorEmulatorProcessor` now exposes `GetState()`, `SaveState(path)`, `LoadState(path)` and `LoadState(value)`. The fixed `compucolor-state.json` methods have been removed.
 - `ProgramArguments` parses `--trace-jsonl`, `--load-state`, `--replay-bundle` and `--record-replay` in both `--flag value` and `--flag=value` forms, rejects duplicates/unknown flags, and enforces the mutual exclusions.
 - GUI replay uses a `ReplayInputSink` debug sink. An opt-in `IReplayTickSink` boundary fires at the start of each 1 ms machine tick, before CPU work, so a replayed key contact is visible to the ROM's keyboard scan even when tracing makes ticks coarse. CPU snapshots still update progress reporting. The Debug → Replay Status window reads host-safe progress snapshots and reports emulated time only.
 - `CompucolorEmulatorProcessor::Start()` now waits for emulator initialization before returning. This prevents the startup ROM load/reset from overwriting a replay state that `Program` loads immediately afterward, a race that tracing could make visible.

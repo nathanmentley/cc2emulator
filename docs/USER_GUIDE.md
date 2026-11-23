@@ -31,11 +31,11 @@ Most keys are translated into Compucolor key presses. The emulator uses a US-lay
 
 - Digits and punctuation follow US-layout symbols; for example `Shift+;` produces `:`. The Compucolor uses typewriter case: an unshifted PC letter produces an uppercase Compucolor letter, and `Shift`+letter produces a lowercase one.
 - Numpad digits, `F1`–`F15`, `Esc`, both `Ctrl` keys, cursor keys, `Home`, `Tab`, `Insert`, `Delete`, `PageUp`, `PageDown` and `End` map to emulated keys. `End` maps to `Home`; `Pause` maps to `BREAK`.
-- `Alt` maps to REPEAT unless it is part of one of the hotkeys below. Right Windows/Super is also REPEAT. Left Windows/Super maps to AUTO and is released automatically after 200 ms because some desktops swallow its key-up.
+- `Alt` is reserved for host shortcuts and is never sent to the emulated keyboard. Right Windows/Super is REPEAT. Left Windows/Super maps to AUTO and is released automatically after 200 ms because some desktops swallow its key-up.
 - Shift is folded into the produced character chord and is not sent as a separate emulated press.
 - Multiple physical keys can hold the same emulated key; it is released only after all of them are released. All emulated keys are released when the window loses focus, closes or is recreated.
 
-If the PC layout differs from US, the character-based mapping may not match the printed symbols. `Alt` combinations and keyboard input are ignored while ImGui needs the keyboard except for the hotkeys, which are always checked first.
+If the PC layout differs from US, the character-based mapping may not match the printed symbols. Every `Alt` keydown, keyup and Alt chord is consumed by the host UI, including unbound chords. While ImGui needs the keyboard (for example, when typing in Preferences), shortcuts are suppressed but the Alt event is still swallowed.
 
 ### Hotkeys
 
@@ -44,9 +44,23 @@ If the PC layout differs from US, the character-based mapping may not match the 
 | `Alt`+`Enter` | Toggle fullscreen (recreates the window) |
 | `Alt`+`1` … `Alt`+`4` | Window scale 1x–4x; also exits fullscreen |
 | `Alt`+`S` | Toggle smooth scaling |
+| `Alt`+`Shift`+`F` | Toggle CRT effects |
 | `Alt`+`A` | Toggle SoundWare audio |
 | `Alt`+`M` | Show/hide the menu |
 | `Alt`+`P` | Save a screenshot |
+| `Alt`+`Shift`+`S` | Save state… (opens the file browser) |
+| `Alt`+`Shift`+`L` | Load state… (opens the file browser) |
+| `Alt`+`R` | Start/stop replay recording |
+| `Alt`+`Shift`+`P` | Pause/resume |
+| `Alt`+`Shift`+`R` | Toggle real speed |
+| `Alt`+`D` | Show/hide the disk panel |
+| `Alt`+`T` | Start/stop trace recording |
+| `Alt`+`Shift`+`T` | Clear traces |
+| `Alt`+`C` | Toggle the CPU debug window |
+| `Alt`+`O` | Preferences… |
+| `Alt`+`H` | Keyboard help |
+| `Alt`+`I` | About |
+| `Alt`+`Shift`+`Q` | Quit |
 
 The menu bar scales with window height and overlays the top of the window; it is excluded from screenshots. Hide it with `Alt`+`M` if it gets in the way; a short status message reminds you how to bring it back. Help → Keyboard shows the same mapping reference in the application.
 
@@ -54,14 +68,14 @@ The menu bar scales with window height and overlays the top of the window; it is
 
 ### File
 
-- **Save State** / **Load State** — write/read `compucolor-state.json` in the working directory. Load State is enabled only when that file exists. State includes CPU, memory, both drives, keyboard, display, timers and machine configuration.
+- **Save State…** / **Load State…** — open the built-in JSON file browser to choose where to write/read emulator state. The chosen path is remembered in `state_path` for the next browser session. State includes CPU, memory, both drives, keyboard, display, timers and machine configuration.
 - **Start Replay Recording…** — opens a save browser for a `.cc2replay.json` path, then captures the current state and starts recording emulated key down/up events. A `REC` chip appears in the menu bar.
 - **Stop Replay Recording** — writes the bundle to the chosen path immediately. Enabled only while recording. Quitting while still recording also writes the bundle.
 - **Mount Disk A/B…** — opens the built-in `.ccvf` browser. If the current disk has unsaved changes, you can save, discard or cancel first.
 - **Eject Disk A/B** — unmounts the drive (with the same unsaved-changes prompt) and clears the saved disk path.
 - **Save Disk A/B** — writes the mounted image in place immediately. It does not prompt; a failed write (for example, a read-only file) shows an Error dialog.
 - **Save Disk A/B As…** — writes to a new path, adds `.ccvf` if the name has no extension, and makes that path the mounted path.
-- **Save Screenshot** — writes a PNG of the raw 384×256 emulated screen to the `screenshots/` directory next to `settings.config` (by default `~/.config/cc2emu/screenshots/`). The menu overlay and window letterboxing are not included.
+- **Save Screenshot** — writes a PNG of the raw 384×256 emulated screen to the `screenshots/` directory next to `settings.config` (by default `~/.config/cc2emu/screenshots/`). The menu overlay, window letterboxing and CRT effects are not included.
 - **Quit** — checks both drives for unsaved changes before closing. Settings are saved on this clean exit.
 
 The file browser starts in the last used disk directory, otherwise `disks/`, otherwise the working directory. Disk actions list directories and `.ccvf` files only; replay recording lists directories and `.json` files. Use `Up` to navigate, double-click or Enter to accept a file, and Cancel to close.
@@ -159,11 +173,11 @@ SoundWare is an optional hardware add-on that produces audio by toggling a seria
 
 ### View
 
-Scale 1x–4x, Fullscreen, Smooth Scaling, Disk Panel and Hide Menu. The Disk Panel is a floating window showing each drive's filename, a `*` for unsaved changes, and Mount/Eject/Save buttons. The menu bar also shows small status chips such as `PAUSED`, `UNREGULATED`, `SOUND OFF` and modified-disk markers when there is room.
+Scale 1x–4x, Fullscreen, Smooth Scaling, CRT Effects, Disk Panel and Hide Menu. CRT Effects adds scanlines, animated grain, vignette and phosphor glow to the emulated screen only; ImGui and screenshots stay clean. Scanlines stay locked to the source rows, while fuzz rerolls every rendered frame. The Disk Panel is a floating window showing each drive's filename, a `*` for unsaved changes, and Mount/Eject/Save buttons. The menu bar also shows small status chips such as `PAUSED`, `UNREGULATED`, `SOUND OFF` and modified-disk markers when there is room.
 
 ### Settings → Preferences
 
-- **Display**: fullscreen, window scale 1–8, smooth scaling and a Theme combo (10 palettes for the eight hardware colors). The wider scale range is only available here or by editing `settings.config`. The saved theme is applied at startup.
+- **Display**: fullscreen, window scale 1–8, smooth scaling, a CRT effects master switch with individual Scanlines / Fuzz / Vignette / Phosphor glow toggles and intensity sliders, and a Theme combo (10 palettes for the eight hardware colors). The wider scale range is only available here or by editing `settings.config`. The saved theme is applied at startup. CRT effects are separate from the palette themes and do not affect screenshots.
 - **Sound**: enable sound and volume, disabled when sound is off.
 - **Machine**: character set (Standard or Lowercase), system ROM (v6.78 or v8.79) and Real Speed. Lowercase changes the font; the ROM choice also changes the floppy stepper geometry and triggers a hard reset.
 
@@ -176,6 +190,15 @@ Settings live in `$XDG_CONFIG_HOME/cc2emu/settings.config`, otherwise `$HOME/.co
 | `window_scale` | `4` | 384×256 × scale, clamped to 1–8 |
 | `fullscreen` | `false` | Use the desktop video mode |
 | `smooth_scaling` | `false` | Texture smoothing for the emulated frame |
+| `crt_effects` | `false` | Master switch for the CRT post-process |
+| `crt_scanlines` | `true` | Darken alternating source rows |
+| `crt_fuzz` | `true` | Animated low-amplitude luminance grain |
+| `crt_vignette` | `true` | Darken the corners and edges of the emulated screen |
+| `crt_glow` | `true` | Bleed bright pixels into their neighbours |
+| `crt_scanline_intensity` | `35` | Scanline strength, clamped to 0–100 |
+| `crt_fuzz_intensity` | `35` | Fuzz strength, clamped to 0–100 |
+| `crt_vignette_intensity` | `35` | Vignette strength, clamped to 0–100 |
+| `crt_glow_intensity` | `35` | Phosphor glow strength, clamped to 0–100 |
 | `theme` | `0` | Palette index 0–9: Standard, Synthwave, Gruvbox, WarmRetro, Amber Terminal, Green Phosphor, Commodore 64, CGA, Solarized Dark, Nord |
 | `charset` | `standard` | `lowercase` selects the alternate font ROM |
 | `rom_version` | `v8.79` | `v6.78` is the other supported value |
@@ -186,18 +209,20 @@ Settings live in `$XDG_CONFIG_HOME/cc2emu/settings.config`, otherwise `$HOME/.co
 | `sound_enabled` | `true` | SoundWare audio |
 | `sound_volume` | `100` | Volume, clamped to 0–100 |
 
+The older `crt_intensity` key is ignored; use the four per-layer intensity keys instead.
+
 `app.config` (in `dist/`) lists plugin library paths and is not where user preferences go. Its `sound_enabled`/`sound_volume` lines are legacy and have no effect.
 
 ## Disks
 
-The bundled `.ccvf` images are: `action_collection`, `action_soundware`, `airraid`, `blackjack`, `blank`, `chess`, `chip_33`, `chomp`, `cooltools`, `hangman`, `life`, `lunar_lander`, `othello`, `sampler`, `sharks`, `startrek` and `swarms`. `chomp` and `life` are writable. In `data/disks/`, only `action_soundware` is read-only; `meson install` currently installs all images writable by their owner. Use Save As if you want to preserve the original bundled image. Some titles in `action_collection` need the v8.79 ROM. Joystick games in the library cannot be controlled: there is no joystick emulation.
+The bundled `.ccvf` images are: `action_collection`, `action_soundware`, `airraid`, `blackjack`, `blank`, `chess`, `chip_33`, `chomp`, `cooltools`, `demonstration`, `hangman`, `life`, `lunar_lander`, `othello`, `sampler`, `sharks`, `startrek` and `swarms`. `chomp`, `demonstration` and `life` are writable. In `data/disks/`, only `action_soundware` is read-only; `meson install` currently installs all images writable by their owner. Use Save As if you want to preserve the original bundled image. Some titles in `action_collection` need the v8.79 ROM. Joystick games in the library cannot be controlled: there is no joystick emulation.
 
 A `.ccvf` image is a text file: optional `Label ...` lines, then `Track N` sections with 64-hex-character data lines (32 bytes per line). Each image contains 41 tracks of 10 sectors of 192 bytes.
 
 ## Troubleshooting
 
 - **"Missing setting '...' in app.config"** — the emulator was started from the wrong directory. Use `dist/cc2_emu.sh` or change into `dist/` first.
-- **Load State reports an error** — `Load State` is enabled by the existence of `compucolor-state.json`. A zero-byte or corrupt file (for example after a crash during saving) must be removed or overwritten with Save State.
+- **Load State… reports an error** — the path came from the file browser. A zero-byte or corrupt file (for example after a crash during saving) must be removed or overwritten with **Save State…**, or choose a different file with **Load State…**.
 - **No sound** — only SoundWare-aware software produces audio; check that sound is enabled and that the volume is above zero.
 - **Settings did not persist** — they are saved only on clean exit via File → Quit; closing the window by other means should also exit cleanly, but a crash will not save them.
 - **A disk save fails** — the image may be read-only. Use Save As to write to a writable location.

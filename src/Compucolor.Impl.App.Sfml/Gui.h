@@ -2,8 +2,10 @@
 
 #include <filesystem>
 #include <chrono>
+#include <cstdint>
 #include <functional>
 #include <memory>
+#include <set>
 #include <optional>
 #include <string>
 #include <vector>
@@ -11,6 +13,7 @@
 #include <SFML/Graphics.hpp>
 
 #include <Compucolor/CompucolorEmulatorProcessor.h>
+#include <Compucolor/Keyboard/CompucolorIIKey.h>
 
 #include "AudioOutput.h"
 #include <Compucolor/App/DebugFilter.h>
@@ -41,6 +44,16 @@ namespace Compucolor::Impl::App::Sfml
             void Shutdown();
 
             void SetQuitHandler(std::function<void()> handler);
+
+            // Injection used by the on-screen keyboard. Program owns the key
+            // ref-counting, replay gate and recording so clicks behave like
+            // real emulated key events.
+            using VirtualKeyHandler = std::function<void(
+                std::uint32_t source,
+                Compucolor::Keyboard::CompucolorIIKey key,
+                bool down
+            )>;
+            void SetVirtualKeyHandler(VirtualKeyHandler handler);
 
             // Hooks used by the File menu replay actions. The path is chosen
             // before recording starts; stopping writes the bundle immediately.
@@ -87,11 +100,41 @@ namespace Compucolor::Impl::App::Sfml
             void SetSoundVolume(int volume);
             void ToggleSound();
 
+            // Optional CRT post-process shared by the menu, Preferences and hotkey.
+            void SetCrtEffects(bool enabled);
+            void ToggleCrtEffects();
+            void SetCrtScanlines(bool enabled);
+            void SetCrtFuzz(bool enabled);
+            void SetCrtVignette(bool enabled);
+            void SetCrtGlow(bool enabled);
+            void SetCrtScanlineIntensity(int intensity);
+            void SetCrtFuzzIntensity(int intensity);
+            void SetCrtVignetteIntensity(int intensity);
+            void SetCrtGlowIntensity(int intensity);
+
+            // UI actions shared by the menus and the host-only keyboard shortcuts.
+            void OpenSaveStateBrowser();
+            void OpenLoadStateBrowser();
+            void ToggleReplayRecording();
+            void SetPaused(bool paused);
+            void TogglePause();
+            void SetRealSpeed(bool enabled);
+            void ToggleRealSpeed();
+            void ToggleDiskPanel();
+            void ToggleOnScreenKeyboard();
+            void ResetOnScreenKeyboardModifiers();
+            void ToggleTraceRecording();
+            void ClearTraces();
+            void ToggleCpuDebug();
+            void ShowPreferences();
+            void ShowKeyboardHelp();
+            void ShowAbout();
+
             // True once if the window mode or scale changed and the window must be recreated.
             bool ConsumeWindowChange();
 
         private:
-            enum class BrowserMode { Mount, SaveAs, SaveReplay };
+            enum class BrowserMode { Mount, SaveAs, SaveReplay, SaveState, LoadState };
 
             std::shared_ptr<sf::RenderWindow> _window;
             std::shared_ptr<Settings> _settings;
@@ -103,6 +146,7 @@ namespace Compucolor::Impl::App::Sfml
             std::function<void()> _quit;
             std::function<void(const std::string&)> _startReplayRecording;
             std::function<void()> _stopReplayRecording;
+            VirtualKeyHandler _injectVirtualKey;
 
             bool _ready = false;
 
@@ -110,6 +154,8 @@ namespace Compucolor::Impl::App::Sfml
             std::optional<sf::Cursor> _arrowCursor;
             bool _menuVisible = true;
             bool _showDiskPanel = false;
+            bool _showKeyboardPanel = false;
+            std::set<Compucolor::Keyboard::CompucolorIIKey> _latchedVirtualKeys;
             bool _showSettings = false;
             bool _showKeys = false;
             bool _showAbout = false;
@@ -154,6 +200,7 @@ namespace Compucolor::Impl::App::Sfml
 
             void DrawMenu();
             void DrawDiskPanel();
+            void DrawOnScreenKeyboard();
             void DrawSettings();
             void DrawKeyHelp();
             void DrawAbout();
@@ -176,10 +223,11 @@ namespace Compucolor::Impl::App::Sfml
 
             void ApplyMachineSettings();
             void ApplySoundSettings();
+            void ApplyCrtSettings();
 
-            // Delegates to the processor's compucolor-state.json and shows errors as a modal.
-            void SaveState();
-            void LoadState();
+            // Writes/reads the state file chosen in the browser and remembers the path.
+            void SaveState(const std::string& path);
+            void LoadState(const std::string& path);
             void AcceptBrowser();
             bool MountDisk(int drive, const std::string& path);
             void EjectDisk(int drive);

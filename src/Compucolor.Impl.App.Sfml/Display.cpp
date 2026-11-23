@@ -1,9 +1,15 @@
 #include "Display.h"
 
+#include "CrtEffects.h"
+
+#include <algorithm>
 #include <utility>
 
 using Compucolor::Common::Color;
 
+using Compucolor::Impl::App::Sfml::ApplyCrtEffects;
+using Compucolor::Impl::App::Sfml::BuildCrtVignetteMask;
+using Compucolor::Impl::App::Sfml::CrtEffectSettings;
 using Compucolor::Impl::App::Sfml::Display;
 
 Display::Display(std::shared_ptr<sf::RenderWindow> window):
@@ -16,12 +22,17 @@ Display::Display(std::shared_ptr<sf::RenderWindow> window):
     {
         _backBuffer[alphaIndex] = 0xFF;
         _publishedFrame[alphaIndex] = 0xFF;
+        _effectFrame[alphaIndex] = 0xFF;
     }
+
+    BuildCrtVignetteMask(_vignetteMask.data(), Width, Height, _crtVignetteIntensity);
 }
 
 void Display::DrawPixel(const Color color, const int x, const int y)
 {
-    if (!_isRunning.load(std::memory_order_relaxed) || x < 0 || y < 0 || x >= Width || y >= Height) {
+    if (!_isRunning.load(std::memory_order_relaxed) ||
+        x < 0 || y < 0 ||
+        x >= static_cast<int>(Width) || y >= static_cast<int>(Height)) {
         return;
     }
 
@@ -51,7 +62,36 @@ void Display::Render(const std::function<void()>& overlay)
 
     {
         std::lock_guard lock(_frameMutex);
-        _texture.update(_publishedFrame.data());
+
+        const std::uint8_t* frame = _publishedFrame.data();
+
+        if (_crtEnabled)
+        {
+            CrtEffectSettings settings;
+            settings.scanlines = _crtScanlines;
+            settings.fuzz = _crtFuzz;
+            settings.vignette = _crtVignette;
+            settings.glow = _crtGlow;
+            settings.scanlineIntensity = _crtScanlineIntensity;
+            settings.fuzzIntensity = _crtFuzzIntensity;
+            settings.vignetteIntensity = _crtVignetteIntensity;
+            settings.glowIntensity = _crtGlowIntensity;
+            settings.noiseState = _noiseState;
+
+            ApplyCrtEffects(
+                _publishedFrame.data(),
+                _effectFrame.data(),
+                _crtVignette ? _vignetteMask.data() : nullptr,
+                Width,
+                Height,
+                settings
+            );
+
+            _noiseState = settings.noiseState;
+            frame = _effectFrame.data();
+        }
+
+        _texture.update(frame);
     }
 
     _window->clear(sf::Color::Black);
@@ -70,6 +110,28 @@ void Display::Render(const std::function<void()>& overlay)
 void Display::SetSmooth(const bool smooth)
 {
     _texture.setSmooth(smooth);
+}
+
+void Display::SetCrtEffects(const bool enabled)
+{
+    _crtEnabled = enabled;
+}
+
+void Display::SetCrtIntensities(const int scanlines, const int fuzz, const int vignette, const int glow)
+{
+    _crtScanlineIntensity = std::clamp(scanlines, 0, 100);
+    _crtFuzzIntensity = std::clamp(fuzz, 0, 100);
+    _crtVignetteIntensity = std::clamp(vignette, 0, 100);
+    _crtGlowIntensity = std::clamp(glow, 0, 100);
+    BuildCrtVignetteMask(_vignetteMask.data(), Width, Height, _crtVignetteIntensity);
+}
+
+void Display::SetCrtLayers(const bool scanlines, const bool fuzz, const bool vignette, const bool glow)
+{
+    _crtScanlines = scanlines;
+    _crtFuzz = fuzz;
+    _crtVignette = vignette;
+    _crtGlow = glow;
 }
 
 void Display::SetTheme(const Theme theme)

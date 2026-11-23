@@ -1,6 +1,8 @@
 
 #include "Program.h"
 
+#include "Hotkeys.h"
+
 #include <algorithm>
 #include <cstdlib>
 #include <fstream>
@@ -24,6 +26,9 @@ using Compucolor::Logger::ConsoleLoggerProvider;
 
 using Compucolor::Keyboard::CompucolorIIKey;
 
+using Compucolor::Impl::App::Sfml::HotkeyAction;
+using Compucolor::Impl::App::Sfml::IsAltKey;
+using Compucolor::Impl::App::Sfml::MatchHotkey;
 using Compucolor::Impl::App::Sfml::Program;
 using Compucolor::Impl::App::Sfml::ThemeFromInt;
 
@@ -107,11 +112,29 @@ Program::Program(ProgramArguments arguments):
 
     _display->SetSmooth(_settings->GetBool("smooth_scaling"));
     _display->SetTheme(ThemeFromInt(_settings->GetInt("theme")));
+    _display->SetCrtEffects(_settings->GetBool("crt_effects"));
+    _display->SetCrtIntensities(
+        _settings->GetInt("crt_scanline_intensity"),
+        _settings->GetInt("crt_fuzz_intensity"),
+        _settings->GetInt("crt_vignette_intensity"),
+        _settings->GetInt("crt_glow_intensity")
+    );
+    _display->SetCrtLayers(
+        _settings->GetBool("crt_scanlines"),
+        _settings->GetBool("crt_fuzz"),
+        _settings->GetBool("crt_vignette"),
+        _settings->GetBool("crt_glow")
+    );
 
     _gui->SetQuitHandler([window = _window] { window->close(); });
     _gui->SetReplayHandlers(
         [this](const std::string& path) { StartReplayRecording(path); },
         [this] { StopReplayRecording(); }
+    );
+    _gui->SetVirtualKeyHandler(
+        [this](std::uint32_t source, EmulatedKey key, bool down) {
+            InjectVirtualKey(source, key, down);
+        }
     );
 
     (void)_gui->Init();
@@ -202,67 +225,136 @@ void Program::RecreateWindow() const
 
 bool Program::HandleHotkey(const Event::KeyPressed& pressed) const
 {
-    if (!pressed.alt)
+    const bool hostModifier = pressed.alt || IsAltKey(pressed.code);
+
+    if (!hostModifier)
     {
         return false;
     }
 
-    using Key = sf::Keyboard::Key;
-
-    if (pressed.code == Key::Enter)
+    // Alt is host-only. While ImGui owns the keyboard, swallow it without
+    // dispatching a shortcut so typing in a settings field cannot change the
+    // emulator configuration.
+    if (_gui->WantsKeyboard())
     {
-        _settings->SetBool(
-            "fullscreen",
-            !_settings->GetBool("fullscreen")
-        );
-
-        RecreateWindow();
         return true;
     }
 
-    if (pressed.code >= Key::Num1 && pressed.code <= Key::Num4)
+    const auto action = MatchHotkey(pressed.code, pressed.shift);
+
+    if (action && !pressed.control && !pressed.system)
     {
-        _settings->SetInt(
-            "window_scale",
-            static_cast<int>(pressed.code) -
-            static_cast<int>(Key::Num1) + 1
-        );
-
-        _settings->SetBool("fullscreen", false);
-
-        RecreateWindow();
-        return true;
+        DispatchHotkey(*action);
     }
 
-    if (pressed.code == Key::S)
+    // Consume the Alt key itself and any unbound Alt chord: neither may reach
+    // the emulated Compucolor keyboard.
+    return true;
+}
+
+void Program::DispatchHotkey(const HotkeyAction action) const
+{
+    switch (action)
     {
-        const bool smooth = !_settings->GetBool("smooth_scaling");
+        case HotkeyAction::Fullscreen:
+            _settings->SetBool("fullscreen", !_settings->GetBool("fullscreen"));
+            RecreateWindow();
+            return;
 
-        _settings->SetBool("smooth_scaling", smooth);
-        _display->SetSmooth(smooth);
+        case HotkeyAction::Scale1:
+        case HotkeyAction::Scale2:
+        case HotkeyAction::Scale3:
+        case HotkeyAction::Scale4:
+        {
+            const int scale =
+                static_cast<int>(action) - static_cast<int>(HotkeyAction::Scale1) + 1;
 
-        return true;
+            _settings->SetInt("window_scale", scale);
+            _settings->SetBool("fullscreen", false);
+            RecreateWindow();
+            return;
+        }
+
+        case HotkeyAction::SmoothScaling:
+        {
+            const bool smooth = !_settings->GetBool("smooth_scaling");
+            _settings->SetBool("smooth_scaling", smooth);
+            _display->SetSmooth(smooth);
+            return;
+        }
+
+        case HotkeyAction::CrtEffects:
+            _gui->ToggleCrtEffects();
+            return;
+
+        case HotkeyAction::Sound:
+            _gui->ToggleSound();
+            return;
+
+        case HotkeyAction::ToggleMenu:
+            _gui->ToggleMenu();
+            return;
+
+        case HotkeyAction::Screenshot:
+            _gui->SaveScreenshot();
+            return;
+
+        case HotkeyAction::SaveState:
+            _gui->OpenSaveStateBrowser();
+            return;
+
+        case HotkeyAction::LoadState:
+            _gui->OpenLoadStateBrowser();
+            return;
+
+        case HotkeyAction::ToggleReplayRecording:
+            _gui->ToggleReplayRecording();
+            return;
+
+        case HotkeyAction::Pause:
+            _gui->TogglePause();
+            return;
+
+        case HotkeyAction::RealSpeed:
+            _gui->ToggleRealSpeed();
+            return;
+
+        case HotkeyAction::DiskPanel:
+            _gui->ToggleDiskPanel();
+            return;
+
+        case HotkeyAction::OnScreenKeyboard:
+            _gui->ToggleOnScreenKeyboard();
+            return;
+
+        case HotkeyAction::TraceRecording:
+            _gui->ToggleTraceRecording();
+            return;
+
+        case HotkeyAction::ClearTraces:
+            _gui->ClearTraces();
+            return;
+
+        case HotkeyAction::CpuDebug:
+            _gui->ToggleCpuDebug();
+            return;
+
+        case HotkeyAction::Preferences:
+            _gui->ShowPreferences();
+            return;
+
+        case HotkeyAction::KeyboardHelp:
+            _gui->ShowKeyboardHelp();
+            return;
+
+        case HotkeyAction::About:
+            _gui->ShowAbout();
+            return;
+
+        case HotkeyAction::Quit:
+            _gui->RequestQuit();
+            return;
     }
-
-    if (pressed.code == Key::M)
-    {
-        _gui->ToggleMenu();
-        return true;
-    }
-
-    if (pressed.code == Key::P)
-    {
-        _gui->SaveScreenshot();
-        return true;
-    }
-
-    if (pressed.code == Key::A)
-    {
-        _gui->ToggleSound();
-        return true;
-    }
-
-    return false;
 }
 
 void Program::PressPhysicalKeys(
@@ -341,6 +433,96 @@ void Program::ReleasePhysicalKey(const sf::Keyboard::Key physical) const
     _oneShotKeyPressTimes.erase(physical);
 }
 
+void Program::InjectVirtualKey(
+    const VirtualKeySource source,
+    const EmulatedKey key,
+    const bool down
+) const
+{
+    // Replay is the only source of emulated key events while it is active.
+    if (_replaySink->IsActive())
+    {
+        return;
+    }
+
+    if (down)
+    {
+        PressVirtualKeys(source, { key });
+    }
+    else
+    {
+        ReleaseVirtualKey(source);
+    }
+}
+
+void Program::PressVirtualKeys(
+    const VirtualKeySource source,
+    std::vector<EmulatedKey> keys
+) const
+{
+    if (_pressedVirtualKeys.contains(source))
+    {
+        return;
+    }
+
+    for (const EmulatedKey key : keys)
+    {
+        auto& count = _keyPressCounts[key];
+
+        // A physical key may already be holding this emulated key.
+        if (count == 0)
+        {
+            _inputRecorder->Record(
+                true,
+                key,
+                _emulator->GetEmulatedNanoseconds()
+            );
+            _emulator->OnKeyDown(key);
+        }
+
+        ++count;
+    }
+
+    _pressedVirtualKeys.emplace(source, std::move(keys));
+}
+
+void Program::ReleaseVirtualKey(const VirtualKeySource source) const
+{
+    const auto virtualIt = _pressedVirtualKeys.find(source);
+
+    if (virtualIt == _pressedVirtualKeys.end())
+    {
+        return;
+    }
+
+    for (const EmulatedKey key : virtualIt->second)
+    {
+        const auto countIt = _keyPressCounts.find(key);
+
+        if (countIt == _keyPressCounts.end())
+        {
+            continue;
+        }
+
+        if (countIt->second > 1)
+        {
+            --countIt->second;
+        }
+        else
+        {
+            _inputRecorder->Record(
+                false,
+                key,
+                _emulator->GetEmulatedNanoseconds()
+            );
+            _emulator->OnKeyUp(key);
+            _keyPressCounts.erase(countIt);
+        }
+    }
+
+    _pressedVirtualKeys.erase(virtualIt);
+}
+
 void Program::ReleaseAllKeys() const
 {
     // Every key in this map is currently logically pressed in the emulator.
@@ -356,8 +538,13 @@ void Program::ReleaseAllKeys() const
     }
 
     _pressedKeys.clear();
+    _pressedVirtualKeys.clear();
     _keyPressCounts.clear();
     _oneShotKeyPressTimes.clear();
+
+    // The panel's latched buttons must not stay highlighted after a focus
+    // loss, replay transition or clean shutdown released the real keys.
+    _gui->ResetOnScreenKeyboardModifiers();
 }
 
 void Program::ReleaseStuckOneShotKeys() const
@@ -486,6 +673,12 @@ void Program::ProcessEvent(const Event& event) const
         }
 
         const auto* released = event.getIf<Event::KeyReleased>();
+
+        // Alt keydowns are consumed by HandleHotkey and never forwarded.
+        if (IsAltKey(released->code))
+        {
+            return;
+        }
 
         // Only release keys that we actually forwarded on KeyPressed.
         // This also works if the GUI has since taken keyboard focus.

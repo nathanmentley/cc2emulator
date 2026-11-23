@@ -1,5 +1,8 @@
 #include "Gui.h"
 
+#include "Hotkeys.h"
+#include "OnScreenKeyMap.h"
+
 #include <Compucolor/App/DebugDisassembler.h>
 
 #include <algorithm>
@@ -19,41 +22,54 @@
 #include <imgui.h>
 #include <imgui-SFML.h>
 
+using Compucolor::Keyboard::CompucolorIIKey;
+
 using Compucolor::Impl::App::Sfml::Gui;
+using Compucolor::Impl::App::Sfml::HotkeyAction;
+using Compucolor::Impl::App::Sfml::IsLatchedOnScreenModifier;
+using Compucolor::Impl::App::Sfml::OnScreenKeyRows;
+using Compucolor::Impl::App::Sfml::ScaleHotkey;
+using Compucolor::Impl::App::Sfml::Shortcut;
 
 namespace fs = std::filesystem;
 
 namespace
 {
-    constexpr const char* BrowserPopup = "Select Disk Image";
+    constexpr const char* BrowserPopup = "Select File";
     constexpr const char* UnsavedPopup = "Unsaved Changes";
     constexpr const char* ErrorPopup = "Error";
     constexpr const char* DiskExtension = ".ccvf";
     constexpr const char* ReplayExtension = ".json";
+    constexpr const char* StateExtension = ".json";
     constexpr const char* ReplayFileNameSuffix = ".cc2replay.json";
-    constexpr const char* StateFileName = "compucolor-state.json";
+
+    // Virtual sources only need to be unique within Program's virtual-key map.
+    // Keeping latches and one-shot taps in separate ranges avoids collisions.
+    constexpr std::uint32_t LatchSourceBase = 0x0000'1000u;
+    constexpr std::uint32_t TapSourceBase = 0x0000'2000u;
 }
 
 
-void ApplyCompucolorTheme(ImGuiStyle& style)
+void ApplyUiTheme(ImGuiStyle& style)
 {
     using Color = ImVec4;
 
-    // Geometry
-    style.WindowPadding = ImVec2(12.f, 10.f);
+    // Slate/steel chrome with one restrained blue accent. The CRT palette
+    // themes in Display.h recolor the emulated screen, not this overlay.
+    // Geometry: compact instrument panel, readable from 1x to 4x.
+    style.WindowPadding = ImVec2(12.f, 9.f);
     style.FramePadding = ImVec2(9.f, 6.f);
-    style.CellPadding = ImVec2(8.f, 5.f);
+    style.CellPadding = ImVec2(8.f, 6.f);
     style.ItemSpacing = ImVec2(8.f, 7.f);
     style.ItemInnerSpacing = ImVec2(6.f, 5.f);
     style.IndentSpacing = 20.f;
-    style.ScrollbarSize = 13.f;
-    style.GrabMinSize = 10.f;
+    style.ScrollbarSize = 12.f;
+    style.GrabMinSize = 8.f;
 
-    // Subtle rounding: industrial equipment, not a mobile app.
-    style.WindowRounding = 7.f;
+    style.WindowRounding = 6.f;
     style.ChildRounding = 5.f;
     style.FrameRounding = 4.f;
-    style.PopupRounding = 5.f;
+    style.PopupRounding = 6.f;
     style.ScrollbarRounding = 6.f;
     style.GrabRounding = 4.f;
     style.TabRounding = 4.f;
@@ -61,105 +77,102 @@ void ApplyCompucolorTheme(ImGuiStyle& style)
     style.WindowBorderSize = 1.f;
     style.ChildBorderSize = 1.f;
     style.PopupBorderSize = 1.f;
-    style.FrameBorderSize = 0.f;
+    style.FrameBorderSize = 1.f;
     style.TabBorderSize = 0.f;
 
-    style.WindowTitleAlign = ImVec2(0.0f, 0.5f);
+    style.WindowTitleAlign = ImVec2(0.f, 0.5f);
     style.ButtonTextAlign = ImVec2(0.5f, 0.5f);
-    style.SelectableTextAlign = ImVec2(0.0f, 0.5f);
+    style.SelectableTextAlign = ImVec2(0.f, 0.5f);
 
     style.SeparatorTextBorderSize = 1.f;
-    style.SeparatorTextAlign = ImVec2(0.0f, 0.5f);
-    style.SeparatorTextPadding = ImVec2(8.f, 5.f);
+    style.SeparatorTextAlign = ImVec2(0.f, 0.5f);
+    style.SeparatorTextPadding = ImVec2(8.f, 4.f);
 
-    // Palette
-    const Color background       = Color(0.067f, 0.110f, 0.145f, 1.00f);
-    const Color surface          = Color(0.090f, 0.153f, 0.192f, 1.00f);
-    const Color elevated         = Color(0.122f, 0.192f, 0.231f, 1.00f);
-    const Color hover            = Color(0.165f, 0.259f, 0.290f, 1.00f);
-    const Color border           = Color(0.220f, 0.298f, 0.333f, 1.00f);
+    const Color canvas = Color(0.071f, 0.086f, 0.106f, 1.f);
+    const Color panel = Color(0.102f, 0.125f, 0.153f, 1.f);
+    const Color raised = Color(0.137f, 0.169f, 0.208f, 1.f);
+    const Color hovered = Color(0.176f, 0.220f, 0.271f, 1.f);
+    const Color border = Color(0.212f, 0.267f, 0.325f, 1.f);
+    const Color subtleBorder = Color(0.165f, 0.208f, 0.259f, 1.f);
 
-    const Color text             = Color(0.914f, 0.898f, 0.835f, 1.00f);
-    const Color muted            = Color(0.565f, 0.647f, 0.659f, 1.00f);
+    const Color text = Color(0.910f, 0.929f, 0.949f, 1.f);
+    const Color muted = Color(0.604f, 0.659f, 0.714f, 1.f);
 
-    const Color amber            = Color(0.914f, 0.725f, 0.357f, 1.00f);
-    const Color amberHover       = Color(0.980f, 0.796f, 0.435f, 1.00f);
-    const Color green            = Color(0.467f, 0.788f, 0.690f, 1.00f);
+    const Color accent = Color(0.243f, 0.557f, 0.816f, 1.f);
+    const Color accentHover = Color(0.353f, 0.651f, 0.929f, 1.f);
+    const Color accentActive = Color(0.184f, 0.482f, 0.753f, 1.f);
+    const Color positive = Color(0.298f, 0.765f, 0.541f, 1.f);
 
     ImVec4* colors = style.Colors;
 
-    colors[ImGuiCol_Text]                  = text;
-    colors[ImGuiCol_TextDisabled]          = muted;
+    colors[ImGuiCol_Text] = text;
+    colors[ImGuiCol_TextDisabled] = muted;
 
-    colors[ImGuiCol_WindowBg]              = background;
-    colors[ImGuiCol_ChildBg]               = background;
-    colors[ImGuiCol_PopupBg]               = surface;
+    colors[ImGuiCol_WindowBg] = canvas;
+    colors[ImGuiCol_ChildBg] = canvas;
+    colors[ImGuiCol_PopupBg] = panel;
 
-    colors[ImGuiCol_Border]                = border;
-    colors[ImGuiCol_BorderShadow]          = Color(0.f, 0.f, 0.f, 0.f);
+    colors[ImGuiCol_Border] = border;
+    colors[ImGuiCol_BorderShadow] = Color(0.f, 0.f, 0.f, 0.f);
 
-    colors[ImGuiCol_FrameBg]               = surface;
-    colors[ImGuiCol_FrameBgHovered]        = elevated;
-    colors[ImGuiCol_FrameBgActive]         = hover;
+    colors[ImGuiCol_FrameBg] = panel;
+    colors[ImGuiCol_FrameBgHovered] = raised;
+    colors[ImGuiCol_FrameBgActive] = hovered;
 
-    colors[ImGuiCol_TitleBg]               = background;
-    colors[ImGuiCol_TitleBgActive]         = surface;
-    colors[ImGuiCol_TitleBgCollapsed]      = background;
+    colors[ImGuiCol_TitleBg] = canvas;
+    colors[ImGuiCol_TitleBgActive] = panel;
+    colors[ImGuiCol_TitleBgCollapsed] = canvas;
+    colors[ImGuiCol_MenuBarBg] = panel;
 
-    colors[ImGuiCol_MenuBarBg]              = surface;
+    colors[ImGuiCol_ScrollbarBg] = canvas;
+    colors[ImGuiCol_ScrollbarGrab] = raised;
+    colors[ImGuiCol_ScrollbarGrabHovered] = border;
+    colors[ImGuiCol_ScrollbarGrabActive] = accent;
 
-    colors[ImGuiCol_ScrollbarBg]           = background;
-    colors[ImGuiCol_ScrollbarGrab]         = elevated;
-    colors[ImGuiCol_ScrollbarGrabHovered]  = border;
-    colors[ImGuiCol_ScrollbarGrabActive]   = amber;
+    colors[ImGuiCol_CheckMark] = positive;
+    colors[ImGuiCol_SliderGrab] = accent;
+    colors[ImGuiCol_SliderGrabActive] = accentHover;
 
-    colors[ImGuiCol_CheckMark]             = green;
-    colors[ImGuiCol_SliderGrab]            = amber;
-    colors[ImGuiCol_SliderGrabActive]      = amberHover;
+    colors[ImGuiCol_Button] = raised;
+    colors[ImGuiCol_ButtonHovered] = hovered;
+    colors[ImGuiCol_ButtonActive] = accentActive;
 
-    colors[ImGuiCol_Button]                = elevated;
-    colors[ImGuiCol_ButtonHovered]         = hover;
-    colors[ImGuiCol_ButtonActive]          = amber;
+    colors[ImGuiCol_Header] = raised;
+    colors[ImGuiCol_HeaderHovered] = hovered;
+    colors[ImGuiCol_HeaderActive] = Color(accent.x, accent.y, accent.z, 0.35f);
 
-    colors[ImGuiCol_Header]                = elevated;
-    colors[ImGuiCol_HeaderHovered]         = hover;
-    colors[ImGuiCol_HeaderActive]          = Color(0.24f, 0.34f, 0.35f, 1.f);
+    colors[ImGuiCol_Separator] = border;
+    colors[ImGuiCol_SeparatorHovered] = accent;
+    colors[ImGuiCol_SeparatorActive] = accentHover;
 
-    colors[ImGuiCol_Separator]             = border;
-    colors[ImGuiCol_SeparatorHovered]      = amber;
-    colors[ImGuiCol_SeparatorActive]       = amberHover;
+    colors[ImGuiCol_ResizeGrip] = Color(accent.x, accent.y, accent.z, 0.20f);
+    colors[ImGuiCol_ResizeGripHovered] = accent;
+    colors[ImGuiCol_ResizeGripActive] = accentHover;
 
-    colors[ImGuiCol_ResizeGrip]            = Color(amber.x, amber.y, amber.z, 0.20f);
-    colors[ImGuiCol_ResizeGripHovered]     = amber;
-    colors[ImGuiCol_ResizeGripActive]      = amberHover;
+    colors[ImGuiCol_Tab] = canvas;
+    colors[ImGuiCol_TabHovered] = hovered;
+    colors[ImGuiCol_TabActive] = panel;
+    colors[ImGuiCol_TabUnfocused] = canvas;
+    colors[ImGuiCol_TabUnfocusedActive] = raised;
 
-    colors[ImGuiCol_Tab]                   = background;
-    colors[ImGuiCol_TabHovered]            = hover;
-    colors[ImGuiCol_TabActive]             = surface;
-    colors[ImGuiCol_TabUnfocused]          = background;
-    colors[ImGuiCol_TabUnfocusedActive]    = surface;
+    colors[ImGuiCol_PlotLines] = positive;
+    colors[ImGuiCol_PlotLinesHovered] = accent;
+    colors[ImGuiCol_PlotHistogram] = accent;
+    colors[ImGuiCol_PlotHistogramHovered] = accentHover;
 
-    colors[ImGuiCol_PlotLines]             = green;
-    colors[ImGuiCol_PlotLinesHovered]      = amber;
-    colors[ImGuiCol_PlotHistogram]         = amber;
-    colors[ImGuiCol_PlotHistogramHovered]  = amberHover;
+    colors[ImGuiCol_TableHeaderBg] = raised;
+    colors[ImGuiCol_TableBorderStrong] = border;
+    colors[ImGuiCol_TableBorderLight] = subtleBorder;
+    colors[ImGuiCol_TableRowBg] = Color(0.f, 0.f, 0.f, 0.f);
+    colors[ImGuiCol_TableRowBgAlt] = Color(1.f, 1.f, 1.f, 0.02f);
 
-    colors[ImGuiCol_TableHeaderBg]         = elevated;
-    colors[ImGuiCol_TableBorderStrong]     = border;
-    colors[ImGuiCol_TableBorderLight]      = surface;
-    colors[ImGuiCol_TableRowBg]            = Color(0.f, 0.f, 0.f, 0.f);
-    colors[ImGuiCol_TableRowBgAlt]         = Color(1.f, 1.f, 1.f, 0.025f);
+    colors[ImGuiCol_TextSelectedBg] = Color(accent.x, accent.y, accent.z, 0.32f);
+    colors[ImGuiCol_DragDropTarget] = accent;
 
-    colors[ImGuiCol_TextSelectedBg]        = Color(
-        amber.x, amber.y, amber.z, 0.30f
-    );
-
-    colors[ImGuiCol_DragDropTarget]        = amber;
-
-    colors[ImGuiCol_NavHighlight]          = amber;
-    colors[ImGuiCol_NavWindowingHighlight] = amber;
-    colors[ImGuiCol_NavWindowingDimBg]     = Color(0.f, 0.f, 0.f, 0.55f);
-    colors[ImGuiCol_ModalWindowDimBg]       = Color(0.f, 0.f, 0.f, 0.65f);
+    colors[ImGuiCol_NavHighlight] = accent;
+    colors[ImGuiCol_NavWindowingHighlight] = accent;
+    colors[ImGuiCol_NavWindowingDimBg] = Color(0.f, 0.f, 0.f, 0.55f);
+    colors[ImGuiCol_ModalWindowDimBg] = Color(0.f, 0.f, 0.f, 0.70f);
 }
 
 
@@ -225,6 +238,11 @@ void Gui::Shutdown()
 void Gui::SetQuitHandler(std::function<void()> handler)
 {
     _quit = std::move(handler);
+}
+
+void Gui::SetVirtualKeyHandler(VirtualKeyHandler handler)
+{
+    _injectVirtualKey = std::move(handler);
 }
 
 void Gui::SetReplayHandlers(
@@ -322,12 +340,233 @@ void Gui::ToggleSound()
     SetSoundEnabled(!_settings->GetBool("sound_enabled"));
 }
 
-void Gui::SaveState()
+void Gui::ApplyCrtSettings()
+{
+    _display->SetCrtEffects(_settings->GetBool("crt_effects"));
+    _display->SetCrtLayers(
+        _settings->GetBool("crt_scanlines"),
+        _settings->GetBool("crt_fuzz"),
+        _settings->GetBool("crt_vignette"),
+        _settings->GetBool("crt_glow")
+    );
+    _display->SetCrtIntensities(
+        _settings->GetInt("crt_scanline_intensity"),
+        _settings->GetInt("crt_fuzz_intensity"),
+        _settings->GetInt("crt_vignette_intensity"),
+        _settings->GetInt("crt_glow_intensity")
+    );
+}
+
+void Gui::SetCrtEffects(const bool enabled)
+{
+    _settings->SetBool("crt_effects", enabled);
+    ApplyCrtSettings();
+}
+
+void Gui::ToggleCrtEffects()
+{
+    const bool enabled = !_settings->GetBool("crt_effects");
+    SetCrtEffects(enabled);
+    ShowStatus(std::string("CRT effects ") + (enabled ? "enabled" : "disabled"));
+}
+
+void Gui::SetCrtScanlineIntensity(const int intensity)
+{
+    _settings->SetInt("crt_scanline_intensity", std::clamp(intensity, 0, 100));
+    ApplyCrtSettings();
+}
+
+void Gui::SetCrtFuzzIntensity(const int intensity)
+{
+    _settings->SetInt("crt_fuzz_intensity", std::clamp(intensity, 0, 100));
+    ApplyCrtSettings();
+}
+
+void Gui::SetCrtVignetteIntensity(const int intensity)
+{
+    _settings->SetInt("crt_vignette_intensity", std::clamp(intensity, 0, 100));
+    ApplyCrtSettings();
+}
+
+void Gui::SetCrtGlowIntensity(const int intensity)
+{
+    _settings->SetInt("crt_glow_intensity", std::clamp(intensity, 0, 100));
+    ApplyCrtSettings();
+}
+
+void Gui::SetCrtScanlines(const bool enabled)
+{
+    _settings->SetBool("crt_scanlines", enabled);
+    ApplyCrtSettings();
+}
+
+void Gui::SetCrtFuzz(const bool enabled)
+{
+    _settings->SetBool("crt_fuzz", enabled);
+    ApplyCrtSettings();
+}
+
+void Gui::SetCrtVignette(const bool enabled)
+{
+    _settings->SetBool("crt_vignette", enabled);
+    ApplyCrtSettings();
+}
+
+void Gui::SetCrtGlow(const bool enabled)
+{
+    _settings->SetBool("crt_glow", enabled);
+    ApplyCrtSettings();
+}
+
+void Gui::OpenSaveStateBrowser()
+{
+    OpenBrowser(BrowserMode::SaveState, 0);
+}
+
+void Gui::OpenLoadStateBrowser()
+{
+    OpenBrowser(BrowserMode::LoadState, 0);
+}
+
+void Gui::ToggleReplayRecording()
+{
+    if (_replayRecording)
+    {
+        if (_stopReplayRecording)
+        {
+            _stopReplayRecording();
+        }
+
+        return;
+    }
+
+    if (_startReplayRecording)
+    {
+        OpenBrowser(BrowserMode::SaveReplay, 0);
+    }
+    else
+    {
+        ShowStatus("Replay recording is not available");
+    }
+}
+
+void Gui::SetPaused(const bool paused)
+{
+    if (paused)
+    {
+        _emulator.Pause();
+    }
+    else
+    {
+        _emulator.Resume();
+    }
+}
+
+void Gui::TogglePause()
+{
+    SetPaused(!_emulator.IsPaused());
+}
+
+void Gui::SetRealSpeed(const bool enabled)
+{
+    _emulator.SetSpeedRegulated(enabled);
+    _settings->SetBool("speed_regulated", enabled);
+}
+
+void Gui::ToggleRealSpeed()
+{
+    SetRealSpeed(!_emulator.IsSpeedRegulated());
+}
+
+void Gui::ToggleDiskPanel()
+{
+    _showDiskPanel = !_showDiskPanel;
+}
+
+void Gui::ToggleOnScreenKeyboard()
+{
+    if (_showKeyboardPanel)
+    {
+        ResetOnScreenKeyboardModifiers();
+    }
+
+    _showKeyboardPanel = !_showKeyboardPanel;
+}
+
+void Gui::ResetOnScreenKeyboardModifiers()
+{
+    if (!_injectVirtualKey)
+    {
+        _latchedVirtualKeys.clear();
+        return;
+    }
+
+    for (const CompucolorIIKey key : _latchedVirtualKeys)
+    {
+        _injectVirtualKey(LatchSourceBase + static_cast<std::uint32_t>(key), key, false);
+    }
+
+    _latchedVirtualKeys.clear();
+}
+
+void Gui::ToggleTraceRecording()
+{
+    _debugRecording = !_debugRecording;
+
+    if (_debugHub)
+    {
+        _debugHub->SetEnabled(_debugRecording);
+    }
+
+    if (_debug)
+    {
+        _debug->SetEnabled(_debugRecording);
+    }
+}
+
+void Gui::ClearTraces()
+{
+    if (_debug)
+    {
+        _debug->Clear();
+    }
+}
+
+void Gui::ToggleCpuDebug()
+{
+    _showCpuDebug = !_showCpuDebug;
+}
+
+void Gui::ShowPreferences()
+{
+    _showSettings = true;
+}
+
+void Gui::ShowKeyboardHelp()
+{
+    _showKeys = true;
+}
+
+void Gui::ShowAbout()
+{
+    _showAbout = true;
+}
+
+void Gui::SaveState(const std::string& path)
 {
     try
     {
-        _emulator.SaveState();
-        ShowStatus("Saved emulator state");
+        _emulator.SaveState(path);
+
+        const fs::path target(path);
+        _settings->SetString("state_path", target.string());
+
+        if (target.has_parent_path())
+        {
+            _settings->SetString("last_disk_dir", target.parent_path().string());
+        }
+
+        ShowStatus("Saved emulator state to " + target.filename().string());
     }
     catch (const std::exception& error)
     {
@@ -335,12 +574,21 @@ void Gui::SaveState()
     }
 }
 
-void Gui::LoadState()
+void Gui::LoadState(const std::string& path)
 {
     try
     {
-        _emulator.LoadState();
-        ShowStatus("Loaded emulator state");
+        _emulator.LoadState(path);
+
+        const fs::path target(path);
+        _settings->SetString("state_path", target.string());
+
+        if (target.has_parent_path())
+        {
+            _settings->SetString("last_disk_dir", target.parent_path().string());
+        }
+
+        ShowStatus("Loaded emulator state from " + target.filename().string());
     }
     catch (const std::exception& error)
     {
@@ -379,7 +627,7 @@ void Gui::UpdateScale()
     _uiScale = scale;
 
     ImGuiStyle style;
-    ApplyCompucolorTheme(style);
+    ApplyUiTheme(style);
 
     style.ScaleAllSizes(scale);
     ImGui::GetStyle() = style;
@@ -402,6 +650,11 @@ void Gui::BeginFrame(const sf::Time elapsed)
     if (_showDiskPanel && _menuVisible)
     {
         DrawDiskPanel();
+    }
+
+    if (_showKeyboardPanel)
+    {
+        DrawOnScreenKeyboard();
     }
 
     DrawSettings();
@@ -578,7 +831,7 @@ void Gui::ToggleMenu()
 
     if (!_menuVisible)
     {
-        ShowStatus("Menu hidden - press Alt+M to show it again");
+        ShowStatus(std::string("Menu hidden - press ") + Shortcut(HotkeyAction::ToggleMenu) + " to show it again");
     }
 }
 
@@ -609,38 +862,36 @@ void Gui::DrawMenu()
 
     if (ImGui::BeginMenu("File"))
     {
-        if (ImGui::MenuItem("Save State"))
+        if (ImGui::MenuItem("Save State...", Shortcut(HotkeyAction::SaveState)))
         {
-            SaveState();
+            OpenSaveStateBrowser();
         }
 
-        std::error_code stateError;
-        const bool hasState = fs::exists(StateFileName, stateError) && !stateError;
-        if (ImGui::MenuItem("Load State", nullptr, false, hasState))
+        if (ImGui::MenuItem("Load State...", Shortcut(HotkeyAction::LoadState)))
         {
-            LoadState();
+            OpenLoadStateBrowser();
         }
 
         ImGui::Separator();
 
         if (ImGui::MenuItem(
                 "Start Replay Recording...",
-                nullptr,
+                Shortcut(HotkeyAction::ToggleReplayRecording),
                 false,
                 !_replayRecording && static_cast<bool>(_startReplayRecording)
             ))
         {
-            OpenBrowser(BrowserMode::SaveReplay, 0);
+            ToggleReplayRecording();
         }
 
         if (ImGui::MenuItem(
                 "Stop Replay Recording",
-                nullptr,
+                Shortcut(HotkeyAction::ToggleReplayRecording),
                 false,
                 _replayRecording && static_cast<bool>(_stopReplayRecording)
             ))
         {
-            _stopReplayRecording();
+            ToggleReplayRecording();
         }
 
         ImGui::Separator();
@@ -681,14 +932,14 @@ void Gui::DrawMenu()
 
         ImGui::Separator();
 
-        if (ImGui::MenuItem("Save Screenshot", "Alt+P"))
+        if (ImGui::MenuItem("Save Screenshot", Shortcut(HotkeyAction::Screenshot)))
         {
             SaveScreenshot();
         }
 
         ImGui::Separator();
 
-        if (ImGui::MenuItem("Quit"))
+        if (ImGui::MenuItem("Quit", Shortcut(HotkeyAction::Quit)))
         {
             RequestQuit();
         }
@@ -711,23 +962,15 @@ void Gui::DrawMenu()
         ImGui::Separator();
 
         bool paused = _emulator.IsPaused();
-        if (ImGui::MenuItem("Pause", nullptr, &paused))
+        if (ImGui::MenuItem("Pause", Shortcut(HotkeyAction::Pause), &paused))
         {
-            if (paused)
-            {
-                _emulator.Pause();
-            }
-            else
-            {
-                _emulator.Resume();
-            }
+            SetPaused(paused);
         }
 
         bool regulated = _emulator.IsSpeedRegulated();
-        if (ImGui::MenuItem("Real Speed", nullptr, &regulated))
+        if (ImGui::MenuItem("Real Speed", Shortcut(HotkeyAction::RealSpeed), &regulated))
         {
-            _emulator.SetSpeedRegulated(regulated);
-            _settings->SetBool("speed_regulated", regulated);
+            SetRealSpeed(regulated);
         }
 
         ImGui::EndMenu();
@@ -735,22 +978,14 @@ void Gui::DrawMenu()
 
     if (ImGui::BeginMenu("Debug"))
     {
-        if (ImGui::MenuItem("Record trace", nullptr, &_debugRecording))
+        if (ImGui::MenuItem("Record trace", Shortcut(HotkeyAction::TraceRecording), _debugRecording))
         {
-            if (_debugHub)
-            {
-                _debugHub->SetEnabled(_debugRecording);
-            }
-
-            if (_debug)
-            {
-                _debug->SetEnabled(_debugRecording);
-            }
+            ToggleTraceRecording();
         }
 
         ImGui::Separator();
 
-        ImGui::MenuItem("CPU", nullptr, &_showCpuDebug);
+        ImGui::MenuItem("CPU", Shortcut(HotkeyAction::CpuDebug), &_showCpuDebug);
         ImGui::MenuItem("Memory", nullptr, &_showMemoryDebug);
         ImGui::MenuItem("Ports", nullptr, &_showPortDebug);
         ImGui::MenuItem("Trace", nullptr, &_showTraceDebug);
@@ -760,9 +995,9 @@ void Gui::DrawMenu()
 
         ImGui::Separator();
 
-        if (ImGui::MenuItem("Clear traces") && _debug)
+        if (ImGui::MenuItem("Clear traces", Shortcut(HotkeyAction::ClearTraces)))
         {
-            _debug->Clear();
+            ClearTraces();
         }
 
         ImGui::EndMenu();
@@ -771,7 +1006,7 @@ void Gui::DrawMenu()
     if (ImGui::BeginMenu("Sound"))
     {
         bool enabled = _settings->GetBool("sound_enabled");
-        if (ImGui::MenuItem("Enable Sound", "Alt+A", &enabled))
+        if (ImGui::MenuItem("Enable Sound", Shortcut(HotkeyAction::Sound), &enabled))
         {
             SetSoundEnabled(enabled);
         }
@@ -799,33 +1034,57 @@ void Gui::DrawMenu()
         for (int option = 1; option <= 4; option++)
         {
             const std::string label = std::to_string(option) + "x";
-            const std::string shortcut = "Alt+" + std::to_string(option);
 
-            if (ImGui::MenuItem(label.c_str(), shortcut.c_str(), scale == option && !_settings->GetBool("fullscreen")))
+            if (ImGui::MenuItem(
+                    label.c_str(),
+                    Shortcut(ScaleHotkey(option)),
+                    scale == option && !_settings->GetBool("fullscreen")
+                ))
             {
                 SetScale(option);
             }
         }
 
         bool fullscreen = _settings->GetBool("fullscreen");
-        if (ImGui::MenuItem("Fullscreen", "Alt+Enter", &fullscreen))
+        if (ImGui::MenuItem("Fullscreen", Shortcut(HotkeyAction::Fullscreen), &fullscreen))
         {
             SetFullscreen(fullscreen);
         }
 
         bool smooth = _settings->GetBool("smooth_scaling");
-        if (ImGui::MenuItem("Smooth Scaling", "Alt+S", &smooth))
+        if (ImGui::MenuItem("Smooth Scaling", Shortcut(HotkeyAction::SmoothScaling), &smooth))
         {
             SetSmooth(smooth);
         }
 
+        if (ImGui::MenuItem(
+                "CRT Effects",
+                Shortcut(HotkeyAction::CrtEffects),
+                _settings->GetBool("crt_effects")
+            ))
+        {
+            ToggleCrtEffects();
+        }
+
         ImGui::Separator();
 
-        ImGui::MenuItem("Disk Panel", nullptr, &_showDiskPanel);
-
-        if (ImGui::MenuItem("Hide Menu", "Alt+M"))
+        if (ImGui::MenuItem("Disk Panel", Shortcut(HotkeyAction::DiskPanel), _showDiskPanel))
         {
-            _menuVisible = false;
+            ToggleDiskPanel();
+        }
+
+        if (ImGui::MenuItem(
+                "On-screen Keyboard",
+                Shortcut(HotkeyAction::OnScreenKeyboard),
+                _showKeyboardPanel
+            ))
+        {
+            ToggleOnScreenKeyboard();
+        }
+
+        if (ImGui::MenuItem("Hide Menu", Shortcut(HotkeyAction::ToggleMenu)))
+        {
+            ToggleMenu();
         }
 
         ImGui::EndMenu();
@@ -833,15 +1092,25 @@ void Gui::DrawMenu()
 
     if (ImGui::BeginMenu("Settings"))
     {
-        ImGui::MenuItem("Preferences...", nullptr, &_showSettings);
+        if (ImGui::MenuItem("Preferences...", Shortcut(HotkeyAction::Preferences)))
+        {
+            ShowPreferences();
+        }
 
         ImGui::EndMenu();
     }
 
     if (ImGui::BeginMenu("Help"))
     {
-        ImGui::MenuItem("Keyboard", nullptr, &_showKeys);
-        ImGui::MenuItem("About", nullptr, &_showAbout);
+        if (ImGui::MenuItem("Keyboard", Shortcut(HotkeyAction::KeyboardHelp)))
+        {
+            ShowKeyboardHelp();
+        }
+
+        if (ImGui::MenuItem("About", Shortcut(HotkeyAction::About)))
+        {
+            ShowAbout();
+        }
 
         ImGui::EndMenu();
     }
@@ -918,6 +1187,118 @@ void Gui::DrawDiskPanel()
     ImGui::End();
 }
 
+void Gui::DrawOnScreenKeyboard()
+{
+    ImGui::SetNextWindowPos(
+        ImVec2(8.f * _uiScale, ImGui::GetFrameHeight() + 8.f * _uiScale),
+        ImGuiCond_FirstUseEver,
+        ImVec2(0.f, 0.f)
+    );
+
+    constexpr int Columns = 8;
+    constexpr ImGuiTableFlags TableFlags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoBordersInBody;
+
+    const auto emit = [this](const std::uint32_t source, const CompucolorIIKey key, const bool down) {
+        if (_injectVirtualKey)
+        {
+            _injectVirtualKey(source, key, down);
+        }
+    };
+
+    std::uint32_t buttonIndex = 0;
+    std::size_t rowIndex = 0;
+
+    if (ImGui::Begin(
+            "On-screen Keyboard",
+            &_showKeyboardPanel,
+            ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing
+        ))
+    {
+        ImGui::TextDisabled("Click a key to tap it. Latched modifiers stay down until clicked again.");
+        ImGui::TextDisabled("Clicks are injected as real emulated key events and are captured by replay recording.");
+
+        for (const auto& row : OnScreenKeyRows())
+        {
+            ImGui::SeparatorText(row.title);
+
+            const std::string tableId = std::string("##OnScreenKeys") + std::to_string(rowIndex++);
+
+            if (!ImGui::BeginTable(tableId.c_str(), Columns, TableFlags))
+            {
+                continue;
+            }
+
+            ImGui::TableNextRow();
+
+            for (const auto& entry : row.keys)
+            {
+                ImGui::TableSetColumnIndex(static_cast<int>(buttonIndex % Columns));
+
+                const bool latched = _latchedVirtualKeys.contains(entry.key);
+                const bool isLatch = IsLatchedOnScreenModifier(entry.key);
+                std::string label = entry.label;
+
+                if (latched)
+                {
+                    label += " (on)";
+                    ImGui::PushStyleColor(
+                        ImGuiCol_Button,
+                        ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered)
+                    );
+                }
+
+                if (ImGui::Button(label.c_str()))
+                {
+                    if (isLatch)
+                    {
+                        const std::uint32_t source =
+                            LatchSourceBase + static_cast<std::uint32_t>(entry.key);
+
+                        if (latched)
+                        {
+                            emit(source, entry.key, false);
+                            _latchedVirtualKeys.erase(entry.key);
+                        }
+                        else
+                        {
+                            emit(source, entry.key, true);
+                            _latchedVirtualKeys.insert(entry.key);
+                        }
+                    }
+                    else
+                    {
+                        const std::uint32_t source = TapSourceBase + buttonIndex;
+                        emit(source, entry.key, true);
+                        emit(source, entry.key, false);
+                    }
+                }
+
+                if (latched)
+                {
+                    ImGui::PopStyleColor();
+                }
+
+                ++buttonIndex;
+
+                if (buttonIndex % Columns == 0)
+                {
+                    ImGui::TableNextRow();
+                }
+            }
+
+            ImGui::EndTable();
+        }
+    }
+
+    ImGui::End();
+
+    // The close button changes _showKeyboardPanel during Begin().
+    if (!_showKeyboardPanel)
+    {
+        ResetOnScreenKeyboardModifiers();
+    }
+}
+
 void Gui::DrawSettings()
 {
     if (!_showSettings)
@@ -964,6 +1345,48 @@ void Gui::DrawSettings()
             _display->SetTheme(ThemeFromInt(theme));
         }
 
+        bool crt = _settings->GetBool("crt_effects");
+        if (ImGui::Checkbox("Enable CRT effects", &crt))
+        {
+            SetCrtEffects(crt);
+        }
+
+        ImGui::SameLine();
+        HelpMarker("Scanlines stay locked to the source rows; fuzz rerolls each frame. ImGui and screenshots stay clean.");
+
+        auto drawCrtLayer = [this](const char* label, bool enabled, int intensity,
+                                   void (Gui::*setEnabled)(bool),
+                                   void (Gui::*setIntensity)(int)) {
+            if (ImGui::Checkbox(label, &enabled))
+            {
+                (this->*setEnabled)(enabled);
+            }
+
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(120.f * _uiScale);
+            const std::string sliderId = std::string("##") + label + "Intensity";
+            if (ImGui::SliderInt(sliderId.c_str(), &intensity, 0, 100, "%d%%"))
+            {
+                (this->*setIntensity)(intensity);
+            }
+        };
+
+        bool crtScanlines = _settings->GetBool("crt_scanlines");
+        bool crtFuzz = _settings->GetBool("crt_fuzz");
+        bool crtVignette = _settings->GetBool("crt_vignette");
+        bool crtGlow = _settings->GetBool("crt_glow");
+
+        int crtScanlineIntensity = std::clamp(_settings->GetInt("crt_scanline_intensity"), 0, 100);
+        int crtFuzzIntensity = std::clamp(_settings->GetInt("crt_fuzz_intensity"), 0, 100);
+        int crtVignetteIntensity = std::clamp(_settings->GetInt("crt_vignette_intensity"), 0, 100);
+        int crtGlowIntensity = std::clamp(_settings->GetInt("crt_glow_intensity"), 0, 100);
+
+        ImGui::BeginDisabled(!crt);
+        drawCrtLayer("Scanlines", crtScanlines, crtScanlineIntensity, &Gui::SetCrtScanlines, &Gui::SetCrtScanlineIntensity);
+        drawCrtLayer("Fuzz", crtFuzz, crtFuzzIntensity, &Gui::SetCrtFuzz, &Gui::SetCrtFuzzIntensity);
+        drawCrtLayer("Vignette", crtVignette, crtVignetteIntensity, &Gui::SetCrtVignette, &Gui::SetCrtVignetteIntensity);
+        drawCrtLayer("Phosphor glow", crtGlow, crtGlowIntensity, &Gui::SetCrtGlow, &Gui::SetCrtGlowIntensity);
+        ImGui::EndDisabled();
 
         ImGui::SeparatorText("Sound");
 
@@ -1032,17 +1455,40 @@ void Gui::DrawKeyHelp()
 
     if (ImGui::Begin("Keyboard", &_showKeys, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        ImGui::SeparatorText("Emulator hotkeys");
-        ImGui::BulletText("Alt+Enter: fullscreen");
-        ImGui::BulletText("Alt+1 .. Alt+4: window scale");
-        ImGui::BulletText("Alt+S: smooth scaling");
-        ImGui::BulletText("Alt+A: sound on / off");
-        ImGui::BulletText("Alt+M: show or hide the menu");
-        ImGui::BulletText("Alt+P: save a screenshot");
-        ImGui::TextDisabled("Save and load state are in the File menu.");
+        ImGui::SeparatorText("Host shortcuts");
+        ImGui::TextDisabled("Alt is reserved for these host shortcuts and is not sent to the Compucolor.");
+        ImGui::BulletText("%s: fullscreen", Shortcut(HotkeyAction::Fullscreen));
+        ImGui::BulletText(
+            "%s .. %s: window scale",
+            Shortcut(ScaleHotkey(1)),
+            Shortcut(ScaleHotkey(4))
+        );
+        ImGui::BulletText("%s: smooth scaling", Shortcut(HotkeyAction::SmoothScaling));
+        ImGui::BulletText("%s: toggle CRT effects", Shortcut(HotkeyAction::CrtEffects));
+        ImGui::BulletText("%s: sound on / off", Shortcut(HotkeyAction::Sound));
+        ImGui::BulletText("%s: show or hide the menu", Shortcut(HotkeyAction::ToggleMenu));
+        ImGui::BulletText("%s: save a screenshot", Shortcut(HotkeyAction::Screenshot));
+        ImGui::BulletText(
+            "%s / %s: save / load state",
+            Shortcut(HotkeyAction::SaveState),
+            Shortcut(HotkeyAction::LoadState)
+        );
+        ImGui::BulletText("%s: start or stop replay recording", Shortcut(HotkeyAction::ToggleReplayRecording));
+        ImGui::BulletText("%s: pause or resume", Shortcut(HotkeyAction::Pause));
+        ImGui::BulletText("%s: toggle real speed", Shortcut(HotkeyAction::RealSpeed));
+        ImGui::BulletText("%s: show or hide the disk panel", Shortcut(HotkeyAction::DiskPanel));
+        ImGui::BulletText("%s: show or hide the on-screen keyboard", Shortcut(HotkeyAction::OnScreenKeyboard));
+        ImGui::BulletText("%s: start or stop trace recording", Shortcut(HotkeyAction::TraceRecording));
+        ImGui::BulletText("%s: clear traces", Shortcut(HotkeyAction::ClearTraces));
+        ImGui::BulletText("%s: toggle the CPU debug window", Shortcut(HotkeyAction::CpuDebug));
+        ImGui::BulletText("%s: preferences", Shortcut(HotkeyAction::Preferences));
+        ImGui::BulletText("%s: keyboard help", Shortcut(HotkeyAction::KeyboardHelp));
+        ImGui::BulletText("%s: about", Shortcut(HotkeyAction::About));
+        ImGui::BulletText("%s: quit", Shortcut(HotkeyAction::Quit));
 
         ImGui::SeparatorText("PC keys on the Compucolor");
-        ImGui::BulletText("Alt / right Windows key: REPEAT; left Windows key: AUTO");
+        ImGui::BulletText("On-screen keyboard: mouse-driven access to every CC2 key, including unmapped ones");
+        ImGui::BulletText("Right Windows key: REPEAT; left Windows key: AUTO");
         ImGui::BulletText("Ctrl: CONTROL");
         ImGui::BulletText("Symbols follow the printed character, e.g. Shift+; is ':' and Shift+7 is '&'");
         ImGui::BulletText("Arrow keys, Home, Tab: cursor keys");
@@ -1076,9 +1522,23 @@ void Gui::DrawAbout()
         ImGui::BulletText("Two floppy drives with .ccvf disk images");
         ImGui::BulletText("Optional SoundWare add-on audio");
 
+        ImGui::SeparatorText("Credits and references");
+        // TextWrapped wraps to the current window width, which is unstable with
+        // AlwaysAutoResize; use an explicit wrap position for readable URLs.
+        const float creditsWrapPos = ImGui::GetCursorPosX() + ImGui::GetFontSize() * 64.0f;
+        ImGui::PushTextWrapPos(creditsWrapPos);
+        ImGui::TextUnformatted("Reference point: https://github.com/jtbattle/ccemu");
+        ImGui::TextUnformatted("Documentation and community resources: https://www.compucolor.org");
+        ImGui::TextUnformatted("Intel 8080 CPU emulation core used by this project, wrapped by local code: https://github.com/superzazu/8080");
+        ImGui::TextUnformatted("UI libraries: https://github.com/ocornut/imgui and https://github.com/eliasdaler/imgui-sfml");
+
+        ImGui::SeparatorText("License");
+        ImGui::TextUnformatted("This project is MIT licensed (Copyright 2021 Nathan Mentley). See LICENSE.md for details. Third-party components retain their own licenses.");
+        ImGui::PopTextWrapPos();
+
         ImGui::Separator();
 
-        ImGui::TextDisabled("Press Alt+M to show or hide the menu.");
+        ImGui::TextDisabled("Press %s to show or hide the menu.", Shortcut(HotkeyAction::ToggleMenu));
     }
 
     ImGui::End();
@@ -1948,8 +2408,30 @@ void Gui::OpenBrowser(const BrowserMode mode, const int drive)
     _browserMode = mode;
     _browserDrive = drive;
 
+    const bool stateBrowser = mode == BrowserMode::SaveState || mode == BrowserMode::LoadState;
+
     std::error_code error;
-    fs::path start = _settings->GetString("last_disk_dir");
+    fs::path start;
+
+    if (stateBrowser)
+    {
+        const fs::path statePath(_settings->GetString("state_path"));
+
+        if (statePath.has_parent_path())
+        {
+            start = statePath.parent_path();
+
+            if (!fs::is_directory(start, error))
+            {
+                start.clear();
+            }
+        }
+    }
+
+    if (start.empty())
+    {
+        start = _settings->GetString("last_disk_dir");
+    }
 
     if (start.empty() || !fs::is_directory(start, error))
     {
@@ -1970,6 +2452,11 @@ void Gui::OpenBrowser(const BrowserMode mode, const int drive)
     {
         std::strncpy(_fileName, "replay.cc2replay.json", sizeof(_fileName) - 1);
     }
+    else if (stateBrowser)
+    {
+        const std::string name = fs::path(_settings->GetString("state_path")).filename().string();
+        std::strncpy(_fileName, name.c_str(), sizeof(_fileName) - 1);
+    }
 
     _openBrowser = true;
 }
@@ -1985,20 +2472,37 @@ void Gui::DrawBrowser()
         return;
     }
 
-    const bool saving = _browserMode != BrowserMode::Mount;
+    const bool stateBrowser = _browserMode == BrowserMode::SaveState
+        || _browserMode == BrowserMode::LoadState;
+    const bool savingDisk = _browserMode == BrowserMode::SaveAs;
     const char* extension = _browserMode == BrowserMode::SaveReplay
         ? ReplayExtension
-        : DiskExtension;
+        : stateBrowser
+            ? StateExtension
+            : DiskExtension;
+    const char* actionLabel = _browserMode == BrowserMode::LoadState ? "Load" : "Save";
+    if (_browserMode == BrowserMode::Mount)
+    {
+        actionLabel = "Mount";
+    }
 
     if (_browserMode == BrowserMode::SaveReplay)
     {
         ImGui::TextUnformatted("Save replay bundle to");
     }
+    else if (_browserMode == BrowserMode::SaveState)
+    {
+        ImGui::TextUnformatted("Save emulator state to");
+    }
+    else if (_browserMode == BrowserMode::LoadState)
+    {
+        ImGui::TextUnformatted("Load emulator state from");
+    }
     else
     {
         ImGui::Text(
             "%s Drive %s",
-            saving ? "Save disk from" : "Mount into",
+            savingDisk ? "Save disk from" : "Mount into",
             DriveLabel(_browserDrive)
         );
     }
@@ -2076,7 +2580,7 @@ void Gui::DrawBrowser()
     ImGui::TextDisabled("Double-click a file or press Enter to continue.");
 
     ImGui::BeginDisabled(_fileName[0] == '\0');
-    if (ImGui::Button(saving ? "Save" : "Mount"))
+    if (ImGui::Button(actionLabel))
     {
         accepted = true;
     }
@@ -2124,6 +2628,27 @@ void Gui::AcceptBrowser()
         if (_startReplayRecording)
         {
             _startReplayRecording(target.string());
+        }
+
+        return;
+    }
+
+    if (_browserMode == BrowserMode::SaveState || _browserMode == BrowserMode::LoadState)
+    {
+        if (target.extension().empty())
+        {
+            target += StateExtension;
+        }
+
+        _settings->SetString("last_disk_dir", _browserDir.string());
+
+        if (_browserMode == BrowserMode::SaveState)
+        {
+            SaveState(target.string());
+        }
+        else
+        {
+            LoadState(target.string());
         }
 
         return;

@@ -136,16 +136,13 @@ std::optional<Compucolor::Keyboard::CompucolorIIKey> Compucolor::Impl::App::Sfml
             return Compucolor::Keyboard::CompucolorIIKey::Ctrl;
         case sf::Keyboard::Key::LShift:
             return Compucolor::Keyboard::CompucolorIIKey::Shift;
-        case sf::Keyboard::Key::LAlt:
-            return Compucolor::Keyboard::CompucolorIIKey::Repeat;
+        // Alt is reserved for host shortcuts and never reaches this translator.
         case sf::Keyboard::Key::LSystem:
             return Compucolor::Keyboard::CompucolorIIKey::Auto;
         case sf::Keyboard::Key::RControl:
             return Compucolor::Keyboard::CompucolorIIKey::Ctrl;
         case sf::Keyboard::Key::RShift:
             return Compucolor::Keyboard::CompucolorIIKey::Shift;
-        case sf::Keyboard::Key::RAlt:
-            return Compucolor::Keyboard::CompucolorIIKey::Repeat;
         case sf::Keyboard::Key::RSystem:
             return Compucolor::Keyboard::CompucolorIIKey::Repeat;
         case sf::Keyboard::Key::Space:

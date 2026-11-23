@@ -3,6 +3,7 @@
 
 #include <chrono>
 #include <cstddef>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <string>
@@ -33,6 +34,8 @@
 
 namespace Compucolor::Impl::App::Sfml
 {
+    enum class HotkeyAction;
+
     // SFML host application. Construction loads settings/config, creates the
     // window and host services, builds the plugin manager and initializes the GUI.
     class Program {
@@ -50,6 +53,7 @@ namespace Compucolor::Impl::App::Sfml
 
         private:
             using EmulatedKey = Compucolor::Keyboard::CompucolorIIKey;
+            using VirtualKeySource = std::uint32_t;
 
             std::string _settingsPath;
             ProgramArguments _arguments;
@@ -74,7 +78,12 @@ namespace Compucolor::Impl::App::Sfml
             // Emulated keys currently held by each physical key.
             mutable std::map<sf::Keyboard::Key, std::vector<EmulatedKey>> _pressedKeys;
 
-            // Number of physical sources currently holding each emulated key.
+            // Emulated keys held by the mouse-driven on-screen keyboard. Each
+            // button gets its own source so modifier latches can stay down
+            // independently of one-shot key taps.
+            mutable std::map<VirtualKeySource, std::vector<EmulatedKey>> _pressedVirtualKeys;
+
+            // Number of physical or virtual sources holding each emulated key.
             mutable std::map<EmulatedKey, std::size_t> _keyPressCounts;
 
             // Some desktop environments swallow the release of the Super key,
@@ -90,9 +99,12 @@ namespace Compucolor::Impl::App::Sfml
             static std::shared_ptr<Settings> LoadSettings(const std::string& path);
             static std::shared_ptr<sf::RenderWindow> CreateWindow(const Settings& settings);
 
-            // Alt+Enter fullscreen, Alt+1..4 scale, Alt+S smoothing,
-            // Alt+A sound, Alt+M menu, Alt+P screenshot.
+            // Alt is reserved for host shortcuts (see Hotkeys.h). Returns
+            // true when the event must not reach the emulated keyboard,
+            // including unbound Alt chords.
             bool HandleHotkey(const sf::Event::KeyPressed& pressed) const;
+
+            void DispatchHotkey(HotkeyAction action) const;
 
             void RecreateWindow() const;
 
@@ -104,6 +116,14 @@ namespace Compucolor::Impl::App::Sfml
             ) const;
 
             void ReleasePhysicalKey(sf::Keyboard::Key physical) const;
+
+            // GUI-driven key injection. Replay owns the keyboard while active,
+            // so virtual presses obey the same gate as host key events.
+            void InjectVirtualKey(VirtualKeySource source, EmulatedKey key, bool down) const;
+
+            void PressVirtualKeys(VirtualKeySource source, std::vector<EmulatedKey> keys) const;
+
+            void ReleaseVirtualKey(VirtualKeySource source) const;
 
             void ReleaseAllKeys() const;
 

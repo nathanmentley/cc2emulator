@@ -23,6 +23,16 @@ TEST(Settings, DefaultsAreProvided) {
     EXPECT_FALSE(settings.GetBool("fullscreen"));
     EXPECT_TRUE(settings.GetBool("speed_regulated"));
     EXPECT_EQ("standard", settings.GetString("charset"));
+    EXPECT_EQ("", settings.GetString("state_path"));
+    EXPECT_TRUE(settings.GetBool("crt_effects"));
+    EXPECT_TRUE(settings.GetBool("crt_scanlines"));
+    EXPECT_TRUE(settings.GetBool("crt_fuzz"));
+    EXPECT_TRUE(settings.GetBool("crt_vignette"));
+    EXPECT_TRUE(settings.GetBool("crt_glow"));
+    EXPECT_EQ(6, settings.GetInt("crt_scanline_intensity"));
+    EXPECT_EQ(25, settings.GetInt("crt_fuzz_intensity"));
+    EXPECT_EQ(12, settings.GetInt("crt_vignette_intensity"));
+    EXPECT_EQ(63, settings.GetInt("crt_glow_intensity"));
 }
 
 TEST(Settings, UnknownKeyReturnsEmptyValues) {

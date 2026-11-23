@@ -17,9 +17,19 @@ Settings::Settings():
         {"disk_a_path", "disks/chomp.ccvf"},
         {"disk_b_path", "disks/life.ccvf"},
         {"last_disk_dir", ""},
+        {"state_path", ""},
         {"sound_enabled", "true"},
-        {"sound_volume", "100"},
-        {"theme", "0"}
+        {"sound_volume", "50"},
+        {"theme", "3"},
+        {"crt_effects", "true"},
+        {"crt_scanlines", "true"},
+        {"crt_fuzz", "true"},
+        {"crt_vignette", "true"},
+        {"crt_glow", "true"},
+        {"crt_scanline_intensity", "6"},
+        {"crt_fuzz_intensity", "25"},
+        {"crt_vignette_intensity", "12"},
+        {"crt_glow_intensity", "63"}
     }
 {
 }

@@ -20,7 +20,7 @@
 namespace Compucolor
 {
     // Host-side façade for ICompucolorEmulator: owns the startup thread and
-    // persists complete emulator state in ./compucolor-state.json.
+    // persists complete emulator state at caller-supplied paths.
     class CompucolorEmulatorProcessor {
         public:
             CompucolorEmulatorProcessor(
@@ -156,13 +156,6 @@ namespace Compucolor
                 return *state;
             }
 
-            // Serializes the composite state to compucolor-state.json in the
-            // current working directory.
-            void SaveState()
-            {
-                SaveState("compucolor-state.json");
-            }
-
             // Serializes the composite state to an explicit path. Throws if the
             // state is empty or the file cannot be written.
             void SaveState(const std::string& path)
@@ -182,12 +175,6 @@ namespace Compucolor
                 {
                     throw std::runtime_error("Failed to write " + path);
                 }
-            }
-
-            // Parses compucolor-state.json and forwards the document to the emulator.
-            void LoadState()
-            {
-                LoadState(std::string("compucolor-state.json"));
             }
 
             // Loads an already-parsed state document, used by replay bundles.

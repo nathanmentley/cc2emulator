@@ -81,6 +81,12 @@ namespace Compucolor::Impl::App::Sfml
 
             void SetSmooth(bool smooth);
 
+            // Optional CRT-style layers applied to the raw frame before it is
+            // uploaded to the texture. Screenshots stay raw.
+            void SetCrtEffects(bool enabled);
+            void SetCrtLayers(bool scanlines, bool fuzz, bool vignette, bool glow);
+            void SetCrtIntensities(int scanlines, int fuzz, int vignette, int glow);
+
             // Selects the palette used to convert hardware colors to RGBA.
             void SetTheme(Theme theme);
 
@@ -100,6 +106,18 @@ namespace Compucolor::Impl::App::Sfml
             std::mutex _frameMutex;
             std::array<std::uint8_t, FrameSize> _backBuffer{};
             std::array<std::uint8_t, FrameSize> _publishedFrame{};
+            std::array<std::uint8_t, FrameSize> _effectFrame{};
+            std::array<std::uint8_t, Width * Height> _vignetteMask{};
+            bool _crtEnabled = false;
+            bool _crtScanlines = true;
+            bool _crtFuzz = true;
+            bool _crtVignette = true;
+            bool _crtGlow = true;
+            int _crtScanlineIntensity = 35;
+            int _crtFuzzIntensity = 35;
+            int _crtVignetteIntensity = 35;
+            int _crtGlowIntensity = 35;
+            std::uint32_t _noiseState = 0x9E3779B9u;
             std::atomic<bool> _isRunning;
 
             uint32_t GetColor(Compucolor::Common::Color color);
